@@ -22,12 +22,14 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.art.constraints.ChannelMeanMatcher;
 import com.simiacryptus.mindseye.art.constraints.GramMatrixMatcher;
 import com.simiacryptus.mindseye.art.constraints.RMSChannelEnhancer;
+import com.simiacryptus.mindseye.art.constraints.RMSContentMatcher;
 import com.simiacryptus.mindseye.art.models.InceptionVision;
 import com.simiacryptus.mindseye.eval.ArrayTrainable;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
+import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.IterativeTrainer;
@@ -63,8 +65,9 @@ public class OptimizationTest {
             (
                 new GramMatrixMatcher().build(InceptionVision.Layer1a.getNetwork(), styleImage),
                 new GramMatrixMatcher().build(InceptionVision.Layer2a.getNetwork(), styleImage),
-                new GramMatrixMatcher().build(InceptionVision.Layer3a.getNetwork(), styleImage)
-//            ,new RMSContentMatcher().build(new PipelineNetwork(), contentImage).andThenWrap(new LinearActivationLayer().setScale(1e-2).freeze())
+                new GramMatrixMatcher().build(InceptionVision.Layer3a.getNetwork(), styleImage),
+                new RMSContentMatcher().build(new PipelineNetwork(), contentImage)
+                    //.andThenWrap(new LinearActivationLayer().setScale(1e0).freeze())
             ), Precision.Float), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4)
     );
     Thread.sleep(100000);
