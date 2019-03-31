@@ -1,8 +1,0 @@
-{
-  "class": "com.simiacryptus.mindseye.layers.cudnn.GramianLayer",
-  "id": "dcc758b7-224c-468e-ab43-5c4c98424c69",
-  "isFrozen": true,
-  "name": "GramianLayer/dcc758b7-224c-468e-ab43-5c4c98424c69",
-  "precision": "Float",
-  "alpha": 1.0
-}

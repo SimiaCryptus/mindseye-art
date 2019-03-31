@@ -1,8 +1,0 @@
-{
-  "class": "com.simiacryptus.mindseye.layers.cudnn.SumInputsLayer",
-  "id": "bdb3c27a-923b-4bc0-9fc7-6af1d17cc0e7",
-  "isFrozen": true,
-  "name": "SumInputsLayer/bdb3c27a-923b-4bc0-9fc7-6af1d17cc0e7",
-  "precision": "Float",
-  "parallel": true
-}

@@ -1,7 +1,0 @@
-{
-  "class": "com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer",
-  "id": "5519ea8d-3e13-44ae-a448-81b3403531ac",
-  "isFrozen": true,
-  "name": "NthPowerActivationLayer/5519ea8d-3e13-44ae-a448-81b3403531ac",
-  "power": 0.5
-}
