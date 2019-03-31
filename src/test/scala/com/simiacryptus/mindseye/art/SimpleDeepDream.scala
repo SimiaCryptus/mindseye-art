@@ -41,7 +41,7 @@ import com.simiacryptus.sparkbook.util.LocalRunner
 
 package SimpleDeepDream {
 
-  object EC2 extends SimpleDeepDream with AWSNotebookRunner[Object] with EC2Runner[Object] {
+  object EC2 extends SimpleDeepDream with EC2Runner[Object] with AWSNotebookRunner[Object] {
 
     override def inputTimeoutSeconds = 120
 
@@ -65,9 +65,6 @@ abstract class SimpleDeepDream extends InteractiveSetup[Object] {
   val styleResolution = 1280
   val trainingMinutes: Int = 200
   val trainingIterations: Int = 100
-  val isVerbose: Boolean = false
-
-  def precision = Precision.Float
 
   override def postConfigure(log: NotebookOutput) = {
     TestUtil.addGlobalHandlers(log.getHttpd)
@@ -86,7 +83,7 @@ abstract class SimpleDeepDream extends InteractiveSetup[Object] {
             channelEnhancer.build(InceptionVision.Layer3a.getNetwork, contentImage),
             channelEnhancer.build(InceptionVision.Layer3b.getNetwork, contentImage),
             contentMatcher.build(new PipelineNetwork, contentImage)
-          ), precision).asInstanceOf[PipelineNetwork]
+          ), Precision.Float).asInstanceOf[PipelineNetwork]
         })
         log.eval(() => {
           new IterativeTrainer(new ArrayTrainable(Array[Array[Tensor]](Array(contentImage)), network).setMask(true))
