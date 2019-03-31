@@ -1,0 +1,11 @@
+{
+  "class": "com.simiacryptus.mindseye.layers.cudnn.LRNLayer",
+  "id": "ba619c8e-b821-4d75-8bdc-229460f83e8a",
+  "isFrozen": true,
+  "name": "LRNLayer/ba619c8e-b821-4d75-8bdc-229460f83e8a",
+  "alpha": 0.0010999999940395355,
+  "beta": 0.5,
+  "k": 2.0,
+  "width": 11,
+  "precision": "Float"
+}

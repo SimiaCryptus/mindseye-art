@@ -1,0 +1,9 @@
+{
+  "class": "com.simiacryptus.mindseye.layers.cudnn.ImgConcatLayer",
+  "id": "4cf8cfc0-c2f5-4b1a-bea3-bd6db47cdc7d",
+  "isFrozen": true,
+  "name": "ImgConcatLayer/4cf8cfc0-c2f5-4b1a-bea3-bd6db47cdc7d",
+  "maxBands": -1,
+  "precision": "Float",
+  "parallel": true
+}

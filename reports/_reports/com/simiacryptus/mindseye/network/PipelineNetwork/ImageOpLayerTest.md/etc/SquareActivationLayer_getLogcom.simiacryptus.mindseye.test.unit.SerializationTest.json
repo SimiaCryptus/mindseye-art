@@ -1,0 +1,8 @@
+{
+  "class": "com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer",
+  "id": "8d9fb614-fe9a-4dad-9371-5c30ce50ab90",
+  "isFrozen": true,
+  "name": "SquareActivationLayer/8d9fb614-fe9a-4dad-9371-5c30ce50ab90",
+  "precision": "Float",
+  "alpha": 1.0
+}
