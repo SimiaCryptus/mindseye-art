@@ -100,7 +100,7 @@ public enum InceptionVision implements VisionPipelineLayer {
 
   @Override
   public Layer getLayer() {
-    return layerMap().get(this.layerId).copy();
+    return layerMap().get(this.layerId).copy().setName(name());
   }
 
   @Override

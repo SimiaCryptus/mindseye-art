@@ -19,12 +19,19 @@
 
 package com.simiacryptus.mindseye.art
 
+import java.io.File
+
+import com.simiacryptus.mindseye.lang.Layer
+import com.simiacryptus.mindseye.network.{DAGNetwork, DAGNode, PipelineNetwork}
 import com.simiacryptus.mindseye.opt.{Step, TrainingMonitor}
 import com.simiacryptus.mindseye.test.{StepRecord, TestUtil}
 import com.simiacryptus.notebook.NotebookOutput
 import com.simiacryptus.sparkbook.NotebookRunner
+import com.simiacryptus.sparkbook.util.Java8Util
 import com.simiacryptus.sparkbook.util.Java8Util._
 import com.simiacryptus.util.Util
+import guru.nidi.graphviz.engine.{Format, Graphviz}
+import guru.nidi.graphviz.model.Graph
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
@@ -51,6 +58,16 @@ object ArtUtil {
       }
       fn(trainingMonitor)
     }
+  }
+
+  def graph(log: NotebookOutput, network: PipelineNetwork) = {
+    val graphviz = Graphviz.fromGraph(TestUtil.toGraph(network, Java8Util.cvt((node: DAGNode) => {
+      Option(node.getLayer[Layer]()).map(_.getName).getOrElse(node.getId.toString)
+    })).asInstanceOf[Graph]).height(400).width(600)
+    val file = new File(log.getResourceDir, log.getName + "_network.svg")
+    graphviz.render(Format.SVG_STANDALONE).toFile(file)
+    log.p(log.link(file, "Configuration SVG"))
+    log.p(log.png(graphviz.height(400).width(600).render(Format.PNG).toImage, "Configuration Graph"))
   }
 
 
