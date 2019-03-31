@@ -19,6 +19,8 @@
 
 package com.simiacryptus.mindseye.art
 
+import java.util.concurrent.TimeUnit
+
 import com.simiacryptus.aws.exe.EC2NodeSettings
 import com.simiacryptus.mindseye.art.ArtUtil._
 import com.simiacryptus.mindseye.art.constraints.{GramMatrixMatcher, RMSContentMatcher}
@@ -41,7 +43,7 @@ import com.simiacryptus.sparkbook.util.LocalRunner
 
 package SimpleStyleTransfer {
 
-  object EC2 extends SimpleStyleTransfer with AWSNotebookRunner[Object] with EC2Runner[Object] {
+  object EC2 extends SimpleStyleTransfer with EC2Runner[Object] with AWSNotebookRunner[Object] {
 
     override def inputTimeoutSeconds = 120
 
@@ -65,9 +67,6 @@ abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
   val styleResolution = 1280
   val trainingMinutes: Int = 200
   val trainingIterations: Int = 100
-  val isVerbose: Boolean = false
-
-  def precision = Precision.Float
 
   override def postConfigure(log: NotebookOutput) = {
     TestUtil.addGlobalHandlers(log.getHttpd)
@@ -86,11 +85,11 @@ abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
             val contentMatcher = new RMSContentMatcher()
             MultiPrecision.setPrecision(SumInputsLayer.combine(
               gramMatcher.build(InceptionVision.Layer1a.getNetwork, styleImage),
-              gramMatcher.build(InceptionVision.Layer2a.getNetwork, styleImage),
-              gramMatcher.build(InceptionVision.Layer3a.getNetwork, styleImage),
-              gramMatcher.build(InceptionVision.Layer3b.getNetwork, styleImage),
+//              gramMatcher.build(InceptionVision.Layer2a.getNetwork, styleImage),
+//              gramMatcher.build(InceptionVision.Layer3a.getNetwork, styleImage),
+//              gramMatcher.build(InceptionVision.Layer3b.getNetwork, styleImage),
               contentMatcher.build(new PipelineNetwork, contentImage)
-            ), precision).asInstanceOf[PipelineNetwork]
+            ), Precision.Float).asInstanceOf[PipelineNetwork]
           })
           log.eval(() => {
             new IterativeTrainer(new ArrayTrainable(Array[Array[Tensor]](Array(contentImage)), network).setMask(true))
@@ -98,6 +97,7 @@ abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
                 override def getRegionPolicy(layer: Layer) = new RangeConstraint().setMin(0e-2).setMax(256)
               })
               .setMonitor(trainingMonitor)
+              .setTimeout(trainingMinutes, TimeUnit.MINUTES)
               .setMaxIterations(trainingIterations)
               .setLineSearchFactory((_: CharSequence) => new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4))
               .setTerminateThreshold(java.lang.Double.NEGATIVE_INFINITY)
