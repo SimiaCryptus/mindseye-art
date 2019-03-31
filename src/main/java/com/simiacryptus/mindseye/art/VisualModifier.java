@@ -24,4 +24,10 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 public interface VisualModifier {
   PipelineNetwork build(PipelineNetwork network, Tensor image);
+  default PipelineNetwork build(VisionPipelineLayer layer, Tensor image) {
+    return build(layer.getNetwork(), image);
+  };
+  default PipelineNetwork build(Tensor image) {
+    return build((PipelineNetwork) new PipelineNetwork().setName("Input"), image);
+  };
 }

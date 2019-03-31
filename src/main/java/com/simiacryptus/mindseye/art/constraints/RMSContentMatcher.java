@@ -39,7 +39,6 @@ public class RMSContentMatcher implements VisualModifier {
     DAGNode constNode = network.constValueWrap(baseContent.scale(-1));
     Layer layer = original.getHead().getLayer();
     if(layer != null) constNode.getLayer().setName((layer != null?layer.getName():"Original") + " Content");
-
     network.wrap(new SumInputsLayer().setName("Difference"), head, constNode);
     network.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),

@@ -23,7 +23,7 @@
 
     <parent>
         <groupId>com.simiacryptus</groupId>
-        <artifactId>scala-parent</artifactId>
+        <artifactId>java-parent</artifactId>
         <version>1.6.1</version>
         <relativePath>../scala-parent</relativePath>
     </parent>
@@ -53,10 +53,6 @@
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>com.twitter</groupId>
-            <artifactId>chill_2.11</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.twitter</groupId>
             <artifactId>chill-java</artifactId>
@@ -92,15 +88,7 @@
         </dependency>
         <dependency>
             <groupId>com.simiacryptus</groupId>
-            <artifactId>sparkbook</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.simiacryptus</groupId>
             <artifactId>hadoop-jgit-fs</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.simiacryptus</groupId>
-            <artifactId>aws-utilities</artifactId>
         </dependency>
         <dependency>
             <groupId>com.simiacryptus</groupId>
@@ -112,29 +100,12 @@
         </dependency>
         <dependency>
             <groupId>com.simiacryptus</groupId>
-            <artifactId>mindseye-tensorflow</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.simiacryptus</groupId>
             <artifactId>mindseye-research</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.mjversion}</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-compiler</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.scala-lang.modules</groupId>
-            <artifactId>scala-xml_${scala.mjversion}</artifactId>
+            <groupId>com.simiacryptus</groupId>
+            <artifactId>mindseye-tensorflow</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -143,6 +114,10 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-aws</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jcuda</groupId>

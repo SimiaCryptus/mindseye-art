@@ -23,13 +23,12 @@ import com.simiacryptus.mindseye.art.constraints.ChannelMeanMatcher;
 import com.simiacryptus.mindseye.art.constraints.GramMatrixMatcher;
 import com.simiacryptus.mindseye.art.constraints.RMSChannelEnhancer;
 import com.simiacryptus.mindseye.art.constraints.RMSContentMatcher;
-import com.simiacryptus.mindseye.art.models.InceptionVision;
+import com.simiacryptus.mindseye.art.models.Inception5H;
 import com.simiacryptus.mindseye.eval.ArrayTrainable;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
-import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.IterativeTrainer;
@@ -53,7 +52,7 @@ public class OptimizationTest {
   @Test
   public void testDream() throws InterruptedException {
     Tensor image = Tensor.fromRGB(VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500));
-    train(image, new RMSChannelEnhancer().build(InceptionVision.Layer3b.getNetwork(), image), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1));
+    train(image, new RMSChannelEnhancer().build(Inception5H.Inc5H_3b, image), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1));
     Thread.sleep(100000);
   }
 
@@ -63,10 +62,10 @@ public class OptimizationTest {
     Tensor styleImage = Tensor.fromRGB(VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200));
     train(contentImage, (PipelineNetwork) MultiPrecision.setPrecision(SumInputsLayer.combine
             (
-                new GramMatrixMatcher().build(InceptionVision.Layer1a.getNetwork(), styleImage),
-                new GramMatrixMatcher().build(InceptionVision.Layer2a.getNetwork(), styleImage),
-                new GramMatrixMatcher().build(InceptionVision.Layer3a.getNetwork(), styleImage),
-                new RMSContentMatcher().build(new PipelineNetwork(), contentImage)
+                new GramMatrixMatcher().build(Inception5H.Inc5H_1a, styleImage),
+                new GramMatrixMatcher().build(Inception5H.Inc5H_2a, styleImage),
+                new GramMatrixMatcher().build(Inception5H.Inc5H_3a, styleImage),
+                new RMSContentMatcher().build(contentImage)
                     //.andThenWrap(new LinearActivationLayer().setScale(1e0).freeze())
             ), Precision.Float), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4)
     );
@@ -77,7 +76,7 @@ public class OptimizationTest {
   public void testMeanMatch() throws InterruptedException {
     train(
         Tensor.fromRGB(VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500)),
-        new ChannelMeanMatcher().build(InceptionVision.Layer1a.getNetwork(),
+        new ChannelMeanMatcher().build(Inception5H.Inc5H_1a,
             Tensor.fromRGB(VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200))),
         100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1)
     );
@@ -88,7 +87,7 @@ public class OptimizationTest {
   public void testGramMatch() throws InterruptedException {
     train(
         Tensor.fromRGB(VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500)),
-        new GramMatrixMatcher().build(InceptionVision.Layer2a.getNetwork(),
+        new GramMatrixMatcher().build(Inception5H.Inc5H_2a,
             Tensor.fromRGB(VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200))),
         100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1)
     );

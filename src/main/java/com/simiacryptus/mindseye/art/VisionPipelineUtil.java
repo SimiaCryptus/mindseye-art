@@ -107,9 +107,7 @@ public class VisionPipelineUtil {
         inputPin -> {
           Tensor testInput = new Tensor(inputDims).setAll(0.0).set(inputPin, 1.0);
           Tensor testOutput = liveTestingNetwork.eval(testInput).getDataAndFree().getAndFree(0).map(outValue -> outValue == 0.0 ? 0.0 : 1.0);
-          List<Coordinate> collect = testOutput.coordStream(true).filter(c -> testOutput.get(c) != 0.0 && c.getCoords()[2] == 0).collect(Collectors.toList());
-          //log.info(inputPin + " -> " + collect.stream().map(Coordinate::toString).reduce((a, b)->a+","+b));
-          return collect;
+          return testOutput.coordStream(true).filter(c -> testOutput.get(c) != 0.0 && c.getCoords()[2] == 0).collect(Collectors.toList());
         }));
 
     Map<Coordinate, Integer> fwdSizes = fwdPinMapping.entrySet().stream().collect(Collectors.groupingBy(

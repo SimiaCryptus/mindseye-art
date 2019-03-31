@@ -28,24 +28,24 @@ import com.simiacryptus.tensorflow.ImageNetworkPipeline;
 import java.util.*;
 import java.util.stream.IntStream;
 
-public enum InceptionVision implements VisionPipelineLayer {
-  Layer1a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, "conv2d0"),
-  Layer2a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 64, 192, "localresponsenorm1"),
-  Layer3a(new int[]{0, 0}, new int[]{1, 1}, new int[]{3, 3}, new int[]{2, 2}, 192, 256, "mixed3a"),
-  Layer3b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 256, 480, "mixed3b"),
-  Layer4a(new int[]{0, 0}, new int[]{1, 1}, new int[]{3, 3}, new int[]{2, 2}, 480, 508, "mixed4a"),
-  Layer4b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 508, 512, "mixed4b"),
-  Layer4c(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 512, 512, "mixed4c"),
-  Layer4d(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 512, 528, "mixed4d"),
-  Layer4e(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 528, 832, "mixed4e"),
-  Layer5a(new int[]{1, 1}, new int[]{1, 1}, new int[]{2, 2}, new int[]{2, 2}, 832, 832, "mixed5a"),
-  Layer5b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 832, 1024, "mixed5b")
+public enum Inception5H implements VisionPipelineLayer {
+  Inc5H_1a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, "conv2d0"),
+  Inc5H_2a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 64, 192, "localresponsenorm1"),
+  Inc5H_3a(new int[]{0, 0}, new int[]{1, 1}, new int[]{3, 3}, new int[]{2, 2}, 192, 256, "mixed3a"),
+  Inc5H_3b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 256, 480, "mixed3b"),
+  Inc5H_4a(new int[]{0, 0}, new int[]{1, 1}, new int[]{3, 3}, new int[]{2, 2}, 480, 508, "mixed4a"),
+  Inc5H_4b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 508, 512, "mixed4b"),
+  Inc5H_4c(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 512, 512, "mixed4c"),
+  Inc5H_4d(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 512, 528, "mixed4d"),
+  Inc5H_4e(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 528, 832, "mixed4e"),
+  Inc5H_5a(new int[]{1, 1}, new int[]{1, 1}, new int[]{2, 2}, new int[]{2, 2}, 832, 832, "mixed5a"),
+  Inc5H_5b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 832, 1024, "mixed5b")
   ;
 
   private static transient Map<String, Layer> inception5h = null;
   public static Map<String, Layer> layerMap() {
     if (null == inception5h) {
-      synchronized (InceptionVision.class) {
+      synchronized (Inception5H.class) {
         if (null == inception5h) {
           inception5h = VisionPipelineUtil.convertPipeline(ImageNetworkPipeline.loadGraphZip(
               "https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip",
@@ -71,16 +71,16 @@ public enum InceptionVision implements VisionPipelineLayer {
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
   public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
     if(null == visionPipeline) {
-      synchronized (InceptionVision.class) {
+      synchronized (Inception5H.class) {
         if(null == visionPipeline) {
-          visionPipeline = new VisionPipeline<>(InceptionVision.values());
+          visionPipeline = new VisionPipeline<>(Inception5H.class.getSimpleName(), Inception5H.values());
         }
       }
     }
     return visionPipeline;
   }
 
-  InceptionVision(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, String layerId) {
+  Inception5H(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, String layerId) {
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;
     this.layerId = layerId;
