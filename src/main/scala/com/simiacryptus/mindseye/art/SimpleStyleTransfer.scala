@@ -57,7 +57,7 @@ abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
   val styleUrl = "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg"
   val contentResolution = 600
   val styleResolution = 1280
-  val trainingMinutes: Int = 20
+  val trainingMinutes: Int = 200
   val trainingIterations: Int = 100
   val isVerbose: Boolean = false
   def precision = Precision.Float
