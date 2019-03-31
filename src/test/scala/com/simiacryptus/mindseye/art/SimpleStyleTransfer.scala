@@ -85,9 +85,9 @@ abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
             val contentMatcher = new RMSContentMatcher()
             MultiPrecision.setPrecision(SumInputsLayer.combine(
               gramMatcher.build(InceptionVision.Layer1a.getNetwork, styleImage),
-//              gramMatcher.build(InceptionVision.Layer2a.getNetwork, styleImage),
-//              gramMatcher.build(InceptionVision.Layer3a.getNetwork, styleImage),
-//              gramMatcher.build(InceptionVision.Layer3b.getNetwork, styleImage),
+              gramMatcher.build(InceptionVision.Layer2a.getNetwork, styleImage),
+              gramMatcher.build(InceptionVision.Layer3a.getNetwork, styleImage),
+              gramMatcher.build(InceptionVision.Layer3b.getNetwork, styleImage),
               contentMatcher.build(new PipelineNetwork, contentImage)
             ), Precision.Float).asInstanceOf[PipelineNetwork]
           })
