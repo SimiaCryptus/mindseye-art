@@ -38,7 +38,8 @@ public class RMSChannelEnhancer implements VisualModifier {
         new SquareActivationLayer(),
         new AvgReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5),
-        new LinearActivationLayer().setScale(Math.pow(rms,-1))));
+        new LinearActivationLayer().setScale(Math.pow(rms,-1))
+    ).setName(String.format("RMS / %.0E", rms)));
     return (PipelineNetwork) network.freeze();
   }
 

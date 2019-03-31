@@ -62,12 +62,10 @@ object ArtUtil {
 
   def graph(log: NotebookOutput, network: PipelineNetwork) = {
     val graphviz = Graphviz.fromGraph(TestUtil.toGraph(network, Java8Util.cvt((node: DAGNode) => {
-      Option(node.getLayer[Layer]()).map(_.getName).getOrElse(node.getId.toString)
-    })).asInstanceOf[Graph]).height(400).width(600)
-    val file = new File(log.getResourceDir, log.getName + "_network.svg")
-    graphviz.render(Format.SVG_STANDALONE).toFile(file)
-    log.p(log.link(file, "Configuration SVG"))
+      Option(node.getLayer[Layer]()).map(_.getName.stripSuffix("Layer")).getOrElse("Input " + node.getNetwork.inputHandles.indexOf(node.getId))
+    })).asInstanceOf[Graph])
     log.p(log.png(graphviz.height(400).width(600).render(Format.PNG).toImage, "Configuration Graph"))
+    log.p(log.svg(graphviz.height(400).width(600).render(Format.SVG_STANDALONE).toString, "Configuration Graph"))
   }
 
 
