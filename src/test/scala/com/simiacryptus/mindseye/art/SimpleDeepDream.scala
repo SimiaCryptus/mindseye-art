@@ -21,7 +21,7 @@ package com.simiacryptus.mindseye.art
 
 import com.simiacryptus.aws.exe.EC2NodeSettings
 import com.simiacryptus.mindseye.art.ArtUtil._
-import com.simiacryptus.mindseye.art.constraints.{GramMatrixMatcher, RMSContentMatcher}
+import com.simiacryptus.mindseye.art.constraints.{RMSChannelEnhancer, RMSContentMatcher}
 import com.simiacryptus.mindseye.art.models.InceptionVision
 import com.simiacryptus.mindseye.eval.ArrayTrainable
 import com.simiacryptus.mindseye.lang.cudnn.{MultiPrecision, Precision}
@@ -31,7 +31,7 @@ import com.simiacryptus.mindseye.network.PipelineNetwork
 import com.simiacryptus.mindseye.opt.IterativeTrainer
 import com.simiacryptus.mindseye.opt.line.BisectionSearch
 import com.simiacryptus.mindseye.opt.orient.{GradientDescent, TrustRegionStrategy}
-import com.simiacryptus.mindseye.opt.region.RangeConstraint
+import com.simiacryptus.mindseye.opt.region.{RangeConstraint, TrustRegion}
 import com.simiacryptus.mindseye.test.TestUtil
 import com.simiacryptus.notebook.{MarkdownNotebookOutput, NotebookOutput}
 import com.simiacryptus.sparkbook.NotebookRunner.withMonitoredImage
@@ -39,9 +39,9 @@ import com.simiacryptus.sparkbook._
 import com.simiacryptus.sparkbook.util.Java8Util._
 import com.simiacryptus.sparkbook.util.LocalRunner
 
-package SimpleStyleTransfer {
+package SimpleDeepDream {
 
-  object EC2 extends SimpleStyleTransfer with AWSNotebookRunner[Object] with EC2Runner[Object] {
+  object EC2 extends SimpleDeepDream with AWSNotebookRunner[Object] with EC2Runner[Object] {
 
     override def inputTimeoutSeconds = 120
 
@@ -51,13 +51,13 @@ package SimpleStyleTransfer {
 
   }
 
-  object Local extends SimpleStyleTransfer with LocalRunner[Object] with NotebookRunner[Object] {
-    override def inputTimeoutSeconds = 600
+  object Local extends SimpleDeepDream with LocalRunner[Object] with NotebookRunner[Object] {
+    override def inputTimeoutSeconds = 15
   }
 
 }
 
-abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
+abstract class SimpleDeepDream extends InteractiveSetup[Object] {
 
   val contentUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg"
   val styleUrl = "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg"
@@ -72,44 +72,35 @@ abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
   override def postConfigure(log: NotebookOutput) = {
     TestUtil.addGlobalHandlers(log.getHttpd)
     log.asInstanceOf[MarkdownNotebookOutput].setMaxImageSize(10000)
-    try {
-      val contentImage = Tensor.fromRGB(log.eval(() => {
-        VisionPipelineUtil.load(contentUrl, contentResolution)
-      }))
-      val styleImage = Tensor.fromRGB(log.eval(() => {
-        VisionPipelineUtil.load(styleUrl, styleResolution)
-      }))
-      withMonitoredImage(log, contentImage.toRgbImage) {
-        withTrainingMonitor(log, trainingMonitor => {
-          val network = log.eval(() => {
-            val gramMatcher = new GramMatrixMatcher()
-            val contentMatcher = new RMSContentMatcher()
-            MultiPrecision.setPrecision(SumInputsLayer.combine(
-              gramMatcher.build(InceptionVision.Layer1a.getNetwork, styleImage),
-              gramMatcher.build(InceptionVision.Layer2a.getNetwork, styleImage),
-              gramMatcher.build(InceptionVision.Layer3a.getNetwork, styleImage),
-              gramMatcher.build(InceptionVision.Layer3b.getNetwork, styleImage),
-              contentMatcher.build(new PipelineNetwork, contentImage)
-            ), precision).asInstanceOf[PipelineNetwork]
-          })
-          log.eval(() => {
-            new IterativeTrainer(new ArrayTrainable(Array[Array[Tensor]](Array(contentImage)), network).setMask(true))
-              .setOrientation(new TrustRegionStrategy(new GradientDescent) {
-                override def getRegionPolicy(layer: Layer) = new RangeConstraint().setMin(0e-2).setMax(256)
-              })
-              .setMonitor(trainingMonitor)
-              .setMaxIterations(trainingIterations)
-              .setLineSearchFactory((_: CharSequence) => new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4))
-              .setTerminateThreshold(java.lang.Double.NEGATIVE_INFINITY)
-              .runAndFree
-              .asInstanceOf[java.lang.Double]
-          })
+    val contentImage = Tensor.fromRGB(log.eval(() => {
+      VisionPipelineUtil.load(contentUrl, contentResolution)
+    }))
+    withMonitoredImage(log, contentImage.toRgbImage) {
+      withTrainingMonitor(log, trainingMonitor => {
+        val network = log.eval(() => {
+          val channelEnhancer = new RMSChannelEnhancer()
+          val contentMatcher = new RMSContentMatcher()
+          MultiPrecision.setPrecision(SumInputsLayer.combine(
+            channelEnhancer.build(InceptionVision.Layer1a.getNetwork, contentImage),
+            channelEnhancer.build(InceptionVision.Layer2a.getNetwork, contentImage),
+            channelEnhancer.build(InceptionVision.Layer3a.getNetwork, contentImage),
+            channelEnhancer.build(InceptionVision.Layer3b.getNetwork, contentImage),
+            contentMatcher.build(new PipelineNetwork, contentImage)
+          ), precision).asInstanceOf[PipelineNetwork]
         })
-      }
-    } catch {
-      case e: Throwable =>
-        e.printStackTrace()
-        throw e
+        log.eval(() => {
+          new IterativeTrainer(new ArrayTrainable(Array[Array[Tensor]](Array(contentImage)), network).setMask(true))
+            .setOrientation(new TrustRegionStrategy(new GradientDescent) {
+              override def getRegionPolicy(layer: Layer) = new RangeConstraint().setMin(0e-2).setMax(256)
+            })
+            .setMonitor(trainingMonitor)
+            .setMaxIterations(trainingIterations)
+            .setLineSearchFactory((_: CharSequence) => new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4))
+            .setTerminateThreshold(java.lang.Double.NEGATIVE_INFINITY)
+            .runAndFree
+            .asInstanceOf[java.lang.Double]
+        })
+      })
     }
   }
 
