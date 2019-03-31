@@ -19,7 +19,7 @@
 
 package com.simiacryptus.mindseye.art;
 
-import com.simiacryptus.mindseye.art.models.InceptionVision;
+import com.simiacryptus.mindseye.art.models.Inception5H;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -28,25 +28,25 @@ import org.slf4j.LoggerFactory;
 public abstract class VisionPipelineTest {
   private static final Logger log = LoggerFactory.getLogger(VisionPipelineTest.class);
 
-  public static class InceptionVisionTest extends VisionPipelineTest {
+  public static class Inception5HTest extends VisionPipelineTest {
     @Test
     public void inoutDims() {
-      testDims(InceptionVision.Layer1a, new int[]{320, 240, 3}, new int[]{160, 120, 64});
-      testDims(InceptionVision.Layer2a, new int[]{160, 120, 64}, new int[]{80, 60, 192});
-      testDims(InceptionVision.Layer3a, new int[]{80, 60, 192}, new int[]{40, 30, 256});
-      testDims(InceptionVision.Layer3b, new int[]{40, 30, 256}, new int[]{40, 30, 480});
-      testDims(InceptionVision.Layer4a, new int[]{40, 30, 480}, new int[]{20, 15, 508});
-      testDims(InceptionVision.Layer4b, new int[]{20, 15, 508}, new int[]{20, 15, 512});
-      testDims(InceptionVision.Layer4c, new int[]{20, 15, 512}, new int[]{20, 15, 512});
-      testDims(InceptionVision.Layer4d, new int[]{20, 15, 512}, new int[]{20, 15, 528});
-      testDims(InceptionVision.Layer4e, new int[]{20, 15, 528}, new int[]{20, 15, 832});
-      testDims(InceptionVision.Layer5a, new int[]{20, 15, 832}, new int[]{10, 8, 832});
-      testDims(InceptionVision.Layer5b, new int[]{10, 8, 832}, new int[]{10, 8, 1024});
+      testDims(Inception5H.Inc5H_1a, new int[]{320, 240, 3}, new int[]{160, 120, 64});
+      testDims(Inception5H.Inc5H_2a, new int[]{160, 120, 64}, new int[]{80, 60, 192});
+      testDims(Inception5H.Inc5H_3a, new int[]{80, 60, 192}, new int[]{40, 30, 256});
+      testDims(Inception5H.Inc5H_3b, new int[]{40, 30, 256}, new int[]{40, 30, 480});
+      testDims(Inception5H.Inc5H_4a, new int[]{40, 30, 480}, new int[]{20, 15, 508});
+      testDims(Inception5H.Inc5H_4b, new int[]{20, 15, 508}, new int[]{20, 15, 512});
+      testDims(Inception5H.Inc5H_4c, new int[]{20, 15, 512}, new int[]{20, 15, 512});
+      testDims(Inception5H.Inc5H_4d, new int[]{20, 15, 512}, new int[]{20, 15, 528});
+      testDims(Inception5H.Inc5H_4e, new int[]{20, 15, 528}, new int[]{20, 15, 832});
+      testDims(Inception5H.Inc5H_5a, new int[]{20, 15, 832}, new int[]{10, 8, 832});
+      testDims(Inception5H.Inc5H_5b, new int[]{10, 8, 832}, new int[]{10, 8, 1024});
     }
 
     @Test
     public void pipelineTest() {
-      VisionPipeline<VisionPipelineLayer> pipeline = InceptionVision.getVisionPipeline();
+      VisionPipeline<VisionPipelineLayer> pipeline = Inception5H.getVisionPipeline();
       Assert.assertArrayEquals(testDims(pipeline, 320, 320, 3), new int[]{10, 10, 1024});
       Assert.assertArrayEquals(testDims(pipeline, 32, 32, 3), new int[]{1, 1, 1024});
       Assert.assertArrayEquals(testDims(pipeline, 400, 400, 3), new int[]{13, 13, 1024});
@@ -56,17 +56,17 @@ public abstract class VisionPipelineTest {
     @Test
     public void layerPins() {
       int sizeMultiplier = 4;
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer1a, new int[]{32 * sizeMultiplier, 24 * sizeMultiplier, 3});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer2a, new int[]{16 * sizeMultiplier, 12 * sizeMultiplier, 64});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer3a, new int[]{8 * sizeMultiplier, 6 * sizeMultiplier, 192});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer3b, new int[]{4 * sizeMultiplier, 3 * sizeMultiplier, 256});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer4a, new int[]{4 * sizeMultiplier, 3 * sizeMultiplier, 480});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer4b, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 508});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer4c, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 512});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer4d, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 512});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer4e, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 528});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer5a, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 832});
-      VisionPipelineUtil.testPinConnectivity(InceptionVision.Layer5b, new int[]{1 * sizeMultiplier, 1 * sizeMultiplier, 832});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_1a, new int[]{32 * sizeMultiplier, 24 * sizeMultiplier, 3});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_2a, new int[]{16 * sizeMultiplier, 12 * sizeMultiplier, 64});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_3a, new int[]{8 * sizeMultiplier, 6 * sizeMultiplier, 192});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_3b, new int[]{4 * sizeMultiplier, 3 * sizeMultiplier, 256});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_4a, new int[]{4 * sizeMultiplier, 3 * sizeMultiplier, 480});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_4b, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 508});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_4c, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 512});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_4d, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 512});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_4e, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 528});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_5a, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 832});
+      VisionPipelineUtil.testPinConnectivity(Inception5H.Inc5H_5b, new int[]{1 * sizeMultiplier, 1 * sizeMultiplier, 832});
     }
 
   }

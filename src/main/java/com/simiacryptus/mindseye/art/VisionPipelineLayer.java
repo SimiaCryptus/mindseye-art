@@ -41,6 +41,8 @@ public interface VisionPipelineLayer {
     }).toArray();
   }
 
+  String name();
+
   VisionPipeline<?> getPipeline();
 
   default PipelineNetwork getNetwork() {

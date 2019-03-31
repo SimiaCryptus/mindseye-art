@@ -26,26 +26,18 @@ import java.util.*;
 
 public class VisionPipeline<T extends VisionPipelineLayer> {
 
+  public final String name;
+
   private final LinkedHashMap<T, PipelineNetwork> layers = new LinkedHashMap<>();
 
-  public VisionPipeline(T... values) {
+  public VisionPipeline(String name, T... values) {
+    this.name = name;
     PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
     for (T value : values) {
       pipelineNetwork.wrap(value.getLayer()).freeRef();
       layers.put(value, (PipelineNetwork) pipelineNetwork.copy().freeze());
     }
     pipelineNetwork.freeRef();
-  }
-
-  public Map<T,Tensor> evalFeatureMaps(Tensor input) {
-    Map<T,Tensor> tensors = new HashMap<>();
-    for (T layer : layers.keySet()) {
-      Tensor newValue = layer.getLayer().eval(input).getDataAndFree().getAndFree(0);
-      tensors.put(layer,newValue.copy());
-      input.freeRef();
-      input = newValue;
-    }
-    return tensors;
   }
 
   public PipelineNetwork get(T layer) {
