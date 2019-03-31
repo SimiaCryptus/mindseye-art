@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art
 
+import java.lang
 import java.util.concurrent.TimeUnit
 
 import com.simiacryptus.aws.exe.EC2NodeSettings
@@ -46,9 +47,7 @@ package SimpleStyleTransfer {
   object EC2 extends SimpleStyleTransfer with EC2Runner[Object] with AWSNotebookRunner[Object] {
 
     override def inputTimeoutSeconds = 120
-
     override def maxHeap = Option("55g")
-
     override def nodeSettings = EC2NodeSettings.P2_XL
 
   }
@@ -71,45 +70,40 @@ abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
   override def postConfigure(log: NotebookOutput) = {
     TestUtil.addGlobalHandlers(log.getHttpd)
     log.asInstanceOf[MarkdownNotebookOutput].setMaxImageSize(10000)
-    try {
-      val contentImage = Tensor.fromRGB(log.eval(() => {
-        VisionPipelineUtil.load(contentUrl, contentResolution)
-      }))
-      val styleImage = Tensor.fromRGB(log.eval(() => {
-        VisionPipelineUtil.load(styleUrl, styleResolution)
-      }))
-      withMonitoredImage(log, contentImage.toRgbImage) {
-        withTrainingMonitor(log, trainingMonitor => {
-          val network = log.eval(() => {
-            val gramMatcher = new GramMatrixMatcher()
-            val contentMatcher = new RMSContentMatcher()
-            MultiPrecision.setPrecision(SumInputsLayer.combine(
-              gramMatcher.build(InceptionVision.Layer1a.getNetwork, styleImage),
-              gramMatcher.build(InceptionVision.Layer2a.getNetwork, styleImage),
-              gramMatcher.build(InceptionVision.Layer3a.getNetwork, styleImage),
-              gramMatcher.build(InceptionVision.Layer3b.getNetwork, styleImage),
-              contentMatcher.build(new PipelineNetwork, contentImage)
-            ), Precision.Float).asInstanceOf[PipelineNetwork]
-          })
-          log.eval(() => {
-            new IterativeTrainer(new ArrayTrainable(Array[Array[Tensor]](Array(contentImage)), network).setMask(true))
-              .setOrientation(new TrustRegionStrategy(new GradientDescent) {
-                override def getRegionPolicy(layer: Layer) = new RangeConstraint().setMin(0e-2).setMax(256)
-              })
-              .setMonitor(trainingMonitor)
-              .setTimeout(trainingMinutes, TimeUnit.MINUTES)
-              .setMaxIterations(trainingIterations)
-              .setLineSearchFactory((_: CharSequence) => new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4))
-              .setTerminateThreshold(java.lang.Double.NEGATIVE_INFINITY)
-              .runAndFree
-              .asInstanceOf[java.lang.Double]
-          })
+    val contentImage = Tensor.fromRGB(log.eval(() => {
+      VisionPipelineUtil.load(contentUrl, contentResolution)
+    }))
+    val styleImage = Tensor.fromRGB(log.eval(() => {
+      VisionPipelineUtil.load(styleUrl, styleResolution)
+    }))
+    val network = log.eval(() => {
+      val gramMatcher = new GramMatrixMatcher()
+      val contentMatcher = new RMSContentMatcher()
+      MultiPrecision.setPrecision(SumInputsLayer.combine(
+        gramMatcher.build(InceptionVision.Layer1a.getNetwork, styleImage),
+        //          gramMatcher.build(InceptionVision.Layer2a.getNetwork, styleImage),
+        //          gramMatcher.build(InceptionVision.Layer3a.getNetwork, styleImage),
+        //          gramMatcher.build(InceptionVision.Layer3b.getNetwork, styleImage),
+        contentMatcher.build(new PipelineNetwork, contentImage)
+      ), Precision.Float).asInstanceOf[PipelineNetwork]
+    })
+    graph(log, network)
+    withMonitoredImage(log, contentImage.toRgbImage) {
+      withTrainingMonitor(log, trainingMonitor => {
+        log.eval(() => {
+          new IterativeTrainer(new ArrayTrainable(Array[Array[Tensor]](Array(contentImage)), network).setMask(true))
+            .setOrientation(new TrustRegionStrategy(new GradientDescent) {
+              override def getRegionPolicy(layer: Layer) = new RangeConstraint().setMin(0e-2).setMax(256)
+            })
+            .setMonitor(trainingMonitor)
+            .setTimeout(trainingMinutes, TimeUnit.MINUTES)
+            .setMaxIterations(trainingIterations)
+            .setLineSearchFactory((_: CharSequence) => new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4))
+            .setTerminateThreshold(java.lang.Double.NEGATIVE_INFINITY)
+            .runAndFree
+            .asInstanceOf[lang.Double]
         })
-      }
-    } catch {
-      case e: Throwable =>
-        e.printStackTrace()
-        throw e
+      })
     }
   }
 
