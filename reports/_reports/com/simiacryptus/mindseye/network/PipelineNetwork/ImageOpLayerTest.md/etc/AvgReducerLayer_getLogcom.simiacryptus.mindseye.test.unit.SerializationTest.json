@@ -1,0 +1,7 @@
+{
+  "class": "com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer",
+  "id": "8528da9e-59de-4bcf-b4f8-cdab50d29dcc",
+  "isFrozen": true,
+  "name": "AvgReducerLayer/8528da9e-59de-4bcf-b4f8-cdab50d29dcc",
+  "precision": "Float"
+}

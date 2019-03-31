@@ -1,0 +1,37 @@
+# <a id="p-0"></a>Serialization
+<a id="p-1"></a>This apply will demonstrate the key's JSON serialization, and verify deserialization integrity.
+
+## <a id="p-2"></a>Raw Json
+<a id="p-3"></a>Code from [SerializationTest.java:89](https://github.com/SimiaCryptus/mindseye-test/tree/444256810c541076ac97c4437963f8489a719862/src/main/java/com/simiacryptus/mindseye/test/unit/SerializationTest.java#L89) executed in 0.00 seconds (0.000 gc): 
+```java
+    final JsonObject json = layer.getJson();
+    @Nonnull final Layer echo = Layer.fromJson(json);
+    if (echo == null) throw new AssertionError("Failed to deserialize");
+    if (layer == echo) throw new AssertionError("Serialization did not copy");
+    if (!layer.equals(echo)) throw new AssertionError("Serialization not equal");
+    echo.freeRef();
+    return new GsonBuilder().setPrettyPrinting().create().toJson(json);
+```
+
+<a id="p-4"></a>Returns: 
+
+```
+    {
+      "class": "com.simiacryptus.mindseye.layers.cudnn.LRNLayer",
+      "id": "ba619c8e-b821-4d75-8bdc-229460f83e8a",
+      "isFrozen": true,
+      "name": "LRNLayer/ba619c8e-b821-4d75-8bdc-229460f83e8a",
+      "alpha": 0.0010999999940395355,
+      "beta": 0.5,
+      "k": 2.0,
+      "width": 11,
+      "precision": "Float"
+    }
+```
+
+
+
+<a id="p-5"></a>[Wrote Model to LRNLayer_getLogcom.simiacryptus.mindseye.test.unit.SerializationTest.json; 291 characters](etc/LRNLayer_getLogcom.simiacryptus.mindseye.test.unit.SerializationTest.json)
+
+<a id="p-6"></a>
+

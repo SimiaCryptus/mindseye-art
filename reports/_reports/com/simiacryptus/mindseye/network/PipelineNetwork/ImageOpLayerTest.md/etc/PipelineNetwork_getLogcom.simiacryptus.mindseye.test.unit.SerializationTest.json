@@ -1,0 +1,65 @@
+{
+  "class": "com.simiacryptus.mindseye.network.PipelineNetwork",
+  "id": "9ed6d99d-2b16-48ee-8adf-6a5efa91da50",
+  "isFrozen": true,
+  "name": "PipelineNetwork/9ed6d99d-2b16-48ee-8adf-6a5efa91da50",
+  "inputs": [
+    "72c74804-9c78-4f95-9e82-c742282b7f5d"
+  ],
+  "nodes": {
+    "633ad0f0-d974-4841-b3d3-3a5751f1c949": "8d9fb614-fe9a-4dad-9371-5c30ce50ab90",
+    "da1d17fe-be1b-4b3a-8dee-39b09e841ffc": "8528da9e-59de-4bcf-b4f8-cdab50d29dcc",
+    "5d143783-e9db-4bdd-a0e5-c52f0c5aeec0": "5519ea8d-3e13-44ae-a448-81b3403531ac",
+    "345c6d61-7726-4466-b5bd-47964bdcbfe2": "ac1997f8-fbda-4ec1-89f3-32a06ae3c7d0"
+  },
+  "layers": {
+    "8d9fb614-fe9a-4dad-9371-5c30ce50ab90": {
+      "class": "com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer",
+      "id": "8d9fb614-fe9a-4dad-9371-5c30ce50ab90",
+      "isFrozen": true,
+      "name": "SquareActivationLayer/8d9fb614-fe9a-4dad-9371-5c30ce50ab90",
+      "precision": "Float",
+      "alpha": 1.0
+    },
+    "8528da9e-59de-4bcf-b4f8-cdab50d29dcc": {
+      "class": "com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer",
+      "id": "8528da9e-59de-4bcf-b4f8-cdab50d29dcc",
+      "isFrozen": true,
+      "name": "AvgReducerLayer/8528da9e-59de-4bcf-b4f8-cdab50d29dcc",
+      "precision": "Float"
+    },
+    "5519ea8d-3e13-44ae-a448-81b3403531ac": {
+      "class": "com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer",
+      "id": "5519ea8d-3e13-44ae-a448-81b3403531ac",
+      "isFrozen": true,
+      "name": "NthPowerActivationLayer/5519ea8d-3e13-44ae-a448-81b3403531ac",
+      "power": 0.5
+    },
+    "ac1997f8-fbda-4ec1-89f3-32a06ae3c7d0": {
+      "class": "com.simiacryptus.mindseye.layers.java.LinearActivationLayer",
+      "id": "ac1997f8-fbda-4ec1-89f3-32a06ae3c7d0",
+      "isFrozen": true,
+      "name": "LinearActivationLayer/ac1997f8-fbda-4ec1-89f3-32a06ae3c7d0",
+      "weights": [
+        0.010436656660232777,
+        0.0
+      ]
+    }
+  },
+  "links": {
+    "633ad0f0-d974-4841-b3d3-3a5751f1c949": [
+      "72c74804-9c78-4f95-9e82-c742282b7f5d"
+    ],
+    "da1d17fe-be1b-4b3a-8dee-39b09e841ffc": [
+      "633ad0f0-d974-4841-b3d3-3a5751f1c949"
+    ],
+    "5d143783-e9db-4bdd-a0e5-c52f0c5aeec0": [
+      "da1d17fe-be1b-4b3a-8dee-39b09e841ffc"
+    ],
+    "345c6d61-7726-4466-b5bd-47964bdcbfe2": [
+      "5d143783-e9db-4bdd-a0e5-c52f0c5aeec0"
+    ]
+  },
+  "labels": {},
+  "head": "345c6d61-7726-4466-b5bd-47964bdcbfe2"
+}
