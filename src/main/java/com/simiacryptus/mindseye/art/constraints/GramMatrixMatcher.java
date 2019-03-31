@@ -41,7 +41,8 @@ public class GramMatrixMatcher implements VisualModifier {
         new SquareActivationLayer(),
         new AvgReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5),
-        new LinearActivationLayer().setScale(Math.pow(rms,-1)))).freeRef();
+        new LinearActivationLayer().setScale(Math.pow(rms,-1))
+    ).setName(String.format("-RMS[x-C] / %.0E", rms))).freeRef();
     result.freeRef();
     return (PipelineNetwork) network.freeze();
   }
