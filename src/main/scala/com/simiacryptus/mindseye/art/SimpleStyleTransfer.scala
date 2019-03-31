@@ -24,8 +24,8 @@ import com.simiacryptus.mindseye.art.ArtUtil._
 import com.simiacryptus.mindseye.art.constraints.{GramMatrixMatcher, RMSContentMatcher}
 import com.simiacryptus.mindseye.art.models.InceptionVision
 import com.simiacryptus.mindseye.eval.ArrayTrainable
-import com.simiacryptus.mindseye.lang.cudnn.{CudaMemory, MultiPrecision, Precision}
-import com.simiacryptus.mindseye.lang.{CoreSettings, Layer, Tensor}
+import com.simiacryptus.mindseye.lang.cudnn.{MultiPrecision, Precision}
+import com.simiacryptus.mindseye.lang.{Layer, Tensor}
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer
 import com.simiacryptus.mindseye.network.PipelineNetwork
 import com.simiacryptus.mindseye.opt.IterativeTrainer
@@ -35,27 +35,20 @@ import com.simiacryptus.mindseye.opt.region.{RangeConstraint, TrustRegion}
 import com.simiacryptus.mindseye.test.TestUtil
 import com.simiacryptus.notebook.{MarkdownNotebookOutput, NotebookOutput}
 import com.simiacryptus.sparkbook.NotebookRunner.withMonitoredImage
+import com.simiacryptus.sparkbook._
 import com.simiacryptus.sparkbook.util.Java8Util._
-import com.simiacryptus.sparkbook.{AWSNotebookRunner, EC2Runner, InteractiveSetup}
+import com.simiacryptus.sparkbook.util.LocalRunner
 
 object SimpleStyleTransfer_EC2 extends SimpleStyleTransfer() with AWSNotebookRunner[Object] with EC2Runner[Object] {
 
   override def inputTimeoutSeconds = 600
+  override def maxHeap = Option("55g")
+  override def nodeSettings = EC2NodeSettings.P2_XL
 
-  override def maxHeap: Option[String] = Option("55g")
+}
 
-  override def nodeSettings: EC2NodeSettings = EC2NodeSettings.P2_XL
-
-//  override def javaProperties: Map[String, String] = Map(
-//    "spark.master" -> "local[8]",
-//    "MAX_TOTAL_MEMORY" -> (8 * CudaMemory.GiB).toString,
-//    "MAX_DEVICE_MEMORY" -> (8 * CudaMemory.GiB).toString,
-//    "MAX_IO_ELEMENTS" -> (2 * CudaMemory.MiB).toString,
-//    "CONVOLUTION_WORKSPACE_SIZE_LIMIT" -> (1 * 512 * CudaMemory.MiB).toString,
-//    "MAX_FILTER_ELEMENTS" -> (1 * 512 * CudaMemory.MiB).toString,
-//    "java.util.concurrent.ForkJoinPool.common.parallelism" -> Integer.toString(CoreSettings.INSTANCE().jvmThreads)
-//  )
-
+object SimpleStyleTransfer_Local extends SimpleStyleTransfer() with LocalRunner[Object] with NotebookRunner[Object] {
+  override def inputTimeoutSeconds = 600
 }
 
 abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
@@ -67,8 +60,7 @@ abstract class SimpleStyleTransfer extends InteractiveSetup[Object] {
   val trainingMinutes: Int = 20
   val trainingIterations: Int = 100
   val isVerbose: Boolean = false
-
-  def precision: Precision = Precision.Float
+  def precision = Precision.Float
 
   override def postConfigure(log: NotebookOutput) = {
     TestUtil.addGlobalHandlers(log.getHttpd)
