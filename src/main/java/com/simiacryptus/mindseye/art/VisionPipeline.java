@@ -19,10 +19,11 @@
 
 package com.simiacryptus.mindseye.art;
 
-import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class VisionPipeline<T extends VisionPipelineLayer> {
 
@@ -47,8 +48,5 @@ public class VisionPipeline<T extends VisionPipelineLayer> {
   public Map<T, PipelineNetwork> getLayers() {
     return Collections.unmodifiableMap(layers);
   }
-
-  ;
-
 
 }
