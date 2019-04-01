@@ -20,6 +20,8 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
+import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 public interface VisualModifier {
@@ -29,5 +31,16 @@ public interface VisualModifier {
   };
   default PipelineNetwork build(Tensor image) {
     return build((PipelineNetwork) new PipelineNetwork().setName("Input"), image);
+  };
+
+  default VisualModifier combine(VisualModifier right) {
+    return (original, image) -> SumInputsLayer.combine(
+        this.build(original, image),
+        right.build(original, image)
+    );
+  };
+
+  default VisualModifier scale(double scale) {
+    return (original, image) -> this.build(original, image).andThenWrap(new LinearActivationLayer().setScale(scale).freeze());
   };
 }
