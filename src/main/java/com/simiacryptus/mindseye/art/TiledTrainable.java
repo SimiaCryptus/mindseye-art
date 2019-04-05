@@ -49,7 +49,6 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   private final PipelineNetwork[] networks;
   private final UUID canvasId = UUID.randomUUID();
   AtomicInteger count = new AtomicInteger();
-  private NotebookOutput log = new NullNotebookOutput();
   private boolean verbose = false;
 
   public TiledTrainable(Tensor canvas, int tileSize, int padding) {
@@ -106,15 +105,22 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     }
   }
 
+  private boolean mutableCanvas = true;
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
     if (null == selectors) {
-      Trainable trainable = new ArrayTrainable(getNetwork(filter), 1).setVerbose(isVerbose()).setMask(true).setData(Arrays.asList(new Tensor[][]{{canvas}}));
+      Trainable trainable = new ArrayTrainable(getNetwork(filter), 1).setVerbose(isVerbose()).setMask(isMutableCanvas()).setData(Arrays.asList(new Tensor[][]{{canvas}}));
       PointSample measure = trainable.measure(monitor);
       trainable.freeRef();
       return measure;
     } else {
-      Result canvasBuffer = filter.evalAndFree(new MutableResult(new UUID[]{canvasId}, canvas));
+
+      Result canvasBuffer;
+      if(isMutableCanvas()) {
+        canvasBuffer = filter.evalAndFree(new MutableResult(new UUID[]{canvasId}, canvas));
+      } else {
+        canvasBuffer = filter.evalAndFree(new ConstantResult(canvas));
+      }
       final DeltaSet<UUID> delta = new DeltaSet<>();
       double result = IntStream.range(0, selectors.length).mapToDouble(i -> {
         Result tileInput = selectors[i].eval(canvasBuffer);
@@ -130,8 +136,10 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       }).sum();
       canvasBuffer.getData().freeRef();
       canvasBuffer.freeRef();
-      final StateSet<UUID> weights = new StateSet<>();
-      weights.get(canvasId, canvas.getData()).set(canvas.getData()).freeRef();
+      final StateSet<UUID> weights = new StateSet<>(delta);
+      if(isMutableCanvas()) {
+        weights.get(canvasId, canvas.getData()).set(canvas.getData()).freeRef();
+      }
       assert delta.getMap().keySet().stream().allMatch(x -> weights.getMap().containsKey(x));
       PointSample pointSample = new PointSample(delta, weights, result, 0, count.incrementAndGet());
       delta.freeRef();
@@ -163,12 +171,13 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     super._free();
   }
 
-  public NotebookOutput getLog() {
-    return log;
+
+  public boolean isMutableCanvas() {
+    return mutableCanvas;
   }
 
-  public TiledTrainable setLog(NotebookOutput log) {
-    this.log = log;
+  public TiledTrainable setMutableCanvas(boolean mutableCanvas) {
+    this.mutableCanvas = mutableCanvas;
     return this;
   }
 }

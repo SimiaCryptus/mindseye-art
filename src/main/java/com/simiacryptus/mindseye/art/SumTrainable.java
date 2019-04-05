@@ -51,12 +51,12 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
     List<PointSample> results = Arrays.stream(inner).map(x -> x.measure(monitor)).collect(Collectors.toList());
-    DeltaSet<UUID> delta = results.stream().map(x -> x.delta).reduce((a, b) -> {
+    DeltaSet<UUID> delta = results.stream().map(x -> x.delta.addRef()).reduce((a, b) -> {
       DeltaSet<UUID> c = a.addInPlace(b);
       b.freeRef();
       return c;
     }).get();
-    StateSet<UUID> weights = results.stream().map(x -> x.weights).reduce((a, b) -> {
+    StateSet<UUID> weights = results.stream().map(x -> x.weights.addRef()).reduce((a, b) -> {
       StateSet<UUID> c = StateSet.union(a, b);
       a.freeRef();
       b.freeRef();
