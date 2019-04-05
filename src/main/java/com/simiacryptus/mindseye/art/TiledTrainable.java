@@ -50,6 +50,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   private final UUID canvasId = UUID.randomUUID();
   AtomicInteger count = new AtomicInteger();
   private boolean verbose = false;
+  private boolean mutableCanvas = true;
 
   public TiledTrainable(Tensor canvas, int tileSize, int padding) {
     this(canvas, new PipelineNetwork(1), tileSize, padding);
@@ -96,25 +97,17 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     }
   }
 
-  public void logTiles(final NotebookOutput log, Tensor image) {
-    for (ImgTileSelectLayer selector : selectors) {
-      log.p(String.format("Selector: %s", selector));
-      log.eval(() -> {
-        return selector.eval(image).getDataAndFree().getAndFree(0).toRgbImage();
-      });
-    }
-  }
-
-  private boolean mutableCanvas = true;
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
     if (null == selectors) {
-      Trainable trainable = new ArrayTrainable(getNetwork(filter), 1).setVerbose(isVerbose()).setMask(isMutableCanvas()).setData(Arrays.asList(new Tensor[][]{{canvas}}));
+      Trainable trainable = new ArrayTrainable(PipelineNetwork.wrap(1, filter.addRef(), getNetwork(filter)), 1)
+          .setVerbose(isVerbose())
+          .setMask(isMutableCanvas())
+          .setData(Arrays.asList(new Tensor[][]{{canvas}}));
       PointSample measure = trainable.measure(monitor);
       trainable.freeRef();
       return measure;
     } else {
-
       Result canvasBuffer;
       if(isMutableCanvas()) {
         canvasBuffer = filter.evalAndFree(new MutableResult(new UUID[]{canvasId}, canvas));
