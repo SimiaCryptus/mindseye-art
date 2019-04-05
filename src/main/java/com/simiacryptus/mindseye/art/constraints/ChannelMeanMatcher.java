@@ -36,7 +36,7 @@ public class ChannelMeanMatcher implements VisualModifier {
     network = network.copy();
     Tensor rmsResult = network.eval(image).getDataAndFree().getAndFree(0);
     double rms = Math.sqrt(rmsResult.sumSq() / rmsResult.length());
-    network.wrap(new BandAvgReducerLayer());
+    network.wrap(new BandAvgReducerLayer()).freeRef();
     Tensor result = network.eval(image).getDataAndFree().getAndFree(0);
     network.wrap(PipelineNetwork.wrap(1,
         new ImgBandBiasLayer(result.scaleInPlace(-1)),
@@ -44,7 +44,7 @@ public class ChannelMeanMatcher implements VisualModifier {
         new AvgReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5),
         new LinearActivationLayer().setScale(Math.pow(rms, -1))
-    ).setName(String.format("-RMS[x-C] / %.0E", rms)));
+    ).setName(String.format("RMS[x-C] / %.0E", rms))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

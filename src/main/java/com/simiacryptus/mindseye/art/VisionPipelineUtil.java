@@ -60,19 +60,23 @@ public class VisionPipelineUtil {
     GraphModel graphModel = new GraphModel(graphDef.toByteArray());
     Map<String, Layer> graphs = new HashMap<>();
     TFConverter tfConverter = new TFConverter();
-    graphs.put(nodes[0], tfConverter.convert(new TFLayer(
+    TFLayer tfLayer0 = new TFLayer(
         graphModel.getChild(nodes[0]).subgraph(new HashSet<>(Arrays.asList())).toByteArray(),
         new HashMap<>(),
         nodes[0],
-        "input")));
+        "input");
+    graphs.put(nodes[0], tfConverter.convert(tfLayer0));
+    tfLayer0.freeRef();
     for (int i = 1; i < nodes.length; i++) {
       String currentNode = nodes[i];
       String priorNode = nodes[i - 1];
-      graphs.put(currentNode, tfConverter.convert(new TFLayer(
+      TFLayer tfLayer1 = new TFLayer(
           graphModel.getChild(currentNode).subgraph(new HashSet<>(Arrays.asList(priorNode))).toByteArray(),
           new HashMap<>(),
           currentNode,
-          priorNode)));
+          priorNode);
+      graphs.put(currentNode, tfConverter.convert(tfLayer1));
+      tfLayer1.freeRef();
     }
     return graphs;
   }
@@ -88,10 +92,12 @@ public class VisionPipelineUtil {
   }
 
   public static void testPinConnectivity(VisionPipelineLayer layer, int... inputDims) {
-    DAGNetwork liveTestingNetwork = (DAGNetwork) layer.getLayer().copy();
+    DAGNetwork liveTestingNetwork = (DAGNetwork) layer.getLayer();
     liveTestingNetwork.visitLayers(l -> {
       if (l instanceof SimpleConvolutionLayer) {
-        ((SimpleConvolutionLayer) l).set(((SimpleConvolutionLayer) l).getKernel().map(x -> 1.0));
+        Tensor kernel = ((SimpleConvolutionLayer) l).getKernel().map(x -> 1.0);
+        ((SimpleConvolutionLayer) l).set(kernel);
+        kernel.freeRef();
       } else if (l instanceof ImgBandBiasLayer) {
         ((ImgBandBiasLayer) l).setWeights(x -> 0);
       } else if (l instanceof DAGNetwork) {
@@ -100,27 +106,50 @@ public class VisionPipelineUtil {
         throw new RuntimeException(l.getClass().toString());
       }
     });
-    int[] outputDims = evalDims(inputDims, liveTestingNetwork);
+    int[] outputDims = evalDims(inputDims, liveTestingNetwork.addRef());
     log.info(String.format("testPins(%s,%s) => %s", layer, Arrays.toString(inputDims), Arrays.toString(outputDims)));
-    Map<Coordinate, List<Coordinate>> fwdPinMapping = new Tensor(inputDims).coordStream(true).distinct().filter(x -> x.getCoords()[2] == 0).collect(Collectors.toMap(
+    Tensor coordSource = new Tensor(inputDims);
+    Map<Coordinate, List<Coordinate>> fwdPinMapping = coordSource.coordStream(true).distinct().filter(x -> x.getCoords()[2] == 0).collect(Collectors.toMap(
         inputPin -> inputPin,
         inputPin -> {
           Tensor testInput = new Tensor(inputDims).setAll(0.0).set(inputPin, 1.0);
-          Tensor testOutput = liveTestingNetwork.eval(testInput).getDataAndFree().getAndFree(0).map(outValue -> outValue == 0.0 ? 0.0 : 1.0);
-          return testOutput.coordStream(true).filter(c -> testOutput.get(c) != 0.0 && c.getCoords()[2] == 0).collect(Collectors.toList());
+          Tensor testOutput = liveTestingNetwork.eval(testInput).getDataAndFree().getAndFree(0).mapAndFree(outValue -> outValue == 0.0 ? 0.0 : 1.0);
+          List<Coordinate> coordinates = testOutput.coordStream(true).filter(c -> testOutput.get(c) != 0.0 && c.getCoords()[2] == 0).collect(Collectors.toList());
+          testOutput.freeRef();
+          testInput.freeRef();
+          return coordinates;
         }));
+    coordSource.freeRef();
+    liveTestingNetwork.freeRef();
 
     Map<Coordinate, Integer> fwdSizes = fwdPinMapping.entrySet().stream().collect(Collectors.groupingBy(
         e -> e.getKey(), Collectors.summingInt(e -> e.getValue().size())));
+    log.info("fwdSizes=" + fwdSizes.entrySet().stream().collect(Collectors.groupingBy(x -> x.getValue(), Collectors.counting())).toString());
     int minDividedKernelSize = IntStream.range(0, 2).map(d -> {
       return (int) Math.floor((double) layer.getKernelSize()[d] / layer.getStrides()[d]);
     }).reduce((a, b) -> a * b).getAsInt();
     int maxDividedKernelSize = IntStream.range(0, 2).map(d -> {
       return (int) Math.ceil((double) layer.getKernelSize()[d] / layer.getStrides()[d]);
     }).reduce((a, b) -> a * b).getAsInt();
+    if (!fwdSizes.entrySet().stream().filter(e -> e.getValue() == maxDividedKernelSize).findAny().isPresent()) {
+      log.warn("No Fully Represented Input Found");
+    }
     int kernelSize = IntStream.range(0, 2).map(d -> {
       return layer.getKernelSize()[d];
     }).reduce((a, b) -> a * b).getAsInt();
+
+    Map<Coordinate, List<Coordinate>> bakPinMapping = fwdPinMapping.entrySet().stream().flatMap(fwdEntry -> fwdEntry.getValue().stream()
+        .map(outputCoord -> new Coordinate[]{fwdEntry.getKey(), outputCoord}))
+        .collect(Collectors.groupingBy(x -> x[1])).entrySet().stream().collect(Collectors.toMap(
+            e -> e.getKey(),
+            e -> e.getValue().stream().map(x -> x[0]).collect(Collectors.toList())));
+    Map<Coordinate, Integer> bakSizes = bakPinMapping.entrySet().stream().collect(Collectors.groupingBy(
+        e -> e.getKey(), Collectors.summingInt(e -> e.getValue().size())));
+    log.info("bakSizes=" + bakSizes.entrySet().stream().collect(Collectors.groupingBy(x -> x.getValue(), Collectors.counting())).toString());
+    if (!bakSizes.entrySet().stream().filter(e -> e.getValue() == kernelSize).findAny().isPresent()) {
+      log.warn("No Fully Represented Output Found");
+    }
+
     fwdSizes.entrySet().stream().filter(e -> e.getValue() > maxDividedKernelSize).forEach(e -> {
       log.info("Overrepresented Input: " + e.getKey() + " = " + e.getValue());
     });
@@ -136,17 +165,7 @@ public class VisionPipelineUtil {
         log.warn("Underrepresented Input: " + e.getKey() + " = " + e.getValue());
       }
     });
-    if (!fwdSizes.entrySet().stream().filter(e -> e.getValue() == maxDividedKernelSize).findAny().isPresent()) {
-      log.warn("No Fully Repredented Input Found");
-    }
 
-    Map<Coordinate, List<Coordinate>> bakPinMapping = fwdPinMapping.entrySet().stream().flatMap(fwdEntry -> fwdEntry.getValue().stream()
-        .map(outputCoord -> new Coordinate[]{fwdEntry.getKey(), outputCoord}))
-        .collect(Collectors.groupingBy(x -> x[1])).entrySet().stream().collect(Collectors.toMap(
-            e -> e.getKey(),
-            e -> e.getValue().stream().map(x -> x[0]).collect(Collectors.toList())));
-    Map<Coordinate, Integer> bakSizes = bakPinMapping.entrySet().stream().collect(Collectors.groupingBy(
-        e -> e.getKey(), Collectors.summingInt(e -> e.getValue().size())));
     bakSizes.entrySet().stream().filter(e -> e.getValue() < kernelSize).forEach(e -> {
       int[] coords = e.getKey().getCoords();
       int[] outputBorders = layer.getOutputBorders();
@@ -159,13 +178,16 @@ public class VisionPipelineUtil {
         log.warn("Underrepresented Output: " + e.getKey() + " = " + e.getValue());
       }
     });
-    if (!bakSizes.entrySet().stream().filter(e -> e.getValue() == kernelSize).findAny().isPresent()) {
-      log.warn("No Fully Repredented Output Found");
-    }
   }
 
   public static int[] evalDims(int[] inputDims, Layer layer) {
-    return layer.eval(new Tensor(inputDims)).getDataAndFree().getAndFree(0).getDimensions();
+    Tensor input = new Tensor(inputDims);
+    Tensor tensor = layer.eval(input).getDataAndFree().getAndFree(0);
+    input.freeRef();
+    int[] dimensions = tensor.getDimensions();
+    tensor.freeRef();
+    layer.freeRef();
+    return dimensions;
   }
 
   @Nonnull

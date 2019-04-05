@@ -22,31 +22,29 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
-import java.util.stream.IntStream;
-
 public interface VisionPipelineLayer {
 
-  default int[] outputDims(int... inputDims) {
-    return IntStream.range(0, inputDims.length).map(d -> {
-      int inputDim = inputDims[d];
-      if(d < 2) {
-        int inputBorder = getInputBorders()[d];
-        int outputBorder = getOutputBorders()[d];
-        int stride = this.getStrides()[d];
-        return (int) Math.ceil(((double)(inputDim - 2*inputBorder) / stride) + 2*outputBorder);
-      } else if(d == 2) {
-        if (inputDim != getInputChannels()) throw new IllegalArgumentException();
-        return getOutputChannels();
-      } else throw new IllegalArgumentException();
-    }).toArray();
-  }
+//  default int[] outputDims(int... inputDims) {
+//    return IntStream.range(0, inputDims.length).map(d -> {
+//      int inputDim = inputDims[d];
+//      if(d < 2) {
+//        int inputBorder = getInputBorders()[d];
+//        int outputBorder = getOutputBorders()[d];
+//        int stride = this.getStrides()[d];
+//        return (int) Math.ceil(((double)(inputDim - 2*inputBorder) / stride) + 2*outputBorder);
+//      } else if(d == 2) {
+//        if (inputDim != getInputChannels()) throw new IllegalArgumentException();
+//        return getOutputChannels();
+//      } else throw new IllegalArgumentException();
+//    }).toArray();
+//  }
 
   String name();
 
   VisionPipeline<?> getPipeline();
 
   default PipelineNetwork getNetwork() {
-    return ((VisionPipeline<VisionPipelineLayer>)getPipeline()).get(this);
+    return ((VisionPipeline<VisionPipelineLayer>) getPipeline()).get(this);
   }
 
   Layer getLayer();

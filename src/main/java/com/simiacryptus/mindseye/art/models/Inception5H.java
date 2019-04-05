@@ -25,7 +25,7 @@ import com.simiacryptus.mindseye.art.VisionPipelineUtil;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.tensorflow.ImageNetworkPipeline;
 
-import java.util.*;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 public enum Inception5H implements VisionPipelineLayer {
@@ -39,10 +39,27 @@ public enum Inception5H implements VisionPipelineLayer {
   Inc5H_4d(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 512, 528, "mixed4d"),
   Inc5H_4e(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 528, 832, "mixed4e"),
   Inc5H_5a(new int[]{1, 1}, new int[]{1, 1}, new int[]{2, 2}, new int[]{2, 2}, 832, 832, "mixed5a"),
-  Inc5H_5b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 832, 1024, "mixed5b")
-  ;
+  Inc5H_5b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 832, 1024, "mixed5b");
 
   private static transient Map<String, Layer> inception5h = null;
+  private static volatile VisionPipeline<Inception5H> visionPipeline = null;
+  private final String layerId;
+  private final int[] inputBorders;
+  private final int[] outputBorders;
+  private final int[] kenelSize;
+  private final int[] strides;
+  private final int inputChannels;
+  private final int outputChannels;
+  Inception5H(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, String layerId) {
+    this.inputChannels = inputChannels;
+    this.outputChannels = outputChannels;
+    this.layerId = layerId;
+    this.inputBorders = inputBorders;
+    this.outputBorders = outputBorders;
+    this.kenelSize = kenelSize;
+    this.strides = strides;
+  }
+
   public static Map<String, Layer> layerMap() {
     if (null == inception5h) {
       synchronized (Inception5H.class) {
@@ -67,36 +84,16 @@ public enum Inception5H implements VisionPipelineLayer {
     return inception5h;
   }
 
-
-  private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
-  public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
-    if(null == visionPipeline) {
+  public static VisionPipeline<Inception5H> getVisionPipeline() {
+    if (null == visionPipeline) {
       synchronized (Inception5H.class) {
-        if(null == visionPipeline) {
+        if (null == visionPipeline) {
           visionPipeline = new VisionPipeline<>(Inception5H.class.getSimpleName(), Inception5H.values());
         }
       }
     }
     return visionPipeline;
   }
-
-  Inception5H(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, String layerId) {
-    this.inputChannels = inputChannels;
-    this.outputChannels = outputChannels;
-    this.layerId = layerId;
-    this.inputBorders = inputBorders;
-    this.outputBorders = outputBorders;
-    this.kenelSize = kenelSize;
-    this.strides = strides;
-  }
-
-  private final String layerId;
-  private final int[] inputBorders;
-  private final int[] outputBorders;
-  private final int[] kenelSize;
-  private final int[] strides;
-  private final int inputChannels;
-  private final int outputChannels;
 
   @Override
   public Layer getLayer() {
@@ -136,10 +133,10 @@ public enum Inception5H implements VisionPipelineLayer {
   public int[] outputDims(int... inputDims) {
     return IntStream.range(0, inputDims.length).map(d -> {
       int inputDim = inputDims[d];
-      if(d < 2) {
+      if (d < 2) {
         int stride = this.getStrides()[d];
-        return (int) Math.ceil(((double)(inputDim) / stride));
-      } else if(d == 2) {
+        return (int) Math.ceil(((double) (inputDim) / stride));
+      } else if (d == 2) {
         if (inputDim != getInputChannels()) throw new IllegalArgumentException();
         return getOutputChannels();
       } else throw new IllegalArgumentException();

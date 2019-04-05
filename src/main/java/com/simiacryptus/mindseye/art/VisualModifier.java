@@ -26,21 +26,35 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 public interface VisualModifier {
   PipelineNetwork build(PipelineNetwork network, Tensor image);
+
   default PipelineNetwork build(VisionPipelineLayer layer, Tensor image) {
-    return build(layer.getNetwork(), image);
-  };
+    PipelineNetwork network = layer.getNetwork();
+    network.assertAlive();
+    PipelineNetwork pipelineNetwork = build(network, image);
+    network.freeRef();
+    return pipelineNetwork;
+  }
+
+  ;
+
   default PipelineNetwork build(Tensor image) {
     return build((PipelineNetwork) new PipelineNetwork().setName("Input"), image);
-  };
+  }
+
+  ;
 
   default VisualModifier combine(VisualModifier right) {
     return (original, image) -> SumInputsLayer.combine(
         this.build(original, image),
         right.build(original, image)
     );
-  };
+  }
+
+  ;
 
   default VisualModifier scale(double scale) {
     return (original, image) -> this.build(original, image).andThenWrap(new LinearActivationLayer().setScale(scale).freeze());
-  };
+  }
+
+  ;
 }

@@ -22,7 +22,6 @@ package com.simiacryptus.mindseye.art.constraints;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
-import com.simiacryptus.mindseye.layers.cudnn.ImgBandBiasLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
@@ -38,8 +37,8 @@ public class RMSChannelEnhancer implements VisualModifier {
         new SquareActivationLayer(),
         new AvgReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5),
-        new LinearActivationLayer().setScale(Math.pow(rms,-1))
-    ).setName(String.format("RMS / %.0E", rms)));
+        new LinearActivationLayer().setScale(-Math.pow(rms, -1))
+    ).setName(String.format("-RMS / %.0E", rms))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

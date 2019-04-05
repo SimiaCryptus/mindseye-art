@@ -25,3 +25,5 @@ target/
 *.iml
 ../.gitignore
 ../.gitignore
+*.h5
+reports/
