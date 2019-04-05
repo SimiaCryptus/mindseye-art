@@ -38,7 +38,9 @@ import java.util.Random;
 
 public class NetworkTest extends LayerTestBase {
   private static final Logger log = LoggerFactory.getLogger(NetworkTest.class);
-
+  private static final BufferedImage styleImage = VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200);
+  private static final BufferedImage contentImage = VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500);
+  private static final DAGNetwork layer = build();
   public NetworkTest() {
     validateDifferentials = false;
     validateBatchExecution = false;
@@ -46,16 +48,6 @@ public class NetworkTest extends LayerTestBase {
     testEquivalency = false;
     testingBatchSize = 1;
   }
-
-  @Override
-  public int[][] getSmallDims(Random random) {
-    return new int[][]{{contentImage.getWidth(), contentImage.getHeight(), 3}};
-  }
-
-  private static final BufferedImage styleImage = VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200);
-  private static final BufferedImage contentImage = VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500);
-
-  private static final DAGNetwork layer = build();
 
   private static DAGNetwork build() {
     Tensor styleTensor = Tensor.fromRGB(styleImage);
@@ -67,6 +59,11 @@ public class NetworkTest extends LayerTestBase {
     ), Precision.Float);
     styleTensor.freeRef();
     return dagNetwork;
+  }
+
+  @Override
+  public int[][] getSmallDims(Random random) {
+    return new int[][]{{contentImage.getWidth(), contentImage.getHeight(), 3}};
   }
 
   @Override

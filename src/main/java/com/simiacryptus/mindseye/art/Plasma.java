@@ -29,13 +29,18 @@ import java.util.function.IntUnaryOperator;
 public class Plasma {
 
   public static Tensor paint(int bands, final double noiseAmplitude, final double noisePower, final int width, final int height) {
-    return expandPlasma(initSquare(bands), noiseAmplitude, noisePower, width, height);
+    Tensor initSquare = initSquare(bands);
+    Tensor expandPlasma = expandPlasma(initSquare, noiseAmplitude, noisePower, width, height);
+    initSquare.freeRef();
+    return expandPlasma;
   }
 
   @Nonnull
   private static Tensor initSquare(final int bands) {
     Tensor baseColor = new Tensor(1, 1, bands).setByCoord(c -> 100 + 200 * (Math.random() - 0.5));
-    return new Tensor(2, 2, bands).setByCoord(c -> baseColor.get(0, 0, c.getCoords()[2]));
+    Tensor tensor = new Tensor(2, 2, bands).setByCoord(c -> baseColor.get(0, 0, c.getCoords()[2]));
+    baseColor.freeRef();
+    return tensor;
   }
 
   @Nonnull

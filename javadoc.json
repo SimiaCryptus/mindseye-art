@@ -1,14 +1,14 @@
 {
-  "com.simiacryptus.mindseye.art.NetworkTest" : { },
-  "com.simiacryptus.mindseye.art.OptimizationTest" : { },
-  "com.simiacryptus.mindseye.art.VisionPipeline" : { },
-  "com.simiacryptus.mindseye.art.VisionPipelineLayer" : { },
-  "com.simiacryptus.mindseye.art.VisionPipelineTest" : { },
-  "com.simiacryptus.mindseye.art.VisionPipelineTest.InceptionVisionTest" : { },
-  "com.simiacryptus.mindseye.art.VisionPipelineUtil" : { },
-  "com.simiacryptus.mindseye.art.VisualModifier" : { },
-  "com.simiacryptus.mindseye.art.constraints.ChannelMeanMatcher" : { },
-  "com.simiacryptus.mindseye.art.constraints.GramMatrixMatcher" : { },
-  "com.simiacryptus.mindseye.art.constraints.RMSChannelEnhancer" : { },
-  "com.simiacryptus.mindseye.art.constraints.RMSContentMatcher" : { }
+  "com.simiacryptus.mindseye.art.NetworkTest": {},
+  "com.simiacryptus.mindseye.art.OptimizationTest": {},
+  "com.simiacryptus.mindseye.art.VisionPipeline": {},
+  "com.simiacryptus.mindseye.art.VisionPipelineLayer": {},
+  "com.simiacryptus.mindseye.art.VisionPipelineTest": {},
+  "com.simiacryptus.mindseye.art.VisionPipelineTest.InceptionVisionTest": {},
+  "com.simiacryptus.mindseye.art.VisionPipelineUtil": {},
+  "com.simiacryptus.mindseye.art.VisualModifier": {},
+  "com.simiacryptus.mindseye.art.constraints.ChannelMeanMatcher": {},
+  "com.simiacryptus.mindseye.art.constraints.GramMatrixMatcher": {},
+  "com.simiacryptus.mindseye.art.constraints.RMSChannelEnhancer": {},
+  "com.simiacryptus.mindseye.art.constraints.RMSContentMatcher": {}
 }

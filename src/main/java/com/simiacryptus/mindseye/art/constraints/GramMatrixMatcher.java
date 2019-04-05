@@ -21,7 +21,10 @@ package com.simiacryptus.mindseye.art.constraints;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.mindseye.layers.cudnn.*;
+import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
+import com.simiacryptus.mindseye.layers.cudnn.GramianLayer;
+import com.simiacryptus.mindseye.layers.cudnn.ImgBandBiasLayer;
+import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
@@ -34,15 +37,15 @@ public class GramMatrixMatcher implements VisualModifier {
     Tensor rmsResult = network.eval(image).getDataAndFree().getAndFree(0).scaleInPlace(-1);
     double rms = Math.sqrt(rmsResult.sumSq() / rmsResult.length());
     rmsResult.freeRef();
-    network.wrap(new GramianLayer());
+    network.wrap(new GramianLayer()).freeRef();
     Tensor result = network.eval(image).getDataAndFree().getAndFree(0).scaleInPlace(-1);
     network.wrap(PipelineNetwork.wrap(1,
         new ImgBandBiasLayer(result),
         new SquareActivationLayer(),
         new AvgReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5),
-        new LinearActivationLayer().setScale(Math.pow(rms,-1))
-    ).setName(String.format("-RMS[x-C] / %.0E", rms))).freeRef();
+        new LinearActivationLayer().setScale(Math.pow(rms, -1))
+    ).setName(String.format("RMS[x-C] / %.0E", rms))).freeRef();
     result.freeRef();
     return (PipelineNetwork) network.freeze();
   }
