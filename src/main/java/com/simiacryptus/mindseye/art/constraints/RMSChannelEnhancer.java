@@ -23,23 +23,44 @@ import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
+import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 public class RMSChannelEnhancer implements VisualModifier {
 
+  private boolean averaging = true;
+  private boolean balanced = true;
+
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor image) {
     network = network.copy();
-    double rms = network.eval(image).getDataAndFree().getAndFree(0).rms();
+    double rms = balanced?network.eval(image).getDataAndFree().getAndFree(0).rmsAndFree():1;
     network.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),
-        new AvgReducerLayer(),
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5),
         new LinearActivationLayer().setScale(-Math.pow(rms, -1))
     ).setName(String.format("-RMS / %.0E", rms))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 
+  public boolean isAveraging() {
+    return averaging;
+  }
+
+  public RMSChannelEnhancer setAveraging(boolean averaging) {
+    this.averaging = averaging;
+    return this;
+  }
+
+  public boolean isBalanced() {
+    return balanced;
+  }
+
+  public RMSChannelEnhancer setBalanced(boolean balanced) {
+    this.balanced = balanced;
+    return this;
+  }
 }

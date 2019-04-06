@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
+import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
@@ -50,11 +51,12 @@ public interface VisualModifier {
     );
   }
 
-  ;
-
   default VisualModifier scale(double scale) {
     return (original, image) -> this.build(original, image).andThenWrap(new LinearActivationLayer().setScale(scale).freeze());
   }
 
-  ;
+  default VisualModifier pow(double power) {
+    return (original, image) -> this.build(original, image).andThenWrap(new NthPowerActivationLayer().setPower(power).freeze());
+  }
+
 }
