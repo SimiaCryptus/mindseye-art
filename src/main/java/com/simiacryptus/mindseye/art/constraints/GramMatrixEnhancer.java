@@ -21,12 +21,15 @@ package com.simiacryptus.mindseye.art.constraints;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.mindseye.layers.cudnn.*;
+import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
+import com.simiacryptus.mindseye.layers.cudnn.GramianLayer;
+import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
+import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
-public class GramMatrixMatcher implements VisualModifier {
+public class GramMatrixEnhancer implements VisualModifier {
 
   private boolean averaging = true;
   private boolean balanced = true;
@@ -34,35 +37,32 @@ public class GramMatrixMatcher implements VisualModifier {
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor image) {
     network = network.copy();
-    double rms = balanced?network.eval(image).getDataAndFree().getAndFree(0).rmsAndFree():1;
+    double rms = isBalanced() ? network.eval(image).getDataAndFree().getAndFree(0).rms() : 1;
     network.wrap(new GramianLayer()).freeRef();
-    Tensor result = network.eval(image).getDataAndFree().getAndFree(0);
     network.wrap(PipelineNetwork.wrap(1,
-        new ImgBandBiasLayer(result.scaleInPlace(-1)),
         new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5),
-        new LinearActivationLayer().setScale(Math.pow(rms, -1))
-    ).setName(String.format("RMS[x-C] / %.0E", rms))).freeRef();
-    result.freeRef();
+        new LinearActivationLayer().setScale(-Math.pow(rms, -1))
+    ).setName(String.format("-RMS[x] / %.0E", rms))).freeRef();
     return (PipelineNetwork) network.freeze();
-  }
-
-  public boolean isAveraging() {
-    return averaging;
-  }
-
-  public GramMatrixMatcher setAveraging(boolean averaging) {
-    this.averaging = averaging;
-    return this;
   }
 
   public boolean isBalanced() {
     return balanced;
   }
 
-  public GramMatrixMatcher setBalanced(boolean balanced) {
+  public GramMatrixEnhancer setBalanced(boolean balanced) {
     this.balanced = balanced;
+    return this;
+  }
+
+  public boolean isAveraging() {
+    return averaging;
+  }
+
+  public GramMatrixEnhancer setAveraging(boolean averaging) {
+    this.averaging = averaging;
     return this;
   }
 }

@@ -25,6 +25,7 @@ import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SumInputsLayer;
+import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
@@ -32,23 +33,43 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 public class RMSContentMatcher implements VisualModifier {
 
+  private boolean averaging = true;
+  private boolean balanced = true;
+
   @Override
   public PipelineNetwork build(PipelineNetwork original, Tensor image) {
     PipelineNetwork network = original.copy();
     Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
-    double rms = Math.sqrt(baseContent.sumSq() / baseContent.length());
+    double rms = balanced?baseContent.rms():1;
     DAGNode head = network.getHead();
-    DAGNode constNode = network.constValueWrap(baseContent.scale(-1));
+    DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
     Layer layer = original.getHead().getLayer();
     if (layer != null) constNode.getLayer().setName((layer != null ? layer.getName() : "Original") + " Content");
     network.wrap(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
     network.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),
-        new AvgReducerLayer(),
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5),
         new LinearActivationLayer().setScale(Math.pow(rms, -1))
     ).setName(String.format("RMS / %.0E", rms))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 
+  public boolean isAveraging() {
+    return averaging;
+  }
+
+  public RMSContentMatcher setAveraging(boolean averaging) {
+    this.averaging = averaging;
+    return this;
+  }
+
+  public boolean isBalanced() {
+    return balanced;
+  }
+
+  public RMSContentMatcher setBalanced(boolean balanced) {
+    this.balanced = balanced;
+    return this;
+  }
 }
