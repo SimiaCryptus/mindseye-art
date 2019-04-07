@@ -23,13 +23,17 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.simiacryptus.mindseye.lang.Coordinate;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.mindseye.lang.cudnn.CudaSystem;
 import com.simiacryptus.mindseye.layers.cudnn.ImgBandBiasLayer;
 import com.simiacryptus.mindseye.layers.cudnn.conv.SimpleConvolutionLayer;
 import com.simiacryptus.mindseye.layers.tensorflow.TFLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.mindseye.util.TFConverter;
+import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.tensorflow.GraphModel;
+import com.simiacryptus.util.JsonUtil;
+import com.simiacryptus.util.Util;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -44,16 +48,90 @@ import org.tensorflow.framework.GraphDef;
 import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class VisionPipelineUtil {
   private static final Logger log = LoggerFactory.getLogger(VisionPipelineUtil.class);
+
+  public static Closeable cudaReports(NotebookOutput log, boolean interceptLog) {
+    Closeable handler_info = log.getHttpd().addGET("cuda/info.txt", "text/plain", outputStream -> {
+      try {
+        PrintStream stream = new PrintStream(outputStream);
+        CudaSystem.printHeader(stream);
+        stream.flush();
+      } catch (Throwable e) {
+        try {
+          outputStream.write(Util.toString(e).getBytes("UTF-8"));
+        } catch (IOException e1) {
+          e1.printStackTrace();
+        }
+      }
+    });
+    Closeable handler_stats = log.getHttpd().addGET("cuda/stats.json", "application/json", outputStream -> {
+      try {
+        PrintStream stream = new PrintStream(outputStream);
+        stream.println(JsonUtil.toJson(CudaSystem.getExecutionStatistics()));
+        stream.flush();
+      } catch (Throwable e) {
+        try {
+          outputStream.write(Util.toString(e).getBytes("UTF-8"));
+        } catch (IOException e1) {
+          e1.printStackTrace();
+        }
+      }
+    });
+    if(interceptLog) log.subreport("cuda_log", sublog -> {
+      CudaSystem.addLog(new Consumer<String>() {
+        PrintWriter out;
+        long remainingOut = 0;
+        long killAt = 0;
+
+        @Override
+        public void accept(String formattedMessage) {
+          if (null == out) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd_HH_mm_ss");
+            String date = dateFormat.format(new Date());
+            try {
+              String caption = String.format("Log at %s", date);
+              String filename = String.format("%s_cuda.log", date);
+              out = new PrintWriter(sublog.file(filename));
+              sublog.p("[%s](etc/%s)", caption, filename);
+              sublog.write();
+            } catch (Throwable e) {
+              throw new RuntimeException(e);
+            }
+            killAt = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
+            remainingOut = 10L * 1024 * 1024;
+          }
+          out.println(formattedMessage);
+          out.flush();
+          int length = formattedMessage.length();
+          remainingOut -= length;
+          if (remainingOut < 0 || killAt < System.currentTimeMillis()) {
+            out.close();
+            out = null;
+          }
+        }
+      });
+      return null;
+    });
+
+    return new Closeable() {
+      @Override
+      public void close() throws IOException {
+        handler_info.close();
+        handler_stats.close();
+      }
+    };
+
+  }
 
   @NotNull
   public static Map<String, Layer> convertPipeline(GraphDef graphDef, String... nodes) {

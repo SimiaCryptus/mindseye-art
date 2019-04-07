@@ -34,7 +34,7 @@ public class GramMatrixMatcher implements VisualModifier {
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor image) {
     network = network.copy();
-    double rms = balanced?network.eval(image).getDataAndFree().getAndFree(0).rmsAndFree():1;
+    double rms = balanced ? network.eval(image).getDataAndFree().getAndFree(0).rmsAndFree() : 1;
     network.wrap(new GramianLayer()).freeRef();
     Tensor result = network.eval(image).getDataAndFree().getAndFree(0);
     network.wrap(PipelineNetwork.wrap(1,

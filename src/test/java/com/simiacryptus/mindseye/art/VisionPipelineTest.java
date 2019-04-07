@@ -92,10 +92,10 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     run(this::layers);
   }
 
-  @Test
-  public void layerPins() {
-    run(this::layerPins);
-  }
+//  @Test
+//  public void layerPins() {
+//    run(this::layerPins);
+//  }
 
   public abstract void inoutDims(NotebookOutput log);
 
