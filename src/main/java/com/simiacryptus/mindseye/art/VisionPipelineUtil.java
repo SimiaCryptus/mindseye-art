@@ -275,6 +275,12 @@ public class VisionPipelineUtil {
   }
 
   @Nonnull
+  public static BufferedImage load(final CharSequence image, final int width, final int height) {
+    BufferedImage source = getImage(image);
+    return width <= 0 ? source : TestUtil.resize(source, width, height);
+  }
+
+  @Nonnull
   public static BufferedImage getImage(final CharSequence file) {
     if (file.toString().startsWith("http")) {
       try {
