@@ -48,6 +48,7 @@ public enum VGG19 implements VisionPipelineLayer {
   private final int[] strides;
   private final int inputChannels;
   private final int outputChannels;
+
   VGG19(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, Consumer<PipelineNetwork> fn) {
     this.fn = fn;
     this.inputChannels = inputChannels;

@@ -40,7 +40,7 @@ public class RMSContentMatcher implements VisualModifier {
   public PipelineNetwork build(PipelineNetwork original, Tensor image) {
     PipelineNetwork network = original.copy();
     Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
-    double rms = balanced?baseContent.rms():1;
+    double rms = balanced ? baseContent.rms() : 1;
     DAGNode head = network.getHead();
     DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
     Layer layer = original.getHead().getLayer();

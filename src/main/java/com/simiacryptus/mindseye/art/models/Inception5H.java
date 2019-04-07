@@ -50,6 +50,7 @@ public enum Inception5H implements VisionPipelineLayer {
   private final int[] strides;
   private final int inputChannels;
   private final int outputChannels;
+
   Inception5H(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, String layerId) {
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;

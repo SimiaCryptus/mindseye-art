@@ -49,6 +49,7 @@ class VGG16_HDF5 {
   private PoolingLayer.PoolingMode finalPoolingMode = PoolingLayer.PoolingMode.Max;
   private boolean large = true;
   private boolean dense = true;
+
   public VGG16_HDF5(Hdf5Archive hdf5) {
     this.hdf5 = hdf5;
   }

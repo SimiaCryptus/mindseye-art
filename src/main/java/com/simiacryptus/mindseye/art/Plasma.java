@@ -27,10 +27,19 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.IntUnaryOperator;
 
 public class Plasma {
+  private int bands;
+  private double noiseAmplitude;
+  private double noisePower;
 
-  public static Tensor paint(int bands, final double noiseAmplitude, final double noisePower, final int width, final int height) {
+  public Plasma() {
+    setNoisePower(2);
+    setNoiseAmplitude(100);
+    setBands(3);
+  }
+
+  public Tensor paint(final int width, final int height) {
     Tensor initSquare = initSquare(bands);
-    Tensor expandPlasma = expandPlasma(initSquare, noiseAmplitude, noisePower, width, height);
+    Tensor expandPlasma = expandPlasma(initSquare, width, height);
     initSquare.freeRef();
     return expandPlasma;
   }
@@ -44,7 +53,7 @@ public class Plasma {
   }
 
   @Nonnull
-  private static Tensor expandPlasma(Tensor image, final double noiseAmplitude, final double noisePower, final int width, final int height) {
+  private Tensor expandPlasma(Tensor image, final int width, final int height) {
     image.addRef();
     while (image.getDimensions()[0] < Math.max(width, height)) {
       Tensor newImage = expandPlasma(image, Math.pow(noiseAmplitude / image.getDimensions()[0], noisePower));
@@ -56,7 +65,7 @@ public class Plasma {
     return tensor;
   }
 
-  private static Tensor expandPlasma(final Tensor seed, double noise) {
+  private Tensor expandPlasma(final Tensor seed, double noise) {
     int bands = seed.getDimensions()[2];
     int width = seed.getDimensions()[0] * 2;
     int height = seed.getDimensions()[1] * 2;
@@ -114,4 +123,30 @@ public class Plasma {
     return returnValue;
   }
 
+  public int getBands() {
+    return bands;
+  }
+
+  public Plasma setBands(int bands) {
+    this.bands = bands;
+    return this;
+  }
+
+  public double getNoiseAmplitude() {
+    return noiseAmplitude;
+  }
+
+  public Plasma setNoiseAmplitude(double noiseAmplitude) {
+    this.noiseAmplitude = noiseAmplitude;
+    return this;
+  }
+
+  public double getNoisePower() {
+    return noisePower;
+  }
+
+  public Plasma setNoisePower(double noisePower) {
+    this.noisePower = noisePower;
+    return this;
+  }
 }

@@ -47,6 +47,7 @@ public enum VGG16 implements VisionPipelineLayer {
   private final int[] strides;
   private final int inputChannels;
   private final int outputChannels;
+
   VGG16(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, Consumer<PipelineNetwork> fn) {
     this.fn = fn;
     this.inputChannels = inputChannels;
