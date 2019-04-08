@@ -40,7 +40,7 @@ public class RMSContentMatcher implements VisualModifier {
   public PipelineNetwork build(PipelineNetwork original, Tensor image) {
     PipelineNetwork network = original.copy();
     Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
-    double rms = balanced ? baseContent.rms() : 1;
+    double mag = balanced ? baseContent.mag() : 1;
     DAGNode head = network.getHead();
     DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
     Layer layer = original.getHead().getLayer();
@@ -50,8 +50,8 @@ public class RMSContentMatcher implements VisualModifier {
         new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5),
-        new LinearActivationLayer().setScale(Math.pow(rms, -1))
-    ).setName(String.format("RMS / %.0E", rms))).freeRef();
+        new LinearActivationLayer().setScale(Math.pow(mag, -1))
+    ).setName(String.format("RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 
