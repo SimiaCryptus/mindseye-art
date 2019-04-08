@@ -160,12 +160,11 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       log.run(() -> {
         testDims(VGG16_0, new int[]{226, 226, 3}, new int[]{226, 226, 3});
         testDims(VGG16_1a, new int[]{226, 226, 3}, new int[]{226, 226, 64});
-        testDims(VGG16_1b, new int[]{226, 226, 64}, new int[]{113, 113, 128});
-        testDims(VGG16_1c, new int[]{113, 113, 128}, new int[]{57, 57, 256});
-        testDims(VGG16_1d, new int[]{57, 57, 256}, new int[]{29, 29, 512});
-        testDims(VGG16_1e, new int[]{29, 29, 512}, new int[]{15, 15, 512});
-        testDims(VGG16_2a, new int[]{15, 15, 512}, new int[]{8, 8, 512});
-        testDims(VGG16_2b, new int[]{8, 8, 512}, new int[]{14, 14, 4096});
+        testDims(VGG16_1b1, new int[]{226, 226, 64}, new int[]{113, 113, 128});
+        testDims(VGG16_1c1, new int[]{113, 113, 128}, new int[]{57, 57, 256});
+        testDims(VGG16_1d1, new int[]{57, 57, 256}, new int[]{29, 29, 512});
+        testDims(VGG16_1e1, new int[]{29, 29, 512}, new int[]{15, 15, 512});
+        testDims(VGG16_2, new int[]{15, 15, 512}, new int[]{8, 8, 512});
         testDims(VGG16_3a, new int[]{14, 14, 4096}, new int[]{14, 14, 1000});
         testDims(VGG16_3b, new int[]{14, 14, 1000}, new int[]{7, 7, 1000});
       });
@@ -227,13 +226,12 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
         testDims(VGG19_0, new int[]{226, 226, 3}, new int[]{226, 226, 3});
-        testDims(VGG19_1a, new int[]{226, 226, 3}, new int[]{226, 226, 64});
-        testDims(VGG19_1b, new int[]{226, 226, 64}, new int[]{113, 113, 128});
-        testDims(VGG19_1c, new int[]{113, 113, 128}, new int[]{57, 57, 256});
-        testDims(VGG19_1d, new int[]{57, 57, 256}, new int[]{29, 29, 512});
-        testDims(VGG19_1e, new int[]{29, 29, 512}, new int[]{15, 15, 512});
-        testDims(VGG19_2a, new int[]{15, 15, 512}, new int[]{8, 8, 512});
-        testDims(VGG19_2b, new int[]{8, 8, 512}, new int[]{14, 14, 4096});
+        testDims(VGG19_1a1, new int[]{226, 226, 3}, new int[]{226, 226, 64});
+        testDims(VGG19_1b1, new int[]{226, 226, 64}, new int[]{113, 113, 128});
+        testDims(VGG19_1c1, new int[]{113, 113, 128}, new int[]{57, 57, 256});
+        testDims(VGG19_1d1, new int[]{57, 57, 256}, new int[]{29, 29, 512});
+        testDims(VGG19_1e1, new int[]{29, 29, 512}, new int[]{15, 15, 512});
+        testDims(VGG19_2, new int[]{8, 8, 512}, new int[]{14, 14, 4096});
         testDims(VGG19_3a, new int[]{14, 14, 4096}, new int[]{14, 14, 1000});
         testDims(VGG19_3b, new int[]{14, 14, 1000}, new int[]{7, 7, 1000});
       });

@@ -102,66 +102,87 @@ class VGG16_HDF5 {
     phase0(pipeline);
     phase1(pipeline);
     phase2(pipeline);
-    phase3(pipeline);
+    phase3a(pipeline);
+    phase3b(pipeline);
     return pipeline;
   }
 
   public void phase1(PipelineNetwork pipeline) {
     phase1a(pipeline);
-    phase1b(pipeline);
-    phase1c(pipeline);
-    phase1d(pipeline);
-    phase1e(pipeline);
+    phase1b1(pipeline);
+    phase1b2(pipeline);
+    phase1c1(pipeline);
+    phase1c2(pipeline);
+    phase1c3(pipeline);
+    phase1d1(pipeline);
+    phase1d2(pipeline);
+    phase1d3(pipeline);
+    phase1e1(pipeline);
+    phase1e2(pipeline);
+    phase1e3(pipeline);
   }
 
   public void phase0(PipelineNetwork pipeline) {
     add(new ImgMinSizeLayer(226, 226), pipeline);
     add(new ImgBandBiasLayer(3).setAndFree(new Tensor(-103.939, -116.779, -123.68)), pipeline);
+    addConvolutionLayer(3, 3, 64, ActivationLayer.Mode.RELU, "layer_1", pipeline);
   }
 
   public void phase1a(PipelineNetwork pipeline) {
-    addConvolutionLayer(3, 3, 64, ActivationLayer.Mode.RELU, "layer_1", pipeline);
     addConvolutionLayer(3, 64, 64, ActivationLayer.Mode.RELU, "layer_3", pipeline);
   }
 
-  public void phase1b(PipelineNetwork pipeline) {
-    addPoolingLayer(2, pipeline);
-    addConvolutionLayer(3, 64, 128, ActivationLayer.Mode.RELU, "layer_6", pipeline);
+  public void phase1b2(PipelineNetwork pipeline) {
     addConvolutionLayer(3, 128, 128, ActivationLayer.Mode.RELU, "layer_8", pipeline);
   }
 
-  public void phase1c(PipelineNetwork pipeline) {
+  public void phase1b1(PipelineNetwork pipeline) {
     addPoolingLayer(2, pipeline);
-    addConvolutionLayer(3, 128, 256, ActivationLayer.Mode.RELU, "layer_11", pipeline);
-    addConvolutionLayer(3, 256, 256, ActivationLayer.Mode.RELU, "layer_13", pipeline);
+    addConvolutionLayer(3, 64, 128, ActivationLayer.Mode.RELU, "layer_6", pipeline);
+  }
+
+  public void phase1c3(PipelineNetwork pipeline) {
     addConvolutionLayer(3, 256, 256, ActivationLayer.Mode.RELU, "layer_15", pipeline);
   }
 
-  public void phase1d(PipelineNetwork pipeline) {
+  public void phase1c2(PipelineNetwork pipeline) {
+    addConvolutionLayer(3, 256, 256, ActivationLayer.Mode.RELU, "layer_13", pipeline);
+  }
+
+  public void phase1c1(PipelineNetwork pipeline) {
     addPoolingLayer(2, pipeline);
-    addConvolutionLayer(3, 256, 512, ActivationLayer.Mode.RELU, "layer_18", pipeline);
-    addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_20", pipeline);
+    addConvolutionLayer(3, 128, 256, ActivationLayer.Mode.RELU, "layer_11", pipeline);
+  }
+
+  public void phase1d3(PipelineNetwork pipeline) {
     addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_22", pipeline);
   }
 
-  public void phase1e(PipelineNetwork pipeline) {
+  public void phase1d2(PipelineNetwork pipeline) {
+    addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_20", pipeline);
+  }
+
+  public void phase1d1(PipelineNetwork pipeline) {
     addPoolingLayer(2, pipeline);
-    addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_25", pipeline);
-    addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_27", pipeline);
+    addConvolutionLayer(3, 256, 512, ActivationLayer.Mode.RELU, "layer_18", pipeline);
+  }
+
+  public void phase1e3(PipelineNetwork pipeline) {
     addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_29", pipeline);
   }
 
-  public void phase2(PipelineNetwork pipeline) {
-    phase2a(pipeline);
-    phase2b(pipeline);
+  public void phase1e2(PipelineNetwork pipeline) {
+    addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_27", pipeline);
   }
 
-  public void phase2a(PipelineNetwork pipeline) {
+  public void phase1e1(PipelineNetwork pipeline) {
+    addPoolingLayer(2, pipeline);
+    addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_25", pipeline);
+  }
+
+  public void phase2(PipelineNetwork pipeline) {
     //  model.add(MaxPooling2D((2,2), strides=(2,2)))
     addPoolingLayer(2, pipeline);
-  }
-
-  public void phase2b(PipelineNetwork pipeline) {
     if (large) {
       add(new ImgModulusPaddingLayer(7, 7), pipeline);
     } else {
@@ -189,11 +210,6 @@ class VGG16_HDF5 {
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
 
-  public void phase3(PipelineNetwork pipeline) {
-    phase3a(pipeline);
-    phase3b(pipeline);
-  }
-
   public void phase3a(PipelineNetwork pipeline) {
     add(new ConvolutionLayer(1, 1, 4096, 4096)
         .setPaddingXY(0, 0)
@@ -202,13 +218,6 @@ class VGG16_HDF5 {
     add(new ImgBandBiasLayer(4096)
         .setAndFree((hdf5.readDataSet("param_1", "layer_34"))), pipeline);
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
-
-    add(new ConvolutionLayer(1, 1, 4096, 1000)
-        .setPaddingXY(0, 0)
-        .setAndFree(hdf5.readDataSet("param_0", "layer_36")
-            .permuteDimensionsAndFree(fullyconnectedOrder)), pipeline);
-    add(new ImgBandBiasLayer(1000)
-        .setAndFree((hdf5.readDataSet("param_1", "layer_36"))), pipeline);
   }
 
   public void addPoolingLayer(final int size, PipelineNetwork pipeline) {
@@ -234,6 +243,12 @@ class VGG16_HDF5 {
   }
 
   public void phase3b(PipelineNetwork pipeline) {
+    add(new ConvolutionLayer(1, 1, 4096, 1000)
+        .setPaddingXY(0, 0)
+        .setAndFree(hdf5.readDataSet("param_0", "layer_36")
+            .permuteDimensionsAndFree(fullyconnectedOrder)), pipeline);
+    add(new ImgBandBiasLayer(1000)
+        .setAndFree((hdf5.readDataSet("param_1", "layer_36"))), pipeline);
     add(new SoftmaxActivationLayer()
         .setAlgorithm(SoftmaxActivationLayer.SoftmaxAlgorithm.ACCURATE)
         .setMode(SoftmaxActivationLayer.SoftmaxMode.CHANNEL), pipeline);
