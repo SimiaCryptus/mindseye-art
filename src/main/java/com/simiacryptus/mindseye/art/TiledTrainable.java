@@ -28,6 +28,7 @@ import com.simiacryptus.mindseye.lang.cudnn.Precision;
 import com.simiacryptus.mindseye.layers.cudnn.ImgTileSelectLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,30 +78,8 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
     if (cols != 1 || rows != 1) {
-      int tileSizeX = (cols <= 1) ? width : (int) Math.ceil(((double) (width - padding) / cols) + padding);
-      int tileSizeY = (rows <= 1) ? height : (int) Math.ceil(((double) (height - padding) / rows) + padding);
-      logger.info(String.format(
-          "Using Tile Size %s x %s to partition %s x %s png into %s x %s tiles",
-          tileSizeX,
-          tileSizeY,
-          width,
-          height,
-          cols,
-          rows
-      ));
-      selectors = new ImgTileSelectLayer[rows * cols];
-      int index = 0;
-      for (int row = 0; row < rows; row++) {
-        for (int col = 0; col < cols; col++) {
-          selectors[index++] = new ImgTileSelectLayer(
-              tileSizeX,
-              tileSizeY,
-              col * (tileSizeX - padding),
-              row * (tileSizeY - padding)
-          ).setPrecision(getPrecision());
-        }
-      }
-      networks = Arrays.stream(selectors)
+      this.selectors = selectors(padding, width, height, tileSize, getPrecision());
+      networks = Arrays.stream(this.selectors)
           .map(selector -> PipelineNetwork.build(1, filter, selector))
           .map(this::getNetwork)
           .toArray(i -> new PipelineNetwork[i]);
@@ -109,6 +88,47 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       networks = null;
     }
     logger.info("Trainable canvas ID: " + this.canvas.getId());
+  }
+
+  @NotNull
+  public static ImgTileSelectLayer[] selectors(int padding, int width, int height, int tileSize, Precision precision) {
+    int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
+    int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
+    int tileSizeX = (cols <= 1) ? width : (int) Math.ceil(((double) (width - padding) / cols) + padding);
+    int tileSizeY = (rows <= 1) ? height : (int) Math.ceil(((double) (height - padding) / rows) + padding);
+//    logger.info(String.format(
+//        "Using Tile Size %s x %s to partition %s x %s png into %s x %s tiles",
+//        tileSizeX,
+//        tileSizeY,
+//        width,
+//        height,
+//        cols,
+//        rows
+//    ));
+    if (1 == cols && 1 == rows) {
+      return new ImgTileSelectLayer[]{
+          new ImgTileSelectLayer(
+              width,
+              height,
+              0,
+              0
+          )
+      };
+    } else {
+      ImgTileSelectLayer[] selectors = new ImgTileSelectLayer[rows * cols];
+      int index = 0;
+      for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+          selectors[index++] = new ImgTileSelectLayer(
+              tileSizeX,
+              tileSizeY,
+              col * (tileSizeX - padding),
+              row * (tileSizeY - padding)
+          ).setPrecision(precision);
+        }
+      }
+      return selectors;
+    }
   }
 
   @Override

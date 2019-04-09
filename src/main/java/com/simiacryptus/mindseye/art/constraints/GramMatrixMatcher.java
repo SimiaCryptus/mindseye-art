@@ -19,12 +19,16 @@
 
 package com.simiacryptus.mindseye.art.constraints;
 
+import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.mindseye.lang.cudnn.Precision;
 import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+
+import java.util.Arrays;
 
 public class GramMatrixMatcher implements VisualModifier {
 
@@ -33,10 +37,28 @@ public class GramMatrixMatcher implements VisualModifier {
 
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor image) {
-    network = network.copy();
+    //network = network.copy();
     network.wrap(new GramianLayer()).freeRef();
-    Tensor result = network.eval(image).getDataAndFree().getAndFree(0);
-    double mag = balanced ? result.mag() : 1;
+    int[] imageDimensions = image.getDimensions();
+    Tensor result = Arrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], 300, Precision.Double)).map(selector -> {
+      Tensor tile = selector.eval(image).getDataAndFree().getAndFree(0);
+      selector.freeRef();
+      int[] tileDimensions = tile.getDimensions();
+      Tensor component = network.eval(tile).getDataAndFree().getAndFree(0).scaleInPlace(tileDimensions[0] * tileDimensions[1]);
+      tile.freeRef();
+      return component;
+    }).reduce((a, b) -> {
+      a.addInPlace(b);
+      b.freeRef();
+      return a;
+    }).get().scaleInPlace(1.0 / (imageDimensions[0] * imageDimensions[1])).mapAndFree(x -> {
+      if (Double.isFinite(x)) {
+        return x;
+      } else {
+        return 0;
+      }
+    });
+    double mag = balanced ? result.rms() : 1;
     network.wrap(PipelineNetwork.wrap(1,
         new ImgBandBiasLayer(result.scaleInPlace(-1)),
         new SquareActivationLayer(),

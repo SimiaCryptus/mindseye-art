@@ -36,9 +36,9 @@ public class GramMatrixEnhancer implements VisualModifier {
 
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor image) {
-    network = network.copy();
+    //network = network.copy();
     network.wrap(new GramianLayer()).freeRef();
-    double mag = isBalanced() ? network.eval(image).getDataAndFree().getAndFree(0).mag() : 1;
+    double mag = isBalanced() ? network.eval(image).getDataAndFree().getAndFree(0).rms() : 1;
     network.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),

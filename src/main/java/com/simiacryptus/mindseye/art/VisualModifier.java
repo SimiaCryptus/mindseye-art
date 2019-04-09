@@ -32,7 +32,7 @@ public interface VisualModifier {
     PipelineNetwork network = layer.getNetwork();
     network.assertAlive();
     PipelineNetwork pipelineNetwork = build(network, image);
-    network.freeRef();
+//    network.freeRef();
     return pipelineNetwork;
   }
 
@@ -52,11 +52,11 @@ public interface VisualModifier {
   }
 
   default VisualModifier scale(double scale) {
-    return (original, image) -> this.build(original, image).andThenWrap(new LinearActivationLayer().setScale(scale).freeze());
+    return (original, image) -> this.build(original, image).freeAndThenWrap(new LinearActivationLayer().setScale(scale).freeze());
   }
 
   default VisualModifier pow(double power) {
-    return (original, image) -> this.build(original, image).andThenWrap(new NthPowerActivationLayer().setPower(power).freeze());
+    return (original, image) -> this.build(original, image).freeAndThenWrap(new NthPowerActivationLayer().setPower(power).freeze());
   }
 
 }
