@@ -37,13 +37,13 @@ public class RMSContentMatcher implements VisualModifier {
   private boolean balanced = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork original, Tensor image) {
-    PipelineNetwork network = original.copy();
+  public PipelineNetwork build(PipelineNetwork network, Tensor image) {
+    //network = network.copy();
+    Layer layer = network.getHead().getLayer();
     Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
-    double mag = balanced ? baseContent.mag() : 1;
+    double mag = balanced ? baseContent.rms() : 1;
     DAGNode head = network.getHead();
     DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
-    Layer layer = original.getHead().getLayer();
     if (layer != null) constNode.getLayer().setName((layer != null ? layer.getName() : "Original") + " Content");
     network.wrap(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
     network.wrap(PipelineNetwork.wrap(1,

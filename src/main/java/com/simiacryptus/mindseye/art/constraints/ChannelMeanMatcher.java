@@ -33,10 +33,10 @@ public class ChannelMeanMatcher implements VisualModifier {
 
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor image) {
-    network = network.copy();
+    //network = network.copy();
     network.wrap(new BandAvgReducerLayer()).freeRef();
     Tensor result = network.eval(image).getDataAndFree().getAndFree(0);
-    double mag = isBalanced() ? result.mag() : 1;
+    double mag = isBalanced() ? result.rms() : 1;
     network.wrap(PipelineNetwork.wrap(1,
         new ImgBandBiasLayer(result.scaleInPlace(-1)),
         new SquareActivationLayer(),

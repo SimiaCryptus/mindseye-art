@@ -37,19 +37,19 @@ public class Plasma {
     setBands(3);
   }
 
-  public Tensor paint(final int width, final int height) {
-    Tensor initSquare = initSquare(bands);
-    Tensor expandPlasma = expandPlasma(initSquare, width, height);
-    initSquare.freeRef();
-    return expandPlasma;
-  }
-
   @Nonnull
   private static Tensor initSquare(final int bands) {
     Tensor baseColor = new Tensor(1, 1, bands).setByCoord(c -> 100 + 200 * (Math.random() - 0.5));
     Tensor tensor = new Tensor(2, 2, bands).setByCoord(c -> baseColor.get(0, 0, c.getCoords()[2]));
     baseColor.freeRef();
     return tensor;
+  }
+
+  public Tensor paint(final int width, final int height) {
+    Tensor initSquare = initSquare(bands);
+    Tensor expandPlasma = expandPlasma(initSquare, width, height);
+    initSquare.freeRef();
+    return expandPlasma;
   }
 
   @Nonnull
