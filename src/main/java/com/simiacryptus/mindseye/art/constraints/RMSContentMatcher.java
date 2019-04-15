@@ -37,8 +37,8 @@ public class RMSContentMatcher implements VisualModifier {
   private boolean balanced = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor image) {
-    //network = network.copy();
+  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+    network = network.copyPipeline();
     Layer layer = network.getHead().getLayer();
     Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
     double mag = balanced ? baseContent.rms() : 1;

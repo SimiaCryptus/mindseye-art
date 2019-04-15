@@ -24,6 +24,7 @@ import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public enum VGG16 implements VisionPipelineLayer {
@@ -86,7 +87,7 @@ public enum VGG16 implements VisionPipelineLayer {
 
   @Override
   public Layer getLayer() {
-    PipelineNetwork pipeline = new PipelineNetwork();
+    PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
     fn.accept(pipeline);
     return pipeline;
   }
