@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import com.simiacryptus.lang.ref.ReferenceCounting;
 import com.simiacryptus.lang.ref.ReferenceCountingBase;
 import com.simiacryptus.mindseye.eval.BasicTrainable;
 import com.simiacryptus.mindseye.eval.Trainable;
@@ -47,7 +48,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
 
   private final Tensor canvas;
   private final Layer filter;
-  private final ImgTileSelectLayer[] selectors;
+  private final Layer[] selectors;
   private final PipelineNetwork[] networks;
   @Nonnull
   private final Precision precision;
@@ -68,6 +69,10 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   }
 
   public TiledTrainable(Tensor canvas, Layer filter, int tileSize, int padding, @Nonnull Precision precision) {
+    this(canvas, filter, tileSize, padding, precision, true);
+  }
+
+  public TiledTrainable(Tensor canvas, Layer filter, int tileSize, int padding, @Nonnull Precision precision, boolean largeTiles) {
     this.precision = precision;
     this.canvas = canvas;
     this.filter = filter.addRef();
@@ -78,7 +83,12 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
     if (cols != 1 || rows != 1) {
-      this.selectors = selectors(padding, width, height, tileSize, getPrecision());
+      @NotNull ImgTileSelectLayer[] selectors = selectors(padding, width, height, tileSize, getPrecision());
+      if (largeTiles) {
+        this.selectors = Arrays.stream(selectors).map(ImgTileSelectLayer::getCompatibilityLayer).toArray(i -> new Layer[i]);
+      } else {
+        this.selectors = selectors;
+      }
       networks = Arrays.stream(this.selectors)
           .map(selector -> PipelineNetwork.build(1, filter, selector))
           .map(this::getNetwork)
@@ -112,7 +122,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
               height,
               0,
               0
-          )
+          ).setPrecision(precision)
       };
     } else {
       ImgTileSelectLayer[] selectors = new ImgTileSelectLayer[rows * cols];
@@ -134,7 +144,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
     assertAlive();
-    if (null == selectors) {
+    if (null == selectors || 0 == selectors.length) {
       Trainable trainable = new BasicTrainable(PipelineNetwork.wrap(1,
           filter.addRef(),
           getNetwork(filter.addRef())
@@ -202,8 +212,8 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
 
   @Override
   protected void _free() {
-    if (null != selectors) Arrays.stream(selectors).forEach(ReferenceCountingBase::freeRef);
-    if (null != networks) Arrays.stream(networks).forEach(ReferenceCountingBase::freeRef);
+    if (null != selectors) Arrays.stream(selectors).forEach(ReferenceCounting::freeRef);
+    if (null != networks) Arrays.stream(networks).forEach(ReferenceCounting::freeRef);
 
     filter.freeRef();
     super._free();

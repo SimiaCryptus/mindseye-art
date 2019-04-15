@@ -34,8 +34,8 @@ public class RMSChannelEnhancer implements VisualModifier {
   private boolean balanced = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor image) {
-    //network = network.copy();
+  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+    network = network.copyPipeline();
     double mag = balanced ? network.eval(image).getDataAndFree().getAndFree(0).rmsAndFree() : 1;
     network.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),

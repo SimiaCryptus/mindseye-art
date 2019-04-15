@@ -337,4 +337,15 @@ public class VisionPipelineUtil {
     configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getCanonicalName());
     return configuration;
   }
+
+  public static int[][] getIndexMap(final SimpleConvolutionLayer layer) {
+    int[] kernelDimensions = layer.getKernelDimensions();
+    double b = Math.sqrt(kernelDimensions[2]);
+    int h = kernelDimensions[1];
+    int w = kernelDimensions[0];
+    int l = (int) (w * h * b);
+    return IntStream.range(0, (int) b).mapToObj(i -> {
+      return IntStream.range(0, l).map(j -> j + l * i).toArray();
+    }).toArray(i -> new int[i][]);
+  }
 }

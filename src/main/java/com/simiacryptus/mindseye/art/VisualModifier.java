@@ -26,9 +26,9 @@ import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 public interface VisualModifier {
-  PipelineNetwork build(PipelineNetwork network, Tensor image);
+  PipelineNetwork build(PipelineNetwork network, Tensor... image);
 
-  default PipelineNetwork build(VisionPipelineLayer layer, Tensor image) {
+  default PipelineNetwork build(VisionPipelineLayer layer, Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
     network.assertAlive();
     PipelineNetwork pipelineNetwork = build(network, image);
@@ -38,7 +38,7 @@ public interface VisualModifier {
 
   ;
 
-  default PipelineNetwork build(Tensor image) {
+  default PipelineNetwork build(Tensor... image) {
     return build((PipelineNetwork) new PipelineNetwork().setName("Input"), image);
   }
 
@@ -46,17 +46,26 @@ public interface VisualModifier {
 
   default VisualModifier combine(VisualModifier right) {
     return (original, image) -> SumInputsLayer.combine(
-        this.build(original, image),
-        right.build(original, image)
+        this.build(original.copyPipeline(), image),
+        right.build(original.copyPipeline(), image)
     );
   }
 
   default VisualModifier scale(double scale) {
-    return (original, image) -> this.build(original, image).freeAndThenWrap(new LinearActivationLayer().setScale(scale).freeze());
+    return (original, image) -> {
+      PipelineNetwork build = this.build(original, image);
+      build.wrap(new LinearActivationLayer().setScale(scale).freeze());
+      return build;
+    };
   }
 
-  default VisualModifier pow(double power) {
-    return (original, image) -> this.build(original, image).freeAndThenWrap(new NthPowerActivationLayer().setPower(power).freeze());
+  default VisualModifier pow(double power)
+  {
+    return (original, image) -> {
+      PipelineNetwork build = this.build(original, image);
+      build.wrap(new NthPowerActivationLayer().setPower(power).freeze());
+      return build;
+    };
   }
 
 }

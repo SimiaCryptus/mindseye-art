@@ -23,29 +23,55 @@ import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.GramianLayer;
-import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
+import com.simiacryptus.mindseye.layers.cudnn.ProductLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
-import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 public class GramMatrixEnhancer implements VisualModifier {
-
+  private static final Logger log = LoggerFactory.getLogger(GramMatrixEnhancer.class);
   private boolean averaging = true;
   private boolean balanced = true;
+  private int tileSize = 600;
+
+  @NotNull
+  public static PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
+    PipelineNetwork rmsNetwork = new PipelineNetwork(1);
+    rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
+    rmsNetwork.wrap(new LinearActivationLayer().setScale(-Math.pow(mag, -2)),
+        rmsNetwork.wrap(averaging ? new AvgReducerLayer() : new SumReducerLayer(),
+            rmsNetwork.wrap(new ProductLayer(), rmsNetwork.getInput(0), rmsNetwork.constValueWrap(result))
+        )
+    ).freeRef();
+    return rmsNetwork;
+  }
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor image) {
-    //network = network.copy();
-    network.wrap(new GramianLayer()).freeRef();
-    double mag = isBalanced() ? network.eval(image).getDataAndFree().getAndFree(0).rms() : 1;
-    network.wrap(PipelineNetwork.wrap(1,
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new NthPowerActivationLayer().setPower(0.5),
-        new LinearActivationLayer().setScale(-Math.pow(mag, -1))
-    ).setName(String.format("-RMS[x] / %.0E", mag))).freeRef();
+  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+    network = network.copyPipeline();
+    network.wrap(new GramianLayer(GramMatrixMatcher.getAppendUUID(network, GramianLayer.class))).freeRef();
+    int pixels = Arrays.stream(image).mapToInt(x -> {
+      int[] dimensions = x.getDimensions();
+      return dimensions[0] * dimensions[1];
+    }).sum();
+    Tensor result = GramMatrixMatcher.eval(pixels, network, getTileSize(), image);
+    double mag = balanced ? result.rms() : 1;
+    network.wrap(loss(result, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
+  }
+
+  public boolean isAveraging() {
+    return averaging;
+  }
+
+  public GramMatrixEnhancer setAveraging(boolean averaging) {
+    this.averaging = averaging;
+    return this;
   }
 
   public boolean isBalanced() {
@@ -57,12 +83,12 @@ public class GramMatrixEnhancer implements VisualModifier {
     return this;
   }
 
-  public boolean isAveraging() {
-    return averaging;
+  public int getTileSize() {
+    return tileSize;
   }
 
-  public GramMatrixEnhancer setAveraging(boolean averaging) {
-    this.averaging = averaging;
+  public GramMatrixEnhancer setTileSize(int tileSize) {
+    this.tileSize = tileSize;
     return this;
   }
 }

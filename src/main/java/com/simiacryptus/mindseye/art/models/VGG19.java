@@ -24,6 +24,7 @@ import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -83,7 +84,7 @@ public enum VGG19 implements VisionPipelineLayer {
   public static VGG19_HDF5 getVGG19_hdf5() {
     if (null == VGG19_hdf5) {
       if (null == VGG19_hdf5) {
-        VGG19_hdf5 = (VGG19_HDF5) VGG19_HDF5.fromHDF5();
+        VGG19_hdf5 = VGG19_HDF5.fromHDF5();
       }
     }
     return VGG19_hdf5;
@@ -91,7 +92,7 @@ public enum VGG19 implements VisionPipelineLayer {
 
   @Override
   public Layer getLayer() {
-    PipelineNetwork pipeline = new PipelineNetwork();
+    PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
     fn.accept(pipeline);
     return pipeline;
   }
