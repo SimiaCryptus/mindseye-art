@@ -25,7 +25,7 @@
         <groupId>com.simiacryptus</groupId>
         <artifactId>java-parent</artifactId>
         <version>1.7.0</version>
-        <relativePath>../scala-parent</relativePath>
+        <relativePath>../java-parent</relativePath>
     </parent>
 
     <artifactId>mindseye-art</artifactId>
