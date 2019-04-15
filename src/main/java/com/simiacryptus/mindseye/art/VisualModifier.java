@@ -59,8 +59,7 @@ public interface VisualModifier {
     };
   }
 
-  default VisualModifier pow(double power)
-  {
+  default VisualModifier pow(double power) {
     return (original, image) -> {
       PipelineNetwork build = this.build(original, image);
       build.wrap(new NthPowerActivationLayer().setPower(power).freeze());
