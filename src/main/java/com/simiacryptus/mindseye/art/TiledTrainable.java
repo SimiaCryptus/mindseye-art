@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 /**
@@ -52,8 +51,6 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   private final PipelineNetwork[] networks;
   @Nonnull
   private final Precision precision;
-  AtomicInteger count = new AtomicInteger();
-  private boolean verbose = false;
   private boolean mutableCanvas = true;
 
   public TiledTrainable(Tensor canvas, int tileSize, int padding) {
@@ -199,15 +196,6 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   @Override
   public Layer getLayer() {
     return null;
-  }
-
-  public boolean isVerbose() {
-    return verbose;
-  }
-
-  public TiledTrainable setVerbose(boolean verbose) {
-    this.verbose = verbose;
-    return this;
   }
 
   @Override
