@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.constraints;
+package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
@@ -25,6 +25,7 @@ import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.GramianLayer;
 import com.simiacryptus.mindseye.layers.cudnn.ProductLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
+import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import org.jetbrains.annotations.NotNull;
@@ -35,19 +36,22 @@ import java.util.Arrays;
 
 public class GramMatrixEnhancer implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixEnhancer.class);
+  private double min = -1;
+  private double max = 1;
   private boolean averaging = true;
   private boolean balanced = true;
   private int tileSize = 600;
 
   @NotNull
-  public static PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
+  public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
     PipelineNetwork rmsNetwork = new PipelineNetwork(1);
     rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
-    rmsNetwork.wrap(new LinearActivationLayer().setScale(-Math.pow(mag, -2)),
-        rmsNetwork.wrap(averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-            rmsNetwork.wrap(new ProductLayer(), rmsNetwork.getInput(0), rmsNetwork.constValueWrap(result))
-        )
-    ).freeRef();
+    rmsNetwork.wrap(averaging ? new AvgReducerLayer() : new SumReducerLayer(),
+        rmsNetwork.wrap(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()),
+            rmsNetwork.wrap(new LinearActivationLayer().setScale(-Math.pow(mag, -2)),
+                rmsNetwork.wrap(new ProductLayer(), rmsNetwork.getInput(0), rmsNetwork.constValueWrap(result))
+            )
+        )).freeRef();
     return rmsNetwork;
   }
 
@@ -89,6 +93,30 @@ public class GramMatrixEnhancer implements VisualModifier {
 
   public GramMatrixEnhancer setTileSize(int tileSize) {
     this.tileSize = tileSize;
+    return this;
+  }
+
+  public double getMax() {
+    return max;
+  }
+
+  public GramMatrixEnhancer setMax(double max) {
+    this.max = max;
+    return this;
+  }
+
+  public double getMin() {
+    return min;
+  }
+
+  public GramMatrixEnhancer setMin(double min) {
+    this.min = min;
+    return this;
+  }
+
+  public GramMatrixEnhancer setMinMax(double minValue, double maxValue) {
+    this.min = minValue;
+    this.max = maxValue;
     return this;
   }
 }

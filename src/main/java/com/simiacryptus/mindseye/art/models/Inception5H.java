@@ -21,12 +21,11 @@ package com.simiacryptus.mindseye.art.models;
 
 import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
-import com.simiacryptus.mindseye.art.VisionPipelineUtil;
+import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.tensorflow.ImageNetworkPipeline;
 
 import java.util.Map;
-import java.util.stream.IntStream;
 
 public enum Inception5H implements VisionPipelineLayer {
   Inc5H_1a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, "conv2d0"),
@@ -129,19 +128,6 @@ public enum Inception5H implements VisionPipelineLayer {
   @Override
   public int[] getStrides() {
     return this.strides;
-  }
-
-  public int[] outputDims(int... inputDims) {
-    return IntStream.range(0, inputDims.length).map(d -> {
-      int inputDim = inputDims[d];
-      if (d < 2) {
-        int stride = this.getStrides()[d];
-        return (int) Math.ceil(((double) (inputDim) / stride));
-      } else if (d == 2) {
-        if (inputDim != getInputChannels()) throw new IllegalArgumentException();
-        return getOutputChannels();
-      } else throw new IllegalArgumentException();
-    }).toArray();
   }
 
   @Override

@@ -17,9 +17,10 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art;
+package com.simiacryptus.mindseye.art.util;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.lang.Coordinate;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
@@ -58,6 +59,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class VisionPipelineUtil {
+
   private static final Logger log = LoggerFactory.getLogger(VisionPipelineUtil.class);
 
   public static Closeable cudaReports(NotebookOutput log, boolean interceptLog) {

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.constraints;
+package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
@@ -25,6 +25,8 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+
+import java.util.Arrays;
 
 public class ChannelMeanMatcher implements VisualModifier {
 
@@ -35,7 +37,14 @@ public class ChannelMeanMatcher implements VisualModifier {
   public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
     network = network.copyPipeline();
     network.wrap(new BandAvgReducerLayer()).freeRef();
-    Tensor result = network.eval(image).getDataAndFree().getAndFree(0);
+    PipelineNetwork finalNetwork = network;
+    Tensor result = Arrays.stream(image).map(tensor -> {
+      return finalNetwork.eval(tensor).getDataAndFree().getAndFree(0);
+    }).reduce((a, b) -> {
+      Tensor c = a.addAndFree(b);
+      b.freeRef();
+      return c;
+    }).get().scaleInPlace(1.0 / image.length);
     double mag = isBalanced() ? result.rms() : 1;
     network.wrap(PipelineNetwork.wrap(1,
         new ImgBandBiasLayer(result.scaleInPlace(-1)),

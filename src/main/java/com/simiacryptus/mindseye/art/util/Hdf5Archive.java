@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.models;
+package com.simiacryptus.mindseye.art.util;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 
 import static org.bytedeco.javacpp.hdf5.*;
 
-class Hdf5Archive {
+public class Hdf5Archive {
   private static final Logger log = LoggerFactory.getLogger(Hdf5Archive.class);
 
   static {

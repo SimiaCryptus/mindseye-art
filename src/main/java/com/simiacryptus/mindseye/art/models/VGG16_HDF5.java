@@ -18,6 +18,7 @@
  */
 package com.simiacryptus.mindseye.art.models;
 
+import com.simiacryptus.mindseye.art.util.Hdf5Archive;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.Explodable;

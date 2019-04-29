@@ -18,6 +18,7 @@
  */
 package com.simiacryptus.mindseye.art.models;
 
+import com.simiacryptus.mindseye.art.util.Hdf5Archive;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.Explodable;
@@ -93,16 +94,12 @@ class VGG19_HDF5 {
   }
 
   public void phase0(PipelineNetwork pipeline) {
-    //add(new ImgMinSizeLayer(226, 226), pipeline);
     add(new ImgBandBiasLayer(3).setAndFree(new Tensor(-103.939, -116.779, -123.68)), pipeline);
-  }
-
-  public void phase1a2(PipelineNetwork pipeline) {
-    addConvolutionLayer(3, 64, 64, ActivationLayer.Mode.RELU, "layer_3", pipeline);
-  }
-
-  public void phase1a1(PipelineNetwork pipeline) {
     addConvolutionLayer(3, 3, 64, ActivationLayer.Mode.RELU, "layer_1", pipeline);
+  }
+
+  public void phase1a(PipelineNetwork pipeline) {
+    addConvolutionLayer(3, 64, 64, ActivationLayer.Mode.RELU, "layer_3", pipeline);
   }
 
   public void phase1b2(PipelineNetwork pipeline) {
