@@ -26,12 +26,10 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 public enum VGG19 implements VisionPipelineLayer {
   VGG19_0(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase0),
-  VGG19_1a1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1a1),
-  VGG19_1a2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1a2),
+  VGG19_1a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1a),
   VGG19_1b1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1b1),
   VGG19_1b2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1b2),
   VGG19_1c1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1c1),
@@ -125,19 +123,6 @@ public enum VGG19 implements VisionPipelineLayer {
   @Override
   public int[] getStrides() {
     return this.strides;
-  }
-
-  public int[] outputDims(int... inputDims) {
-    return IntStream.range(0, inputDims.length).map(d -> {
-      int inputDim = inputDims[d];
-      if (d < 2) {
-        int stride = this.getStrides()[d];
-        return (int) Math.ceil(((double) (inputDim) / stride));
-      } else if (d == 2) {
-        if (inputDim != getInputChannels()) throw new IllegalArgumentException();
-        return getOutputChannels();
-      } else throw new IllegalArgumentException();
-    }).toArray();
   }
 
   @Override

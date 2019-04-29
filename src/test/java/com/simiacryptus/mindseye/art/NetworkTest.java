@@ -19,9 +19,10 @@
 
 package com.simiacryptus.mindseye.art;
 
-import com.simiacryptus.mindseye.art.constraints.GramMatrixMatcher;
-import com.simiacryptus.mindseye.art.constraints.RMSContentMatcher;
 import com.simiacryptus.mindseye.art.models.Inception5H;
+import com.simiacryptus.mindseye.art.ops.GramMatrixMatcher;
+import com.simiacryptus.mindseye.art.ops.RMSContentMatcher;
+import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;

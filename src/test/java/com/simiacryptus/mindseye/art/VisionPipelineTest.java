@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.art.models.Inception5H;
 import com.simiacryptus.mindseye.art.models.VGG16;
 import com.simiacryptus.mindseye.art.models.VGG19;
+import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.MeanSqLossLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
@@ -48,13 +49,10 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   public static void testDims(VisionPipelineLayer inceptionVision, int[] inputDims, int[] expectedOutputDims) {
     int[] actuals = VisionPipelineUtil.evalDims(inputDims, inceptionVision.getLayer());
     Assert.assertArrayEquals(Arrays.toString(actuals), expectedOutputDims, actuals);
-//    Assert.assertArrayEquals(expectedOutputDims, inceptionVision.outputDims(inputDims));
   }
 
   public static int[] testDims(VisionPipelineLayer inceptionVision, int... inputDims) {
-    int[] actuals = VisionPipelineUtil.evalDims(inputDims, inceptionVision.getLayer());
-//    Assert.assertArrayEquals(inceptionVision.outputDims(inputDims), actuals);
-    return actuals;
+    return VisionPipelineUtil.evalDims(inputDims, inceptionVision.getLayer());
   }
 
   public static int[] testDims(VisionPipeline<? extends VisionPipelineLayer> pipeline, int... dims) {
@@ -226,7 +224,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
         testDims(VGG19_0, new int[]{226, 226, 3}, new int[]{226, 226, 3});
-        testDims(VGG19_1a1, new int[]{226, 226, 3}, new int[]{226, 226, 64});
+        testDims(VGG19_1a, new int[]{226, 226, 3}, new int[]{226, 226, 64});
         testDims(VGG19_1b1, new int[]{226, 226, 64}, new int[]{113, 113, 128});
         testDims(VGG19_1c1, new int[]{113, 113, 128}, new int[]{57, 57, 256});
         testDims(VGG19_1d1, new int[]{57, 57, 256}, new int[]{29, 29, 512});

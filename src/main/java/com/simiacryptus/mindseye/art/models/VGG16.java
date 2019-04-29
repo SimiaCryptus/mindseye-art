@@ -121,19 +121,6 @@ public enum VGG16 implements VisionPipelineLayer {
   public int[] getStrides() {
     return this.strides;
   }
-//
-//  public int[] outputDims(int... inputDims) {
-//    return IntStream.range(0, inputDims.length).map(d -> {
-//      int inputDim = inputDims[d];
-//      if (d < 2) {
-//        int stride = this.getStrides()[d];
-//        return (int) Math.ceil(((double) (inputDim) / stride));
-//      } else if (d == 2) {
-//        if (inputDim != getInputChannels()) throw new IllegalArgumentException();
-//        return getOutputChannels();
-//      } else throw new IllegalArgumentException();
-//    }).toArray();
-//  }
 
   @Override
   public VisionPipeline<?> getPipeline() {
