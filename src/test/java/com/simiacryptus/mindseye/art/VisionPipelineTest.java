@@ -230,8 +230,8 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
         testDims(VGG19_1d1, new int[]{57, 57, 256}, new int[]{29, 29, 512});
         testDims(VGG19_1e1, new int[]{29, 29, 512}, new int[]{15, 15, 512});
         testDims(VGG19_2, new int[]{8, 8, 512}, new int[]{14, 14, 4096});
-        testDims(VGG19_3a, new int[]{14, 14, 4096}, new int[]{14, 14, 1000});
-        testDims(VGG19_3b, new int[]{14, 14, 1000}, new int[]{7, 7, 1000});
+//        testDims(VGG19_3a, new int[]{14, 14, 4096}, new int[]{14, 14, 1000});
+//        testDims(VGG19_3b, new int[]{14, 14, 1000}, new int[]{7, 7, 1000});
       });
     }
 

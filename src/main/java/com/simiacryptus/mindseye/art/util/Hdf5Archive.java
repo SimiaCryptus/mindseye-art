@@ -264,67 +264,71 @@ public class Hdf5Archive {
   private Tensor readDataSet(@Nonnull Group fileGroup, CharSequence datasetName) {
     DataSet dataset = fileGroup.openDataSet(datasetName.toString());
     DataSpace space = dataset.getSpace();
-    int nbDims = space.getSimpleExtentNdims();
-    @Nonnull long[] dims = new long[nbDims];
-    space.getSimpleExtentDims(dims);
-    @Nullable float[] dataBuffer = null;
-    @Nullable FloatPointer fp = null;
-    int j = 0;
-    @Nonnull DataType dataType = new DataType(PredType.NATIVE_FLOAT());
-    @Nullable Tensor data = null;
-    switch (nbDims) {
-      case 4: /* 2D Convolution weights */
-        dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2] * dims[3])];
-        fp = new FloatPointer(dataBuffer);
-        dataset.read(fp, dataType);
-        fp.get(dataBuffer);
-        data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2], (int) dims[3]);
-        j = 0;
-        for (int i1 = 0; i1 < dims[0]; i1++)
-          for (int i2 = 0; i2 < dims[1]; i2++)
-            for (int i3 = 0; i3 < dims[2]; i3++)
-              for (int i4 = 0; i4 < dims[3]; i4++)
-                data.set(i1, i2, i3, i4, (double) dataBuffer[j++]);
-        break;
-      case 3:
-        dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2])];
-        fp = new FloatPointer(dataBuffer);
-        dataset.read(fp, dataType);
-        fp.get(dataBuffer);
-        data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2]);
-        j = 0;
-        for (int i1 = 0; i1 < dims[0]; i1++)
-          for (int i2 = 0; i2 < dims[1]; i2++)
-            for (int i3 = 0; i3 < dims[2]; i3++)
-              data.set(i1, i2, i3, dataBuffer[j++]);
-        break;
-      case 2: /* Dense and Recurrent weights */
-        dataBuffer = new float[(int) (dims[0] * dims[1])];
-        fp = new FloatPointer(dataBuffer);
-        dataset.read(fp, dataType);
-        fp.get(dataBuffer);
-        data = new Tensor((int) dims[0], (int) dims[1]);
-        j = 0;
-        for (int i1 = 0; i1 < dims[0]; i1++)
-          for (int i2 = 0; i2 < dims[1]; i2++)
-            data.set(i1, i2, dataBuffer[j++]);
-        break;
-      case 1: /* Bias */
-        dataBuffer = new float[(int) dims[0]];
-        fp = new FloatPointer(dataBuffer);
-        dataset.read(fp, dataType);
-        fp.get(dataBuffer);
-        data = new Tensor((int) dims[0]);
-        j = 0;
-        for (int i1 = 0; i1 < dims[0]; i1++)
-          data.set(i1, dataBuffer[j++]);
-        break;
-      default:
-        throw new RuntimeException("Cannot import weights apply rank " + nbDims);
+    try {
+      int nbDims = space.getSimpleExtentNdims();
+      @Nonnull long[] dims = new long[nbDims];
+      space.getSimpleExtentDims(dims);
+      @Nullable float[] dataBuffer = null;
+      @Nullable FloatPointer fp = null;
+      int j = 0;
+      @Nonnull DataType dataType = new DataType(PredType.NATIVE_FLOAT());
+      @Nullable Tensor data = null;
+      switch (nbDims) {
+        case 4: /* 2D Convolution weights */
+          dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2] * dims[3])];
+          fp = new FloatPointer(dataBuffer);
+          dataset.read(fp, dataType);
+          fp.get(dataBuffer);
+          data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2], (int) dims[3]);
+          j = 0;
+          for (int i1 = 0; i1 < dims[0]; i1++)
+            for (int i2 = 0; i2 < dims[1]; i2++)
+              for (int i3 = 0; i3 < dims[2]; i3++)
+                for (int i4 = 0; i4 < dims[3]; i4++)
+                  data.set(i1, i2, i3, i4, (double) dataBuffer[j++]);
+          break;
+        case 3:
+          dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2])];
+          fp = new FloatPointer(dataBuffer);
+          dataset.read(fp, dataType);
+          fp.get(dataBuffer);
+          data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2]);
+          j = 0;
+          for (int i1 = 0; i1 < dims[0]; i1++)
+            for (int i2 = 0; i2 < dims[1]; i2++)
+              for (int i3 = 0; i3 < dims[2]; i3++)
+                data.set(i1, i2, i3, dataBuffer[j++]);
+          break;
+        case 2: /* Dense and Recurrent weights */
+          dataBuffer = new float[(int) (dims[0] * dims[1])];
+          fp = new FloatPointer(dataBuffer);
+          dataset.read(fp, dataType);
+          fp.get(dataBuffer);
+          data = new Tensor((int) dims[0], (int) dims[1]);
+          j = 0;
+          for (int i1 = 0; i1 < dims[0]; i1++)
+            for (int i2 = 0; i2 < dims[1]; i2++)
+              data.set(i1, i2, dataBuffer[j++]);
+          break;
+        case 1: /* Bias */
+          dataBuffer = new float[(int) dims[0]];
+          fp = new FloatPointer(dataBuffer);
+          dataset.read(fp, dataType);
+          fp.get(dataBuffer);
+          data = new Tensor((int) dims[0]);
+          j = 0;
+          for (int i1 = 0; i1 < dims[0]; i1++)
+            data.set(i1, dataBuffer[j++]);
+          break;
+        default:
+          throw new RuntimeException("Cannot import weights apply rank " + nbDims);
+      }
+      return data;
+    } finally {
+      space.deallocate();
+      dataset.deallocate();
+      dataset.close();
     }
-    space.deallocate();
-    dataset.deallocate();
-    return data;
   }
 
   @Nonnull

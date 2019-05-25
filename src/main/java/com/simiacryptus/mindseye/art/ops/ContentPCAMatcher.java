@@ -87,8 +87,8 @@ public class ContentPCAMatcher implements VisualModifier {
     signalProjection.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new NthPowerActivationLayer().setPower(0.5),
-        new LinearActivationLayer().setScale(Math.pow(mag, -1))
+        new LinearActivationLayer().setScale(Math.pow(mag, -2))
+//        ,new NthPowerActivationLayer().setPower(0.5)
     ).setName(String.format("RMS / %.0E", mag)));
 
     network.wrap(signalProjection.setName(String.format("PCA Content Match"))).freeRef();

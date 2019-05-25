@@ -37,8 +37,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.UUID;
 
-public class GramMatrixMatcher implements VisualModifier {
-  private static final Logger log = LoggerFactory.getLogger(GramMatrixMatcher.class);
+public class GramMatrixCenteredMatcher implements VisualModifier {
+  private static final Logger log = LoggerFactory.getLogger(GramMatrixCenteredMatcher.class);
   private final Precision precision = Precision.Float;
   private boolean averaging = true;
   private boolean balanced = true;
@@ -98,25 +98,24 @@ public class GramMatrixMatcher implements VisualModifier {
   }
 
   @NotNull
-  public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor model, Tensor... image) {
+  public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor cov, Tensor... image) {
     network = (PipelineNetwork) MultiPrecision.setPrecision(network.copyPipeline(), precision);
     network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
     int pixels = Arrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
-    if(null == model) model = eval(pixels==0?1:pixels, network, getTileSize(), image);
-    double mag = balanced ? model.rms() : 1;
-    network.wrap(loss(model, mag, isAveraging())).freeRef();
+    if(null == cov) cov = eval(pixels==0?1:pixels, network, getTileSize(), image);
+    double mag = balanced ? cov.rms() : 1;
+    network.wrap(loss(cov, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
   }
-
 
   public boolean isAveraging() {
     return averaging;
   }
 
-  public GramMatrixMatcher setAveraging(boolean averaging) {
+  public GramMatrixCenteredMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
@@ -125,7 +124,7 @@ public class GramMatrixMatcher implements VisualModifier {
     return balanced;
   }
 
-  public GramMatrixMatcher setBalanced(boolean balanced) {
+  public GramMatrixCenteredMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
@@ -134,7 +133,7 @@ public class GramMatrixMatcher implements VisualModifier {
     return tileSize;
   }
 
-  public GramMatrixMatcher setTileSize(int tileSize) {
+  public GramMatrixCenteredMatcher setTileSize(int tileSize) {
     this.tileSize = tileSize;
     return this;
   }

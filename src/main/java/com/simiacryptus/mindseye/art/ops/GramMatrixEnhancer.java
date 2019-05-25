@@ -21,10 +21,10 @@ package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
-import com.simiacryptus.mindseye.layers.cudnn.GramianLayer;
-import com.simiacryptus.mindseye.layers.cudnn.ProductLayer;
-import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
+import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
+import com.simiacryptus.mindseye.lang.cudnn.Precision;
+import com.simiacryptus.mindseye.layers.cudnn.*;
+import com.simiacryptus.mindseye.layers.java.AbsActivationLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
@@ -36,11 +36,27 @@ import java.util.Arrays;
 
 public class GramMatrixEnhancer implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixEnhancer.class);
+  private final Precision precision = Precision.Float;
   private double min = -1;
   private double max = 1;
   private boolean averaging = true;
   private boolean balanced = true;
   private int tileSize = 600;
+
+  public static class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
+    @NotNull
+    public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
+      PipelineNetwork rmsNetwork = new PipelineNetwork(1);
+      rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
+      rmsNetwork.wrap(averaging ? new AvgReducerLayer() : new SumReducerLayer(),
+          rmsNetwork.wrap(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()),
+              rmsNetwork.wrap(new LinearActivationLayer().setScale(-Math.pow(mag, -2)),
+                  rmsNetwork.wrap(new AbsActivationLayer())
+              )
+          )).freeRef();
+      return rmsNetwork;
+    }
+  }
 
   @NotNull
   public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
@@ -57,8 +73,8 @@ public class GramMatrixEnhancer implements VisualModifier {
 
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
-    network = network.copyPipeline();
-    network.wrap(new GramianLayer(GramMatrixMatcher.getAppendUUID(network, GramianLayer.class))).freeRef();
+    network = (PipelineNetwork) MultiPrecision.setPrecision(network.copyPipeline(), precision);
+    network.wrap(new GramianLayer(GramMatrixMatcher.getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
     int pixels = Arrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
