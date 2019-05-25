@@ -30,23 +30,23 @@ import java.util.function.Consumer;
 public enum VGG19 implements VisionPipelineLayer {
   VGG19_0(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase0),
   VGG19_1a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1a),
-  VGG19_1b1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1b1),
-  VGG19_1b2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1b2),
-  VGG19_1c1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1c1),
-  VGG19_1c2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1c2),
-  VGG19_1c3(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1c3),
-  VGG19_1c4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1c4),
-  VGG19_1d1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1d1),
-  VGG19_1d2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1d2),
-  VGG19_1d3(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1d3),
-  VGG19_1d4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1d4),
-  VGG19_1e1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1e1),
-  VGG19_1e2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1e2),
-  VGG19_1e3(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1e3),
-  VGG19_1e4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1e4),
-  VGG19_2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase2),
-  VGG19_3a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase3a),
-  VGG19_3b(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase3b);
+  VGG19_1b1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 64, 128, getVGG19_hdf5()::phase1b1),
+  VGG19_1b2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 128, 128, getVGG19_hdf5()::phase1b2),
+  VGG19_1c1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 128, 256, getVGG19_hdf5()::phase1c1),
+  VGG19_1c2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 256, 256, getVGG19_hdf5()::phase1c2),
+  VGG19_1c3(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 256, 256, getVGG19_hdf5()::phase1c3),
+  VGG19_1c4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 256, 256, getVGG19_hdf5()::phase1c4),
+  VGG19_1d1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 256, 512, getVGG19_hdf5()::phase1d1),
+  VGG19_1d2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 512, 512, getVGG19_hdf5()::phase1d2),
+  VGG19_1d3(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 512, 512, getVGG19_hdf5()::phase1d3),
+  VGG19_1d4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 512, 512, getVGG19_hdf5()::phase1d4),
+  VGG19_1e1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 512, 512, getVGG19_hdf5()::phase1e1),
+  VGG19_1e2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 512, 512, getVGG19_hdf5()::phase1e2),
+  VGG19_1e3(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 512, 512, getVGG19_hdf5()::phase1e3),
+  VGG19_1e4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 512, 512, getVGG19_hdf5()::phase1e4),
+  VGG19_2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 512, 4096, getVGG19_hdf5()::phase2);
+//  VGG19_3a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase3a),
+//  VGG19_3b(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase3b);
 
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
   private static VGG19_HDF5 VGG19_hdf5 = null;
@@ -88,11 +88,19 @@ public enum VGG19 implements VisionPipelineLayer {
     return VGG19_hdf5;
   }
 
+  private volatile PipelineNetwork pipeline = null;
+
   @Override
   public Layer getLayer() {
-    PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
-    fn.accept(pipeline);
-    return pipeline;
+    if (null == pipeline) {
+      synchronized (this) {
+        if (null == pipeline) {
+          pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
+          fn.accept(pipeline);
+        }
+      }
+    }
+    return pipeline.copyPipeline();
   }
 
   @Override

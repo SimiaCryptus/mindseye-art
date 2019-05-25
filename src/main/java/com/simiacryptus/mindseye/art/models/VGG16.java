@@ -85,11 +85,18 @@ public enum VGG16 implements VisionPipelineLayer {
     return vgg16_hdf5;
   }
 
+  private volatile PipelineNetwork pipeline = null;
   @Override
   public Layer getLayer() {
-    PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
-    fn.accept(pipeline);
-    return pipeline;
+    if(null == pipeline) {
+      synchronized (this) {
+        if(null == pipeline) {
+          pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
+          fn.accept(pipeline);
+        }
+      }
+    }
+    return pipeline.copyPipeline();
   }
 
   @Override

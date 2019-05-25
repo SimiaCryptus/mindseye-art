@@ -21,7 +21,7 @@ package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.art.models.Inception5H;
 import com.simiacryptus.mindseye.art.ops.GramMatrixMatcher;
-import com.simiacryptus.mindseye.art.ops.RMSContentMatcher;
+import com.simiacryptus.mindseye.art.ops.ContentMatcher;
 import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
@@ -56,7 +56,7 @@ public class NetworkTest extends LayerTestBase {
     DAGNetwork dagNetwork = MultiPrecision.setPrecision(SumInputsLayer.combine(
         new GramMatrixMatcher().build(Inception5H.Inc5H_2a, styleTensor),
         new GramMatrixMatcher().build(Inception5H.Inc5H_3a, styleTensor),
-        new RMSContentMatcher().build(Tensor.fromRGB(contentImage))
+        new ContentMatcher().build(Tensor.fromRGB(contentImage))
             .andThenWrap(new LinearActivationLayer().setScale(1e-1).freeze())
     ), Precision.Float);
     styleTensor.freeRef();

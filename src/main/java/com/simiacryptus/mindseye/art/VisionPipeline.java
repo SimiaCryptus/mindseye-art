@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class VisionPipeline<T extends VisionPipelineLayer> {
@@ -48,8 +49,8 @@ public class VisionPipeline<T extends VisionPipelineLayer> {
     return layers.get(layer).copy();
   }
 
-  public Map<T, PipelineNetwork> getLayers() {
-    return Collections.unmodifiableMap(layers);
+  public LinkedHashMap<T, PipelineNetwork> getLayers() {
+    return new LinkedHashMap<>(layers);
   }
 
 }

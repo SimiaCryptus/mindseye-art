@@ -22,8 +22,8 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.art.models.Inception5H;
 import com.simiacryptus.mindseye.art.ops.ChannelMeanMatcher;
 import com.simiacryptus.mindseye.art.ops.GramMatrixMatcher;
-import com.simiacryptus.mindseye.art.ops.RMSChannelEnhancer;
-import com.simiacryptus.mindseye.art.ops.RMSContentMatcher;
+import com.simiacryptus.mindseye.art.ops.ChannelMeanEnhancer;
+import com.simiacryptus.mindseye.art.ops.ContentMatcher;
 import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
 import com.simiacryptus.mindseye.eval.ArrayTrainable;
 import com.simiacryptus.mindseye.lang.Layer;
@@ -90,7 +90,7 @@ public class OptimizationTest {
   @Test
   public void testDream() throws InterruptedException {
     Tensor image = Tensor.fromRGB(VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500));
-    train(image, new RMSChannelEnhancer().build(Inception5H.Inc5H_3b, image), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1));
+    train(image, new ChannelMeanEnhancer().build(Inception5H.Inc5H_3b, image), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1));
     Thread.sleep(100000);
   }
 
@@ -103,7 +103,7 @@ public class OptimizationTest {
             new GramMatrixMatcher().build(Inception5H.Inc5H_1a, styleImage),
             new GramMatrixMatcher().build(Inception5H.Inc5H_2a, styleImage),
             new GramMatrixMatcher().build(Inception5H.Inc5H_3a, styleImage),
-            new RMSContentMatcher().build(contentImage)
+            new ContentMatcher().build(contentImage)
             //.andThenWrap(new LinearActivationLayer().setScale(1e0).freeze())
         ), Precision.Float), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4)
     );

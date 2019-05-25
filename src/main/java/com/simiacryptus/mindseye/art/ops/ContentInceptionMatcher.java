@@ -61,8 +61,8 @@ public class ContentInceptionMatcher implements VisualModifier {
     network.wrap(PipelineNetwork.wrap(1,
         new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()),
         new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new NthPowerActivationLayer().setPower(0.5)
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()
+//        ,new NthPowerActivationLayer().setPower(0.5)
     ).setName(String.format("-RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }

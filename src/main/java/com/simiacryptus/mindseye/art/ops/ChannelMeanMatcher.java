@@ -23,8 +23,8 @@ import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
-import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
@@ -35,25 +35,35 @@ public class ChannelMeanMatcher implements VisualModifier {
 
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+    Tensor meanSignal = null;
+    return buildWithModel(network, meanSignal, image);
+  }
+
+  @NotNull
+  public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor meanSignal, Tensor... image) {
     network = network.copyPipeline();
     network.wrap(new BandAvgReducerLayer()).freeRef();
-    PipelineNetwork finalNetwork = network;
-    Tensor result = Arrays.stream(image).map(tensor -> {
-      return finalNetwork.eval(tensor).getDataAndFree().getAndFree(0);
-    }).reduce((a, b) -> {
+    if (meanSignal == null) meanSignal = channelMeans(network, image);
+    double mag = isBalanced() ? meanSignal.rms() : 1;
+    network.wrap(PipelineNetwork.wrap(1,
+        new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)),
+        new SquareActivationLayer(),
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
+        new LinearActivationLayer().setScale(Math.pow(mag, -2))
+//        ,new NthPowerActivationLayer().setPower(0.5)
+    ).setName(String.format("RMS[x-C] / %.0E", mag))).freeRef();
+    return (PipelineNetwork) network.freeze();
+  }
+
+  @NotNull
+  private Tensor channelMeans(PipelineNetwork finalNetwork, Tensor... image) {
+    return Arrays.stream(image).map(tensor ->
+        finalNetwork.eval(tensor).getDataAndFree().getAndFree(0)
+    ).reduce((a, b) -> {
       Tensor c = a.addAndFree(b);
       b.freeRef();
       return c;
     }).get().scaleInPlace(1.0 / image.length);
-    double mag = isBalanced() ? result.rms() : 1;
-    network.wrap(PipelineNetwork.wrap(1,
-        new ImgBandBiasLayer(result.scaleInPlace(-1)),
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new NthPowerActivationLayer().setPower(0.5),
-        new LinearActivationLayer().setScale(Math.pow(mag, -1))
-    ).setName(String.format("RMS[x-C] / %.0E", mag))).freeRef();
-    return (PipelineNetwork) network.freeze();
   }
 
   public boolean isBalanced() {

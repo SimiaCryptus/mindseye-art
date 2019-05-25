@@ -45,17 +45,17 @@ public interface VisualModifier {
   ;
 
   default VisualModifier combine(VisualModifier right) {
-    return (original, image) -> SumInputsLayer.combine(
+    return (original, image) -> (PipelineNetwork) SumInputsLayer.combine(
         this.build(original.copyPipeline(), image),
         right.build(original.copyPipeline(), image)
-    );
+    ).freeze();
   }
 
   default VisualModifier scale(double scale) {
     return (original, image) -> {
       PipelineNetwork build = this.build(original, image);
       build.wrap(new LinearActivationLayer().setScale(scale).freeze());
-      return build;
+      return (PipelineNetwork) build.freeze();
     };
   }
 
@@ -63,7 +63,7 @@ public interface VisualModifier {
     return (original, image) -> {
       PipelineNetwork build = this.build(original, image);
       build.wrap(new NthPowerActivationLayer().setPower(power).freeze());
-      return build;
+      return (PipelineNetwork) build.freeze();
     };
   }
 
