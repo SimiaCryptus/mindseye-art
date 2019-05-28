@@ -27,7 +27,6 @@ import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
-import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 public class ContentConvolutionMatcher implements VisualModifier {

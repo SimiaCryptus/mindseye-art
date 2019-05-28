@@ -54,6 +54,7 @@ public enum VGG16 implements VisionPipelineLayer {
   private final int[] strides;
   private final int inputChannels;
   private final int outputChannels;
+  private volatile PipelineNetwork pipeline = null;
 
   VGG16(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, Consumer<PipelineNetwork> fn) {
     this.fn = fn;
@@ -85,12 +86,11 @@ public enum VGG16 implements VisionPipelineLayer {
     return vgg16_hdf5;
   }
 
-  private volatile PipelineNetwork pipeline = null;
   @Override
   public Layer getLayer() {
-    if(null == pipeline) {
+    if (null == pipeline) {
       synchronized (this) {
-        if(null == pipeline) {
+        if (null == pipeline) {
           pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
           fn.accept(pipeline);
         }
