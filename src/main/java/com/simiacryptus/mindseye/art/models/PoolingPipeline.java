@@ -29,7 +29,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public enum PoolingPipeline implements VisionPipelineLayer {
-  Pooling0(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3, (PipelineNetwork pipeline)->{}),
+  Pooling0(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3, (PipelineNetwork pipeline) -> {
+  }),
   Pooling2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
   Pooling4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
   Pooling8(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
@@ -48,8 +49,8 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   private final int outputChannels;
 
   PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels) {
-    this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels, (PipelineNetwork pipeline)->pipeline.wrap(new PoolingLayer()
-        .setStrideXY(2,2).setWindowXY(2,2).setMode(PoolingLayer.PoolingMode.Max)));
+    this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels, (PipelineNetwork pipeline) -> pipeline.wrap(new PoolingLayer()
+        .setStrideXY(2, 2).setWindowXY(2, 2).setMode(PoolingLayer.PoolingMode.Max)));
   }
 
   PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, Consumer<PipelineNetwork> fn) {

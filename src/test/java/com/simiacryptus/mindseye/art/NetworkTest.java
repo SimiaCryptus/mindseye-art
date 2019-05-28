@@ -20,8 +20,8 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.art.models.Inception5H;
-import com.simiacryptus.mindseye.art.ops.GramMatrixMatcher;
 import com.simiacryptus.mindseye.art.ops.ContentMatcher;
+import com.simiacryptus.mindseye.art.ops.GramMatrixMatcher;
 import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;

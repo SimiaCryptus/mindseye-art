@@ -105,7 +105,7 @@ public class GramMatrixMatcher implements VisualModifier {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
-    if(null == model) model = eval(pixels==0?1:pixels, network, getTileSize(), image);
+    if (null == model) model = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), image);
     double mag = balanced ? model.rms() : 1;
     network.wrap(loss(model, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();

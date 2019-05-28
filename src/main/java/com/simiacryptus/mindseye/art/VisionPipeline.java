@@ -23,10 +23,7 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 public class VisionPipeline<T extends VisionPipelineLayer> {
   private static final Logger logger = LoggerFactory.getLogger(VisionPipeline.class);

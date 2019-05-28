@@ -23,7 +23,10 @@ import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
-import com.simiacryptus.mindseye.layers.cudnn.*;
+import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
+import com.simiacryptus.mindseye.layers.cudnn.GramianLayer;
+import com.simiacryptus.mindseye.layers.cudnn.ProductLayer;
+import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.AbsActivationLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
@@ -42,21 +45,6 @@ public class GramMatrixEnhancer implements VisualModifier {
   private boolean averaging = true;
   private boolean balanced = true;
   private int tileSize = 600;
-
-  public static class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
-    @NotNull
-    public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
-      PipelineNetwork rmsNetwork = new PipelineNetwork(1);
-      rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
-      rmsNetwork.wrap(averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-          rmsNetwork.wrap(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()),
-              rmsNetwork.wrap(new LinearActivationLayer().setScale(-Math.pow(mag, -2)),
-                  rmsNetwork.wrap(new AbsActivationLayer())
-              )
-          )).freeRef();
-      return rmsNetwork;
-    }
-  }
 
   @NotNull
   public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
@@ -134,5 +122,20 @@ public class GramMatrixEnhancer implements VisualModifier {
     this.min = minValue;
     this.max = maxValue;
     return this;
+  }
+
+  public static class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
+    @NotNull
+    public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
+      PipelineNetwork rmsNetwork = new PipelineNetwork(1);
+      rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
+      rmsNetwork.wrap(averaging ? new AvgReducerLayer() : new SumReducerLayer(),
+          rmsNetwork.wrap(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()),
+              rmsNetwork.wrap(new LinearActivationLayer().setScale(-Math.pow(mag, -2)),
+                  rmsNetwork.wrap(new AbsActivationLayer())
+              )
+          )).freeRef();
+      return rmsNetwork;
+    }
   }
 }

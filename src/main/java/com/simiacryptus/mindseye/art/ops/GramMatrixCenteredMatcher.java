@@ -105,7 +105,7 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
-    if(null == cov) cov = eval(pixels==0?1:pixels, network, getTileSize(), image);
+    if (null == cov) cov = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), image);
     double mag = balanced ? cov.rms() : 1;
     network.wrap(loss(cov, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
