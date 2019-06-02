@@ -238,8 +238,7 @@ public class VisionPipelineUtil {
       int[] inputBorders = layer.getInputBorders();
       int[] array = IntStream.range(0, inputBorders.length).filter(d -> {
         if (inputBorders[d] > coords[d]) return true;
-        if (((inputDims[d]) - inputBorders[d]) <= coords[d]) return true;
-        return false;
+        return ((inputDims[d]) - inputBorders[d]) <= coords[d];
       }).toArray();
       if (array.length == 0) {
         log.warn("Underrepresented Input: " + e.getKey() + " = " + e.getValue());
@@ -251,8 +250,7 @@ public class VisionPipelineUtil {
       int[] outputBorders = layer.getOutputBorders();
       int[] array = IntStream.range(0, outputBorders.length).filter(d -> {
         if (outputBorders[d] > coords[d]) return true;
-        if (((outputDims[d]) - outputBorders[d]) <= coords[d]) return true;
-        return false;
+        return ((outputDims[d]) - outputBorders[d]) <= coords[d];
       }).toArray();
       if (0 == array.length) {
         log.warn("Underrepresented Output: " + e.getKey() + " = " + e.getValue());

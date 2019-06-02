@@ -36,13 +36,9 @@ public interface VisualModifier {
     return pipelineNetwork;
   }
 
-  ;
-
   default PipelineNetwork build(Tensor... image) {
     return build((PipelineNetwork) new PipelineNetwork().setName("Input"), image);
   }
-
-  ;
 
   default VisualModifier combine(VisualModifier right) {
     return (original, image) -> (PipelineNetwork) SumInputsLayer.combine(
