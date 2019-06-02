@@ -80,7 +80,7 @@ public enum VGG16 implements VisionPipelineLayer {
   public static VGG16_HDF5 getVgg16_hdf5() {
     if (null == vgg16_hdf5) {
       if (null == vgg16_hdf5) {
-        vgg16_hdf5 = (VGG16_HDF5) VGG16_HDF5.fromHDF5();
+        vgg16_hdf5 = VGG16_HDF5.fromHDF5();
       }
     }
     return vgg16_hdf5;

@@ -328,37 +328,37 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     public void layerPins(NotebookOutput log) {
       int sizeMultiplier = 1;
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_1a, new int[]{32 * sizeMultiplier, 24 * sizeMultiplier, 3});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_1a, 32 * sizeMultiplier, 24 * sizeMultiplier, 3);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_2a, new int[]{16 * sizeMultiplier, 12 * sizeMultiplier, 64});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_2a, 16 * sizeMultiplier, 12 * sizeMultiplier, 64);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_3a, new int[]{8 * sizeMultiplier, 6 * sizeMultiplier, 192});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_3a, 8 * sizeMultiplier, 6 * sizeMultiplier, 192);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_3b, new int[]{4 * sizeMultiplier, 3 * sizeMultiplier, 256});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_3b, 4 * sizeMultiplier, 3 * sizeMultiplier, 256);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4a, new int[]{4 * sizeMultiplier, 3 * sizeMultiplier, 480});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_4a, 4 * sizeMultiplier, 3 * sizeMultiplier, 480);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4b, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 508});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_4b, 2 * sizeMultiplier, 2 * sizeMultiplier, 508);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4c, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 512});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_4c, 2 * sizeMultiplier, 2 * sizeMultiplier, 512);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4d, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 512});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_4d, 2 * sizeMultiplier, 2 * sizeMultiplier, 512);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4e, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 528});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_4e, 2 * sizeMultiplier, 2 * sizeMultiplier, 528);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_5a, new int[]{2 * sizeMultiplier, 2 * sizeMultiplier, 832});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_5a, 2 * sizeMultiplier, 2 * sizeMultiplier, 832);
       });
       log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_5b, new int[]{1 * sizeMultiplier, 1 * sizeMultiplier, 832});
+        VisionPipelineUtil.testPinConnectivity(Inc5H_5b, 1 * sizeMultiplier, 1 * sizeMultiplier, 832);
       });
     }
 
