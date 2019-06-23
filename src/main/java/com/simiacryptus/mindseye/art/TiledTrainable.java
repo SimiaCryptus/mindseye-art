@@ -38,9 +38,6 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
-/**
- * The type Tiled trainable.
- */
 public abstract class TiledTrainable extends ReferenceCountingBase implements Trainable {
 
   private static final Logger logger = LoggerFactory.getLogger(TiledTrainable.class);

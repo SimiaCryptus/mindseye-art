@@ -317,11 +317,6 @@ public class VisionPipelineUtil {
     return fileSystem;
   }
 
-  /**
-   * Gets hadoop config.
-   *
-   * @return the hadoop config
-   */
   @Nonnull
   public static Configuration getHadoopConfig() {
     Configuration configuration = new Configuration(false);
