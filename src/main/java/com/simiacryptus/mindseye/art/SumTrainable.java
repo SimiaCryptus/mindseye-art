@@ -35,9 +35,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * The type Tiled trainable.
- */
 public class SumTrainable extends ReferenceCountingBase implements Trainable {
 
   private static final Logger logger = LoggerFactory.getLogger(SumTrainable.class);
