@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 public class MomentMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(MomentMatcher.class);
   private final Precision precision = Precision.Float;
-  private int tileSize = 600;
+  private int tileSize = 400;
   private double posCoeff = 1.0;
   private double scaleCoeff = 1.0;
   private double covCoeff = 1.0;
@@ -119,14 +119,13 @@ public class MomentMatcher implements VisualModifier {
     Tensor evalAvg = eval(pixels, network, getTileSize(), precision, 1.0, image);
     InnerNode recentered = network.wrap(new ImgBandDynamicBiasLayer().setPrecision(precision), mainIn,
         network.wrap(new ScaleLayer(-1).setPrecision(precision), avg.addRef()));
-    ;
 
     InnerNode rms = network.wrap(new NthPowerActivationLayer().setPower(0.5),
         network.wrap(new com.simiacryptus.mindseye.layers.cudnn.BandAvgReducerLayer().setPrecision(precision),
             network.wrap(new SquareActivationLayer().setPrecision(precision), recentered.addRef())
         )
     );
-    Tensor evalRms = eval(pixels, network, getTileSize(), precision, 1.0, image);
+    Tensor evalRms = eval(pixels, network, getTileSize(), precision, 2.0, image);
     InnerNode rescaled = network.wrap(new ProductLayer().setPrecision(precision), recentered,
         network.wrap(new BoundedActivationLayer().setMinValue(0.0).setMaxValue(1e4),
             network.wrap(new NthPowerActivationLayer().setPower(-1), rms.addRef())));
