@@ -25,11 +25,14 @@ import com.simiacryptus.lang.ref.ReferenceCountingBase;
 import com.simiacryptus.mindseye.eval.BasicTrainable;
 import com.simiacryptus.mindseye.eval.Trainable;
 import com.simiacryptus.mindseye.lang.*;
+import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
-import com.simiacryptus.mindseye.layers.cudnn.ImgTileSelectLayer;
+import com.simiacryptus.mindseye.layers.java.ImgPixelGateLayer;
+import com.simiacryptus.mindseye.layers.java.ImgTileSelectLayer;
+import com.simiacryptus.mindseye.network.DAGNetwork;
+import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +50,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   private final Layer[] selectors;
   private final PipelineNetwork[] networks;
   @Nonnull
-  private final Precision precision;
+  private Precision precision;
   private boolean mutableCanvas = true;
 
   public TiledTrainable(Tensor canvas, int tileSize, int padding) {
@@ -66,24 +69,19 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     this(canvas, filter, tileSize, padding, precision, true);
   }
 
-  public TiledTrainable(Tensor canvas, Layer filter, int tileSize, int padding, @Nonnull Precision precision, boolean largeTiles) {
-    this.precision = precision;
+  public TiledTrainable(Tensor canvas, Layer filter, int tileSize, int padding, @Nonnull Precision precision, boolean fade) {
+    this.setPrecision(precision);
     this.canvas = canvas;
     this.filter = filter.addRef();
-    Tensor filteredCanvas = this.filter.eval(canvas).getDataAndFree().getAndFree(0);
+    Tensor filteredCanvas = this.getFilter().eval(canvas).getDataAndFree().getAndFree(0);
     assert 3 == filteredCanvas.getDimensions().length;
     int width = filteredCanvas.getDimensions()[0];
     int height = filteredCanvas.getDimensions()[1];
     int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
     if (cols != 1 || rows != 1) {
-      @NotNull ImgTileSelectLayer[] selectors = selectors(padding, width, height, tileSize, getPrecision());
-      if (largeTiles) {
-        this.selectors = Arrays.stream(selectors).map(ImgTileSelectLayer::getCompatibilityLayer).toArray(i -> new Layer[i]);
-      } else {
-        this.selectors = selectors;
-      }
-      networks = Arrays.stream(this.selectors)
+      this.selectors = selectors(padding, width, height, tileSize, fade);
+      networks = Arrays.stream(this.getSelectors())
           .map(selector -> PipelineNetwork.build(1, filter, selector))
           .map(this::getNetwork)
           .toArray(i -> new PipelineNetwork[i]);
@@ -91,11 +89,10 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       selectors = null;
       networks = null;
     }
-    logger.info("Trainable canvas ID: " + this.canvas.getId());
+    logger.info("Trainable canvas ID: " + this.getCanvas().getId());
   }
 
-  @NotNull
-  public static ImgTileSelectLayer[] selectors(int padding, int width, int height, int tileSize, Precision precision) {
+  public static Layer[] selectors(int padding, int width, int height, int tileSize, boolean fade) {
     int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int tileSizeX = (cols <= 1) ? width : (int) Math.ceil(((double) (width - padding) / cols) + padding);
@@ -116,19 +113,44 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
               height,
               0,
               0
-          ).setPrecision(precision)
+          )
       };
     } else {
-      ImgTileSelectLayer[] selectors = new ImgTileSelectLayer[rows * cols];
+      Layer[] selectors = new Layer[rows * cols];
       int index = 0;
       for (int row = 0; row < rows; row++) {
         for (int col = 0; col < cols; col++) {
-          selectors[index++] = new ImgTileSelectLayer(
+          ImgTileSelectLayer tileSelectLayer = new ImgTileSelectLayer(
               tileSizeX,
               tileSizeY,
               col * (tileSizeX - padding),
               row * (tileSizeY - padding)
-          ).setPrecision(precision);
+          );
+          if(!fade) {
+            selectors[index++] = tileSelectLayer;
+          } else {
+            int finalCol = col;
+            int finalRow = row;
+            Tensor mask = new Tensor(tileSizeX, tileSizeY, 1).mapCoordsAndFree(c->{
+              int[] coords = c.getCoords();
+              double v = 1.0;
+              if(coords[0] < padding && finalCol > 0) {
+                v *= coords[0] / padding;
+              } else if((tileSizeX-coords[0]) < padding && finalCol < (cols-1)) {
+                v *= (double) (tileSizeX-coords[0]) / padding;
+              }
+              if(coords[1] < padding && finalRow > 0) {
+                v *= (double) coords[1] / padding;
+              } else if((tileSizeY-coords[1]) < padding && finalRow < (rows-1)) {
+                v *= (double) (tileSizeY-coords[1]) / padding;
+              }
+              return v;
+            });
+            PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
+            InnerNode selectNode = pipelineNetwork.wrap(tileSelectLayer);
+            pipelineNetwork.wrap(new ImgPixelGateLayer(), selectNode, pipelineNetwork.constValueWrap(mask));
+            selectors[index++] = pipelineNetwork;
+          }
         }
       }
       return selectors;
@@ -138,28 +160,28 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
     assertAlive();
-    if (null == selectors || 0 == selectors.length) {
+    if (null == getSelectors() || 0 == getSelectors().length) {
       Trainable trainable = new BasicTrainable(PipelineNetwork.wrap(1,
-          filter.addRef(),
-          getNetwork(filter.addRef())
+          getFilter().addRef(),
+          getNetwork(getFilter().addRef())
       ))
           .setMask(isMutableCanvas())
-          .setData(Arrays.asList(new Tensor[][]{{canvas}}));
+          .setData(Arrays.asList(new Tensor[][]{{getCanvas()}}));
       PointSample measure = trainable.measure(monitor);
       trainable.freeRef();
       return measure;
     } else {
       Result canvasBuffer;
       if (isMutableCanvas()) {
-        canvasBuffer = filter.evalAndFree(new MutableResult(canvas));
+        canvasBuffer = getFilter().evalAndFree(new MutableResult(getCanvas()));
       } else {
-        canvasBuffer = filter.evalAndFree(new ConstantResult(canvas));
+        canvasBuffer = getFilter().evalAndFree(new ConstantResult(getCanvas()));
       }
       AtomicDouble resultSum = new AtomicDouble(0);
-      final DeltaSet<UUID> delta = IntStream.range(0, selectors.length).mapToObj(i -> {
+      final DeltaSet<UUID> delta = IntStream.range(0, getSelectors().length).mapToObj(i -> {
         final DeltaSet<UUID> deltaSet = new DeltaSet<>();
-        Result tileInput = selectors[i].eval(canvasBuffer);
-        Result tileOutput = networks[i].eval(tileInput);
+        Result tileInput = getSelectors()[i].eval(canvasBuffer);
+        Result tileOutput = getNetworks()[i].eval(tileInput);
         tileInput.freeRef();
         tileInput.getData().freeRef();
         Tensor tensor = tileOutput.getData().getAndFree(0);
@@ -177,8 +199,8 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       canvasBuffer.getData().freeRef();
       canvasBuffer.freeRef();
       final StateSet<UUID> weights = new StateSet<>(delta);
-      if (delta.getMap().containsKey(canvas.getId())) {
-        weights.get(canvas.getId(), canvas.getData()).freeRef();
+      if (delta.getMap().containsKey(getCanvas().getId())) {
+        weights.get(getCanvas().getId(), getCanvas().getData()).freeRef();
       }
       assert delta.getMap().keySet().stream().allMatch(x -> weights.getMap().containsKey(x));
       PointSample pointSample = new PointSample(delta, weights, resultSum.get(), 0, 1);
@@ -197,10 +219,10 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
 
   @Override
   protected void _free() {
-    if (null != selectors) Arrays.stream(selectors).forEach(ReferenceCounting::freeRef);
-    if (null != networks) Arrays.stream(networks).forEach(ReferenceCounting::freeRef);
+    if (null != getSelectors()) Arrays.stream(getSelectors()).forEach(ReferenceCounting::freeRef);
+    if (null != getNetworks()) Arrays.stream(getNetworks()).forEach(ReferenceCounting::freeRef);
 
-    filter.freeRef();
+    getFilter().freeRef();
     super._free();
   }
 
@@ -218,4 +240,24 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     return precision;
   }
 
+  public Layer[] getSelectors() {
+    return selectors;
+  }
+
+  public PipelineNetwork[] getNetworks() {
+    return networks;
+  }
+
+  public Tensor getCanvas() {
+    return canvas;
+  }
+
+  public Layer getFilter() {
+    return filter;
+  }
+
+  public void setPrecision(@Nonnull Precision precision) {
+    this.precision = precision;
+    MultiPrecision.setPrecision((DAGNetwork) filter, precision);
+  }
 }

@@ -23,7 +23,6 @@ import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.mindseye.lang.cudnn.CudaSettings;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
 import com.simiacryptus.mindseye.layers.cudnn.*;
@@ -60,8 +59,7 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
   public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, Tensor... image) {
     return Arrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
-      return Arrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, CudaSettings.INSTANCE().defaultPrecision))
-          .map(s -> s.getCompatibilityLayer())
+      return Arrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, false))
           .map(selector -> {
             //log.info(selector.toString());
             Tensor tile = selector.eval(img).getDataAndFree().getAndFree(0);

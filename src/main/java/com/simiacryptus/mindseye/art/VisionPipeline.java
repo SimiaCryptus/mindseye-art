@@ -19,13 +19,14 @@
 
 package com.simiacryptus.mindseye.art;
 
+import com.simiacryptus.lang.ref.ReferenceCountingBase;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 
-public class VisionPipeline<T extends VisionPipelineLayer> {
+public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCountingBase {
   private static final Logger logger = LoggerFactory.getLogger(VisionPipeline.class);
 
   public final String name;
@@ -37,17 +38,22 @@ public class VisionPipeline<T extends VisionPipelineLayer> {
     PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
     for (T value : values) {
       pipelineNetwork.wrap(value.getLayer()).freeRef();
-      layers.put(value, (PipelineNetwork) pipelineNetwork.copy().freeze());
+      layers.put(value, (PipelineNetwork) pipelineNetwork.copyPipeline().freeze());
     }
     pipelineNetwork.freeRef();
   }
 
   public PipelineNetwork get(T layer) {
-    return layers.get(layer).copy();
+    return layers.get(layer).copyPipeline();
   }
 
   public LinkedHashMap<T, PipelineNetwork> getLayers() {
     return new LinkedHashMap<>(layers);
   }
 
+  @Override
+  protected void _free() {
+    layers.values().stream().forEach(ReferenceCountingBase::freeRef);
+    super._free();
+  }
 }

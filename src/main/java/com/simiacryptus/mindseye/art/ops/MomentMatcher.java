@@ -42,7 +42,8 @@ import java.util.stream.Stream;
 
 public class MomentMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(MomentMatcher.class);
-  private final Precision precision = Precision.Float;
+  private static int padding = 8;
+  private Precision precision = Precision.Float;
   private int tileSize = 400;
   private double posCoeff = 1.0;
   private double scaleCoeff = 1.0;
@@ -50,21 +51,21 @@ public class MomentMatcher implements VisualModifier {
 
   @NotNull
   public static Layer lossSq(Precision precision, Tensor target) {
+    double rms = target.rms();
     Layer layer = PipelineNetwork.wrap(1,
-        new LinearActivationLayer().setScale(Math.pow(target.rms(), -1)),
-        new ImgBandBiasLayer(target.scaleInPlace(-Math.pow(target.rms(), -1))).setPrecision(precision),
+        new LinearActivationLayer().setScale(Math.pow(rms, -1)),
+        new ImgBandBiasLayer(target.scaleInPlace(-Math.pow(rms, -1))).setPrecision(precision),
         new SquareActivationLayer().setPrecision(precision),
         new AvgReducerLayer().setPrecision(precision)
-    ).setName(String.format("RMS[x-C] / %.0E", target.rms()));
+    ).setName(String.format("RMS[x-C] / %.0E", rms));
     target.freeRef();
     return layer;
   }
 
-  protected static Tensor eval(int pixels, PipelineNetwork network, int tileSize, Precision precision, double power, Tensor[] image) {
+  protected static Tensor eval(int pixels, PipelineNetwork network, int tileSize, double power, Tensor[] image) {
     return sum(Arrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
-      return Arrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, precision))
-          .map(s -> s.getCompatibilityLayer())
+      return Arrays.stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
           .map(selector -> {
             //log.info(selector.toString());
             Tensor tile = selector.eval(img).getDataAndFree().getAndFree(0);
@@ -92,7 +93,7 @@ public class MomentMatcher implements VisualModifier {
   @NotNull
   public static Tensor sum(Stream<Tensor> tensorStream) {
     return tensorStream.reduce((a, b) -> {
-      a.addInPlace(b);
+      a.addAndFree(b);
       b.freeRef();
       return a;
     }).get();
@@ -107,46 +108,62 @@ public class MomentMatcher implements VisualModifier {
   }
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
-    network = (PipelineNetwork) MultiPrecision.setPrecision(network.copyPipeline(), precision);
-    int pixels = Math.max(1, Arrays.stream(image).mapToInt(x -> {
+  public PipelineNetwork build(PipelineNetwork network, Tensor... images) {
+    network = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
+    int pixels = Math.max(1, Arrays.stream(images).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum());
     DAGNode mainIn = network.getHead();
 
-    InnerNode avg = network.wrap(new com.simiacryptus.mindseye.layers.cudnn.BandAvgReducerLayer().setPrecision(precision), mainIn.addRef());
-    Tensor evalAvg = eval(pixels, network, getTileSize(), precision, 1.0, image);
-    InnerNode recentered = network.wrap(new ImgBandDynamicBiasLayer().setPrecision(precision), mainIn,
-        network.wrap(new ScaleLayer(-1).setPrecision(precision), avg.addRef()));
+    Tensor evalRoot = avg(network, pixels, images);
+    double sumSq = evalRoot.sumSq();
+    log.info(String.format("Adjust for %s : %s", network.getName(), sumSq));
+    network.wrap(new ScaleLayer(1.0/ sumSq));
+    evalRoot.freeRef();
+
+    InnerNode avg = network.wrap(new com.simiacryptus.mindseye.layers.cudnn.BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef());
+    Tensor evalAvg = eval(pixels, network, getTileSize(), 1.0, images);
+    InnerNode recentered = network.wrap(new ImgBandDynamicBiasLayer().setPrecision(getPrecision()), mainIn,
+        network.wrap(new ScaleLayer(-1).setPrecision(getPrecision()), avg.addRef()));
 
     InnerNode rms = network.wrap(new NthPowerActivationLayer().setPower(0.5),
-        network.wrap(new com.simiacryptus.mindseye.layers.cudnn.BandAvgReducerLayer().setPrecision(precision),
-            network.wrap(new SquareActivationLayer().setPrecision(precision), recentered.addRef())
+        network.wrap(new com.simiacryptus.mindseye.layers.cudnn.BandAvgReducerLayer().setPrecision(getPrecision()),
+            network.wrap(new SquareActivationLayer().setPrecision(getPrecision()), recentered.addRef())
         )
     );
-    Tensor evalRms = eval(pixels, network, getTileSize(), precision, 2.0, image);
-    InnerNode rescaled = network.wrap(new ProductLayer().setPrecision(precision), recentered,
+    Tensor evalRms = eval(pixels, network, getTileSize(), 2.0, images);
+    InnerNode rescaled = network.wrap(new ProductLayer().setPrecision(getPrecision()), recentered,
         network.wrap(new BoundedActivationLayer().setMinValue(0.0).setMaxValue(1e4),
             network.wrap(new NthPowerActivationLayer().setPower(-1), rms.addRef())));
 
-    InnerNode cov = network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision), rescaled);
-    Tensor evalCov = eval(pixels, network, getTileSize(), precision, 1.0, image);
+    InnerNode cov = network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(getPrecision()), rescaled);
+    Tensor evalCov = eval(pixels, network, getTileSize(), 1.0, images);
 
 
-    network.wrap(new SumInputsLayer().setPrecision(precision),
-        network.wrap(new ScaleLayer(getPosCoeff()).setPrecision(precision),
-            network.wrap(lossSq(precision, evalAvg), avg)
+    network.wrap(new SumInputsLayer().setPrecision(getPrecision()),
+        network.wrap(new ScaleLayer(getPosCoeff()).setPrecision(getPrecision()),
+            network.wrap(lossSq(getPrecision(), evalAvg), avg)
         ),
-        network.wrap(new ScaleLayer(getScaleCoeff()).setPrecision(precision),
-            network.wrap(lossSq(precision, evalRms), rms)
+        network.wrap(new ScaleLayer(getScaleCoeff()).setPrecision(getPrecision()),
+            network.wrap(lossSq(getPrecision(), evalRms), rms)
         ),
-        network.wrap(new ScaleLayer(getCovCoeff()).setPrecision(precision),
-            network.wrap(lossSq(precision, evalCov), cov)
+        network.wrap(new ScaleLayer(getCovCoeff()).setPrecision(getPrecision()),
+            network.wrap(lossSq(getPrecision(), evalCov), cov)
         )
     );
-    MultiPrecision.setPrecision(network, precision);
+    MultiPrecision.setPrecision(network, getPrecision());
     return (PipelineNetwork) network.freeze();
+  }
+
+  protected Tensor avg(PipelineNetwork network, int pixels, Tensor[] image) {
+    PipelineNetwork avgNet = PipelineNetwork.wrap(1,
+        network.addRef(),
+        new com.simiacryptus.mindseye.layers.java.AvgReducerLayer()
+    );
+    Tensor evalRoot = eval(pixels, avgNet, getTileSize(), 1.0, image);
+    avgNet.freeRef();
+    return evalRoot;
   }
 
 
@@ -183,6 +200,15 @@ public class MomentMatcher implements VisualModifier {
 
   public MomentMatcher setCovCoeff(double covCoeff) {
     this.covCoeff = covCoeff;
+    return this;
+  }
+
+  public Precision getPrecision() {
+    return precision;
+  }
+
+  public MomentMatcher setPrecision(Precision precision) {
+    this.precision = precision;
     return this;
   }
 }

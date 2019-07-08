@@ -23,7 +23,6 @@ import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.mindseye.lang.cudnn.CudaSettings;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
 import com.simiacryptus.mindseye.layers.cudnn.*;
@@ -57,11 +56,10 @@ public class GramMatrixMatcher implements VisualModifier {
     return layer;
   }
 
-  public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, Tensor... image) {
+  public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, int padding, Tensor... image) {
     return Arrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
-      return Arrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, CudaSettings.INSTANCE().defaultPrecision))
-          .map(s -> s.getCompatibilityLayer())
+      return Arrays.stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
           .map(selector -> {
             //log.info(selector.toString());
             Tensor tile = selector.eval(img).getDataAndFree().getAndFree(0);
@@ -105,7 +103,7 @@ public class GramMatrixMatcher implements VisualModifier {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
-    if (null == model) model = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), image);
+    if (null == model) model = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), 8, image);
     double mag = balanced ? model.rms() : 1;
     network.wrap(loss(model, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();

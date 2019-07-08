@@ -47,7 +47,7 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
 
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
-    List<PointSample> results = Arrays.stream(inner).map(x -> x.measure(monitor)).collect(Collectors.toList());
+    List<PointSample> results = Arrays.stream(getInner()).map(x -> x.measure(monitor)).collect(Collectors.toList());
     DeltaSet<UUID> delta = results.stream().map(x -> x.delta.addRef()).reduce((a, b) -> {
       DeltaSet<UUID> c = a.addInPlace(b);
       b.freeRef();
@@ -73,7 +73,11 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
 
   @Override
   protected void _free() {
-    if (null != inner) Arrays.stream(inner).forEach(ReferenceCounting::freeRef);
+    if (null != getInner()) Arrays.stream(getInner()).forEach(ReferenceCounting::freeRef);
     super._free();
+  }
+
+  public Trainable[] getInner() {
+    return inner;
   }
 }
