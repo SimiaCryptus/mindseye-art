@@ -49,6 +49,7 @@ public class ContentConvolutionMatcher implements VisualModifier {
         .setStrideXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)))
         .setWindowXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)));
     Tensor pooledContent = poolingLayer.eval(baseContent).getDataAndFree().getAndFree(0);
+    baseContent.freeRef();
     network.wrap(poolingLayer).freeRef();
     int[] pooledContentDimensions = pooledContent.getDimensions();
     network.wrap(new ConvolutionLayer(pooledContentDimensions[0], pooledContentDimensions[1], pooledContentDimensions[2], 1)

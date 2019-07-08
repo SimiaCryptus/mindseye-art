@@ -50,7 +50,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
 
   PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels) {
     this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels, (PipelineNetwork pipeline) -> pipeline.wrap(new PoolingLayer()
-        .setStrideXY(2, 2).setWindowXY(2, 2).setMode(PoolingLayer.PoolingMode.Max)));
+        .setStrideXY(2, 2).setWindowXY(2, 2).setMode(PoolingLayer.PoolingMode.Avg)));
   }
 
   PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, Consumer<PipelineNetwork> fn) {
@@ -74,11 +74,18 @@ public enum PoolingPipeline implements VisionPipelineLayer {
     return visionPipeline;
   }
 
+  private volatile PipelineNetwork layer;
   @Override
   public Layer getLayer() {
-    PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
-    fn.accept(pipeline);
-    return pipeline;
+    if(null == layer) {
+      synchronized (this) {
+        if(null == layer) {
+          layer = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
+          fn.accept(layer);
+        }
+      }
+    }
+    return layer;
   }
 
   @Override

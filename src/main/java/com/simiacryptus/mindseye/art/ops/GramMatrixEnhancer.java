@@ -45,6 +45,7 @@ public class GramMatrixEnhancer implements VisualModifier {
   private boolean averaging = true;
   private boolean balanced = true;
   private int tileSize = 600;
+  private int padding = 8;
 
   @NotNull
   public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
@@ -67,7 +68,7 @@ public class GramMatrixEnhancer implements VisualModifier {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
-    Tensor result = GramMatrixMatcher.eval(pixels, network, getTileSize(), image);
+    Tensor result = GramMatrixMatcher.eval(pixels, network, getTileSize(), padding, image);
     double mag = balanced ? result.rms() : 1;
     network.wrap(loss(result, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();

@@ -32,7 +32,7 @@ public interface VisualModifier {
     PipelineNetwork network = layer.getNetwork();
     network.assertAlive();
     PipelineNetwork pipelineNetwork = build(network, image);
-//    network.freeRef();
+    network.freeRef();
     return pipelineNetwork;
   }
 
@@ -42,8 +42,8 @@ public interface VisualModifier {
 
   default VisualModifier combine(VisualModifier right) {
     return (original, image) -> (PipelineNetwork) SumInputsLayer.combine(
-        this.build(original.copyPipeline(), image),
-        right.build(original.copyPipeline(), image)
+        this.build(original, image),
+        right.build(original, image)
     ).freeze();
   }
 
