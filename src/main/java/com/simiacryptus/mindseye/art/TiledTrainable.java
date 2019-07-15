@@ -126,23 +126,23 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
               col * (tileSizeX - padding),
               row * (tileSizeY - padding)
           );
-          if(!fade) {
+          if (!fade) {
             selectors[index++] = tileSelectLayer;
           } else {
             int finalCol = col;
             int finalRow = row;
-            Tensor mask = new Tensor(tileSizeX, tileSizeY, 1).mapCoordsAndFree(c->{
+            Tensor mask = new Tensor(tileSizeX, tileSizeY, 1).mapCoordsAndFree(c -> {
               int[] coords = c.getCoords();
               double v = 1.0;
-              if(coords[0] < padding && finalCol > 0) {
+              if (coords[0] < padding && finalCol > 0) {
                 v *= coords[0] / padding;
-              } else if((tileSizeX-coords[0]) < padding && finalCol < (cols-1)) {
-                v *= (double) (tileSizeX-coords[0]) / padding;
+              } else if ((tileSizeX - coords[0]) < padding && finalCol < (cols - 1)) {
+                v *= (double) (tileSizeX - coords[0]) / padding;
               }
-              if(coords[1] < padding && finalRow > 0) {
+              if (coords[1] < padding && finalRow > 0) {
                 v *= (double) coords[1] / padding;
-              } else if((tileSizeY-coords[1]) < padding && finalRow < (rows-1)) {
-                v *= (double) (tileSizeY-coords[1]) / padding;
+              } else if ((tileSizeY - coords[1]) < padding && finalRow < (rows - 1)) {
+                v *= (double) (tileSizeY - coords[1]) / padding;
               }
               return v;
             });
@@ -240,6 +240,11 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     return precision;
   }
 
+  public void setPrecision(@Nonnull Precision precision) {
+    this.precision = precision;
+    MultiPrecision.setPrecision((DAGNetwork) filter, precision);
+  }
+
   public Layer[] getSelectors() {
     return selectors;
   }
@@ -254,10 +259,5 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
 
   public Layer getFilter() {
     return filter;
-  }
-
-  public void setPrecision(@Nonnull Precision precision) {
-    this.precision = precision;
-    MultiPrecision.setPrecision((DAGNetwork) filter, precision);
   }
 }

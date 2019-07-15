@@ -22,7 +22,7 @@ package com.simiacryptus.mindseye.art.models;
 import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
-import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.tensorflow.ImageNetworkPipeline;
 
 import java.util.Map;
@@ -40,7 +40,7 @@ public enum Inception5H implements VisionPipelineLayer {
   Inc5H_5a(new int[]{1, 1}, new int[]{1, 1}, new int[]{2, 2}, new int[]{2, 2}, 832, 832, "mixed5a"),
   Inc5H_5b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 832, 1024, "mixed5b");
 
-  private static transient Map<String, Layer> inception5h = null;
+  private static transient Map<String, PipelineNetwork> inception5h = null;
   private static volatile VisionPipeline<Inception5H> visionPipeline = null;
   private final String layerId;
   private final int[] inputBorders;
@@ -60,7 +60,7 @@ public enum Inception5H implements VisionPipelineLayer {
     this.strides = strides;
   }
 
-  public static Map<String, Layer> layerMap() {
+  public static Map<String, PipelineNetwork> layerMap() {
     if (null == inception5h) {
       synchronized (Inception5H.class) {
         if (null == inception5h) {
@@ -96,8 +96,8 @@ public enum Inception5H implements VisionPipelineLayer {
   }
 
   @Override
-  public Layer getLayer() {
-    return layerMap().get(this.layerId).copy().setName(name());
+  public PipelineNetwork getLayer() {
+    return (PipelineNetwork) layerMap().get(this.layerId).copyPipeline().setName(name());
   }
 
   @Override
@@ -128,6 +128,11 @@ public enum Inception5H implements VisionPipelineLayer {
   @Override
   public int[] getStrides() {
     return this.strides;
+  }
+
+  @Override
+  public String getPipelineName() {
+    return getVisionPipeline().name;
   }
 
   @Override

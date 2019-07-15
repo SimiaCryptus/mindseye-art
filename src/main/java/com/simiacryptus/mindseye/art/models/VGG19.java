@@ -21,7 +21,6 @@ package com.simiacryptus.mindseye.art.models;
 
 import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
-import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 import java.util.UUID;
@@ -90,7 +89,7 @@ public enum VGG19 implements VisionPipelineLayer {
   }
 
   @Override
-  public Layer getLayer() {
+  public PipelineNetwork getLayer() {
     if (null == pipeline) {
       synchronized (this) {
         if (null == pipeline) {
@@ -130,6 +129,11 @@ public enum VGG19 implements VisionPipelineLayer {
   @Override
   public int[] getStrides() {
     return this.strides;
+  }
+
+  @Override
+  public String getPipelineName() {
+    return getVisionPipeline().name;
   }
 
   @Override

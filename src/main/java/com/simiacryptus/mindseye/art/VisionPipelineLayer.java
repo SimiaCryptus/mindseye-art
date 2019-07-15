@@ -20,18 +20,35 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
+
+import static com.simiacryptus.mindseye.layers.cudnn.PoolingLayer.getPoolingLayer;
 
 public interface VisionPipelineLayer {
 
+  @Nonnull
   String name();
 
+  @Nonnull
   VisionPipeline<?> getPipeline();
 
+  @Nonnull
+  String getPipelineName();
+
+  @Nonnull
   default PipelineNetwork getNetwork() {
-    return ((VisionPipeline<VisionPipelineLayer>) getPipeline()).get(this);
+    VisionPipeline<?> pipeline = getPipeline();
+//    if (null == pipeline) return null;
+    PipelineNetwork pipelineNetwork = pipeline.getLayerMap().get(this);
+//    if (null == pipelineNetwork) return null;
+    return pipelineNetwork.copyPipeline();
   }
 
+  @Nonnull
   Layer getLayer();
 
   int[] getInputBorders();
@@ -45,4 +62,34 @@ public interface VisionPipelineLayer {
   int[] getKernelSize();
 
   int[] getStrides();
+
+  default VisionPipelineLayer prependAvgPool(int radius) {
+    return prependPool(radius, PoolingLayer.PoolingMode.Avg);
+  }
+
+
+  default VisionPipelineLayer appendMaxPool(int radius) {
+    return appendPool(radius, PoolingLayer.PoolingMode.Max);
+  }
+
+  @NotNull
+  default VisionPipelineLayer prependPool(int radius, PoolingLayer.PoolingMode mode) {
+    return prepend(getPoolingLayer(radius, mode));
+  }
+
+  @NotNull
+  default VisionPipelineLayer appendPool(int radius, PoolingLayer.PoolingMode mode) {
+    return append(getPoolingLayer(radius, mode));
+  }
+
+  @NotNull
+  default VisionPipelineLayer prepend(Layer layer) {
+    return new PrependVisionPipelineLayer(this, layer);
+  }
+
+  @NotNull
+  default VisionPipelineLayer append(Layer layer) {
+    return new AppendVisionPipelineLayer(this, layer);
+  }
+
 }

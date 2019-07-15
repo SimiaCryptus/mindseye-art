@@ -53,11 +53,11 @@ public class MomentMatcher implements VisualModifier {
   public static Layer lossSq(Precision precision, Tensor target) {
     double rms = target.rms();
     Layer layer = PipelineNetwork.wrap(1,
-        new LinearActivationLayer().setScale(Math.pow(rms, -1)),
-        new ImgBandBiasLayer(target.scaleInPlace(-Math.pow(rms, -1))).setPrecision(precision),
+        new LinearActivationLayer().setScale(0 == rms ? 1 : Math.pow(rms, -1)),
+        new ImgBandBiasLayer(target.scaleInPlace(0 == rms ? 1 : -Math.pow(rms, -1))).setPrecision(precision),
         new SquareActivationLayer().setPrecision(precision),
         new AvgReducerLayer().setPrecision(precision)
-    ).setName(String.format("RMS[x-C] / %.0E", rms));
+    ).setName(String.format("RMS[x-C] / %.0E", 0 == rms ? 1 : rms));
     target.freeRef();
     return layer;
   }
@@ -79,7 +79,7 @@ public class MomentMatcher implements VisualModifier {
             return component;
           });
     })).scaleInPlace(1.0 / pixels)
-        .mapAndFree(x -> Math.pow(x, 1.0 / power))
+        .mapAndFree(x -> Math.pow(x, 0 == power ? 1 : (1.0 / power)))
         .mapAndFree(x -> {
           if (Double.isFinite(x)) {
             return x;
@@ -119,7 +119,7 @@ public class MomentMatcher implements VisualModifier {
     Tensor evalRoot = avg(network, pixels, images);
     double sumSq = evalRoot.sumSq();
     log.info(String.format("Adjust for %s : %s", network.getName(), sumSq));
-    network.wrap(new ScaleLayer(1.0/ sumSq));
+    network.wrap(new ScaleLayer(0 == sumSq ? 1 : 1.0 / sumSq));
     evalRoot.freeRef();
 
     InnerNode avg = network.wrap(new com.simiacryptus.mindseye.layers.cudnn.BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef());

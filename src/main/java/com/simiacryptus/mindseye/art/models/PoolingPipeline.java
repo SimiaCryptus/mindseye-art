@@ -21,7 +21,6 @@ package com.simiacryptus.mindseye.art.models;
 
 import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
-import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
@@ -47,6 +46,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   private final int[] strides;
   private final int inputChannels;
   private final int outputChannels;
+  private volatile PipelineNetwork layer;
 
   PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels) {
     this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels, (PipelineNetwork pipeline) -> pipeline.wrap(new PoolingLayer()
@@ -74,12 +74,11 @@ public enum PoolingPipeline implements VisionPipelineLayer {
     return visionPipeline;
   }
 
-  private volatile PipelineNetwork layer;
   @Override
-  public Layer getLayer() {
-    if(null == layer) {
+  public PipelineNetwork getLayer() {
+    if (null == layer) {
       synchronized (this) {
-        if(null == layer) {
+        if (null == layer) {
           layer = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
           fn.accept(layer);
         }
@@ -116,6 +115,11 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   @Override
   public int[] getStrides() {
     return this.strides;
+  }
+
+  @Override
+  public String getPipelineName() {
+    return getVisionPipeline().name;
   }
 
   @Override
