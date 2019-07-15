@@ -56,7 +56,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   }
 
   public static int[] testDims(VisionPipeline<? extends VisionPipelineLayer> pipeline, int... dims) {
-    for (VisionPipelineLayer layer : pipeline.getLayers().keySet()) dims = testDims(layer, dims);
+    for (VisionPipelineLayer layer : pipeline.getLayers()) dims = testDims(layer, dims);
     return dims;
   }
 
@@ -102,7 +102,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   public abstract VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline();
 
   public void graphs(NotebookOutput log) {
-    getVisionPipeline().getLayers().forEach((e, v) -> {
+    getVisionPipeline().getLayers().forEach((e) -> {
       log.h1(e.name());
       DAGNetwork layer = (DAGNetwork) e.getLayer();
       TestUtil.graph(log, layer);
@@ -112,7 +112,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
   public void layers(NotebookOutput log) {
     final int[][] dims = {{226, 226, 3}};
-    getVisionPipeline().getLayers().forEach((e, v) -> {
+    getVisionPipeline().getLayers().forEach((e) -> {
       log.h1(e.name());
       DAGNetwork layer = (DAGNetwork) e.getLayer();
       log.subreport(e.name(), sublog -> {

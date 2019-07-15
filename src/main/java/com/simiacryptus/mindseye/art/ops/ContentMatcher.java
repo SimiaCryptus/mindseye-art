@@ -48,7 +48,7 @@ public class ContentMatcher implements VisualModifier {
     network.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))
+        new LinearActivationLayer().setScale(0 == mag ? 1 : Math.pow(mag, -2))
 //        ,new NthPowerActivationLayer().setPower(0.5)
     ).setName(String.format("RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();

@@ -98,7 +98,7 @@ public class OptimizationTest {
   public void testStyleTransfer() throws InterruptedException {
     Tensor contentImage = Tensor.fromRGB(VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500));
     Tensor styleImage = Tensor.fromRGB(VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200));
-    train(contentImage, (PipelineNetwork) MultiPrecision.setPrecision(SumInputsLayer.combine
+    train(contentImage, MultiPrecision.setPrecision(SumInputsLayer.combine
         (
             new GramMatrixMatcher().build(Inception5H.Inc5H_1a, styleImage),
             new GramMatrixMatcher().build(Inception5H.Inc5H_2a, styleImage),

@@ -29,6 +29,7 @@ import com.simiacryptus.mindseye.layers.cudnn.ImgBandBiasLayer;
 import com.simiacryptus.mindseye.layers.cudnn.conv.SimpleConvolutionLayer;
 import com.simiacryptus.mindseye.layers.tensorflow.TFLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
+import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.mindseye.util.TFConverter;
 import com.simiacryptus.notebook.NotebookOutput;
@@ -136,9 +137,9 @@ public class VisionPipelineUtil {
   }
 
   @NotNull
-  public static Map<String, Layer> convertPipeline(GraphDef graphDef, String... nodes) {
+  public static Map<String, PipelineNetwork> convertPipeline(GraphDef graphDef, String... nodes) {
     GraphModel graphModel = new GraphModel(graphDef.toByteArray());
-    Map<String, Layer> graphs = new HashMap<>();
+    Map<String, PipelineNetwork> graphs = new HashMap<>();
     TFConverter tfConverter = new TFConverter();
     TFLayer tfLayer0 = new TFLayer(
         graphModel.getChild(nodes[0]).subgraph(new HashSet<>(Arrays.asList())).toByteArray(),

@@ -97,7 +97,7 @@ public class GramMatrixMatcher implements VisualModifier {
 
   @NotNull
   public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor model, Tensor... image) {
-    network = (PipelineNetwork) MultiPrecision.setPrecision(network.copyPipeline(), precision);
+    network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
     network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
     int pixels = Arrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
