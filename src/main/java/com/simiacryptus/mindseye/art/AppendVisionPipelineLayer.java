@@ -43,7 +43,7 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
   public VisionPipeline<VisionPipelineLayer> getPipeline() {
     return new VisionPipeline<>(
         getPipelineName(),
-        inner.getPipeline().getLayers().stream().map(x -> new com.simiacryptus.mindseye.art.AppendVisionPipelineLayer(x, layer)).toArray(i -> new VisionPipelineLayer[i])
+        inner.getPipeline().getLayers().keySet().stream().map(x -> new com.simiacryptus.mindseye.art.AppendVisionPipelineLayer(x, layer)).toArray(i -> new VisionPipelineLayer[i])
     );
   }
 
@@ -59,10 +59,9 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
 
   @Override
   public PipelineNetwork getNetwork() {
-    return PipelineNetwork.sequence(
-        inner.getNetwork(),
-        PipelineNetwork.build(1, layer)
-    );
+    PipelineNetwork pipelineNetwork = inner.getNetwork().copyPipeline();
+    pipelineNetwork.add(layer);
+    return pipelineNetwork;
   }
 
   @Override
@@ -99,7 +98,7 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    com.simiacryptus.mindseye.art.AppendVisionPipelineLayer that = (com.simiacryptus.mindseye.art.AppendVisionPipelineLayer) o;
+    com.simiacryptus.mindseye.art.VisionPipelineLayer that = (com.simiacryptus.mindseye.art.VisionPipelineLayer) o;
     if (!Objects.equals(getPipelineName(), that.getPipelineName())) return false;
     if (!Objects.equals(name(), that.name())) return false;
     return true;

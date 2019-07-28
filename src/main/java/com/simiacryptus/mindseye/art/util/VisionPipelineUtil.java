@@ -34,6 +34,7 @@ import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.mindseye.util.TFConverter;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.tensorflow.GraphModel;
+import com.simiacryptus.util.FastRandom;
 import com.simiacryptus.util.JsonUtil;
 import com.simiacryptus.util.Util;
 import org.apache.commons.io.IOUtils;
@@ -269,20 +270,20 @@ public class VisionPipelineUtil {
     return dimensions;
   }
 
-  @Nonnull
   public static BufferedImage load(final CharSequence image, final int imageSize) {
+    if (image.length() == 0) return new Tensor(imageSize, imageSize, 3).mapAndFree(x -> FastRandom.INSTANCE.random() * 50).toImage();
     BufferedImage source = getImage(image);
     return imageSize <= 0 ? source : TestUtil.resize(source, imageSize, true);
   }
 
   @Nonnull
-  public static BufferedImage load(final CharSequence image, final int width, final int height) {
+  public static BufferedImage load(@Nonnull final CharSequence image, final int width, final int height) {
     BufferedImage source = getImage(image);
     return width <= 0 ? source : TestUtil.resize(source, width, height);
   }
 
   @Nonnull
-  public static BufferedImage getImage(final CharSequence file) {
+  public static BufferedImage getImage(@Nonnull final CharSequence file) {
     if (file.toString().startsWith("http")) {
       try {
         BufferedImage read = ImageIO.read(new URL(file.toString()));
