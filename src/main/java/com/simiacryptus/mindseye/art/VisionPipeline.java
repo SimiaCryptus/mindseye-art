@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 
 public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCountingBase {
   private static final Logger logger = LoggerFactory.getLogger(VisionPipeline.class);
@@ -44,11 +43,7 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
     pipelineNetwork.freeRef();
   }
 
-  public LinkedHashSet<T> getLayers() {
-    return new LinkedHashSet<T>(layers.keySet());
-  }
-
-  LinkedHashMap<T, PipelineNetwork> getLayerMap() {
+  public LinkedHashMap<T, PipelineNetwork> getLayers() {
     return new LinkedHashMap<>(layers);
   }
 

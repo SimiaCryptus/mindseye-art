@@ -37,13 +37,15 @@ public class ContentMatcher implements VisualModifier {
 
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+    if (1 != image.length) throw new IllegalArgumentException();
     network = network.copyPipeline();
     Layer layer = network.getHead().getLayer();
+    String name = (layer != null ? layer.getName() : "Original") + " Content";
     Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
     double mag = balanced ? baseContent.rms() : 1;
     DAGNode head = network.getHead();
     DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
-    if (layer != null) constNode.getLayer().setName((layer != null ? layer.getName() : "Original") + " Content");
+    constNode.getLayer().setName(name);
     network.wrap(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
     network.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),

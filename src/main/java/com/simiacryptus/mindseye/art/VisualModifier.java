@@ -41,25 +41,54 @@ public interface VisualModifier {
   }
 
   default VisualModifier combine(VisualModifier right) {
-    return (original, image) -> (PipelineNetwork) SumInputsLayer.combine(
-        this.build(original, image),
-        right.build(original, image)
-    ).freeze();
+    VisualModifier left = this;
+    return new VisualModifier() {
+      @Override
+      public String toString() {
+        return String.format("(%s+%s)", left.toString(), right);
+      }
+
+      @Override
+      public PipelineNetwork build(PipelineNetwork original, Tensor... image) {
+        return (PipelineNetwork) SumInputsLayer.combine(
+            VisualModifier.this.build(original, image),
+            right.build(original, image)
+        ).freeze();
+      }
+    };
   }
 
   default VisualModifier scale(double scale) {
-    return (original, image) -> {
-      PipelineNetwork build = this.build(original, image);
-      build.wrap(new LinearActivationLayer().setScale(scale).freeze());
-      return (PipelineNetwork) build.freeze();
+    VisualModifier left = this;
+    return new VisualModifier() {
+      @Override
+      public String toString() {
+        return String.format("(%s*%s)", left.toString(), scale);
+      }
+
+      @Override
+      public PipelineNetwork build(PipelineNetwork original, Tensor... image) {
+        PipelineNetwork build = VisualModifier.this.build(original, image);
+        build.wrap(new LinearActivationLayer().setScale(scale).freeze());
+        return (PipelineNetwork) build.freeze();
+      }
     };
   }
 
   default VisualModifier pow(double power) {
-    return (original, image) -> {
-      PipelineNetwork build = this.build(original, image);
-      build.wrap(new NthPowerActivationLayer().setPower(power).freeze());
-      return (PipelineNetwork) build.freeze();
+    VisualModifier left = this;
+    return new VisualModifier() {
+      @Override
+      public String toString() {
+        return String.format("(%s^%s)", left.toString(), power);
+      }
+
+      @Override
+      public PipelineNetwork build(PipelineNetwork original, Tensor... image) {
+        PipelineNetwork build = VisualModifier.this.build(original, image);
+        build.wrap(new NthPowerActivationLayer().setPower(power).freeze());
+        return (PipelineNetwork) build.freeze();
+      }
     };
   }
 

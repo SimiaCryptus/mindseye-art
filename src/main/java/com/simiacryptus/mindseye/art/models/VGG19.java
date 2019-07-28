@@ -27,8 +27,10 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public enum VGG19 implements VisionPipelineLayer {
-  VGG19_0(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase0),
-  VGG19_1a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase1a),
+  VGG19_0a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3, p -> {
+  }),
+  VGG19_0b(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, getVGG19_hdf5()::phase0),
+  VGG19_1a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 64, 64, getVGG19_hdf5()::phase1a),
   VGG19_1b1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 64, 128, getVGG19_hdf5()::phase1b1),
   VGG19_1b2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 128, 128, getVGG19_hdf5()::phase1b2),
   VGG19_1c1(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 128, 256, getVGG19_hdf5()::phase1c1),

@@ -41,11 +41,7 @@ public interface VisionPipelineLayer {
 
   @Nonnull
   default PipelineNetwork getNetwork() {
-    VisionPipeline<?> pipeline = getPipeline();
-//    if (null == pipeline) return null;
-    PipelineNetwork pipelineNetwork = pipeline.getLayerMap().get(this);
-//    if (null == pipelineNetwork) return null;
-    return pipelineNetwork.copyPipeline();
+    return getPipeline().getLayers().get(this).copyPipeline();
   }
 
   @Nonnull
@@ -68,18 +64,26 @@ public interface VisionPipelineLayer {
   }
 
 
+  default VisionPipelineLayer appendAvgPool(int radius) {
+    return appendPool(radius, PoolingLayer.PoolingMode.Avg);
+  }
+
   default VisionPipelineLayer appendMaxPool(int radius) {
     return appendPool(radius, PoolingLayer.PoolingMode.Max);
   }
 
+  default VisionPipelineLayer prependMaxPool(int radius) {
+    return prependPool(radius, PoolingLayer.PoolingMode.Max);
+  }
+
   @NotNull
   default VisionPipelineLayer prependPool(int radius, PoolingLayer.PoolingMode mode) {
-    return prepend(getPoolingLayer(radius, mode));
+    return prepend(getPoolingLayer(radius, mode, String.format("prepend(%s)", this)));
   }
 
   @NotNull
   default VisionPipelineLayer appendPool(int radius, PoolingLayer.PoolingMode mode) {
-    return append(getPoolingLayer(radius, mode));
+    return append(getPoolingLayer(radius, mode, String.format("append(%s)", this)));
   }
 
   @NotNull

@@ -56,7 +56,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   }
 
   public static int[] testDims(VisionPipeline<? extends VisionPipelineLayer> pipeline, int... dims) {
-    for (VisionPipelineLayer layer : pipeline.getLayers()) dims = testDims(layer, dims);
+    for (VisionPipelineLayer layer : pipeline.getLayers().keySet()) dims = testDims(layer, dims);
     return dims;
   }
 
@@ -102,7 +102,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   public abstract VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline();
 
   public void graphs(NotebookOutput log) {
-    getVisionPipeline().getLayers().forEach((e) -> {
+    getVisionPipeline().getLayers().keySet().forEach((e) -> {
       log.h1(e.name());
       DAGNetwork layer = (DAGNetwork) e.getLayer();
       TestUtil.graph(log, layer);
@@ -112,7 +112,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
   public void layers(NotebookOutput log) {
     final int[][] dims = {{226, 226, 3}};
-    getVisionPipeline().getLayers().forEach((e) -> {
+    getVisionPipeline().getLayers().keySet().forEach((e) -> {
       log.h1(e.name());
       DAGNetwork layer = (DAGNetwork) e.getLayer();
       log.subreport(e.name(), sublog -> {
@@ -223,7 +223,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   public static class VGG19Test extends VisionPipelineTest {
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
-        testDims(VGG19_0, new int[]{226, 226, 3}, new int[]{226, 226, 3});
+        testDims(VGG19_0b, new int[]{226, 226, 3}, new int[]{226, 226, 3});
         testDims(VGG19_1a, new int[]{226, 226, 3}, new int[]{226, 226, 64});
         testDims(VGG19_1b1, new int[]{226, 226, 64}, new int[]{113, 113, 128});
         testDims(VGG19_1c1, new int[]{113, 113, 128}, new int[]{57, 57, 256});
@@ -245,7 +245,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
     public void layerPins(NotebookOutput log) {
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_0, new int[]{226, 226, 3});
+//        VisionPipelineUtil.testPinConnectivity(VGG19_0b, new int[]{226, 226, 3});
 //      });
 //      log.run(() -> {
 //        VisionPipelineUtil.testPinConnectivity(VGG19_1a, new int[]{226, 226, 3});
