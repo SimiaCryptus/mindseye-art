@@ -36,7 +36,7 @@ public class PrependVisionPipelineLayer implements VisionPipelineLayer {
 
   @Override
   public String name() {
-    return inner.name();
+    return inner.name() + "/prepend=" + layer.getName();
   }
 
   @Override

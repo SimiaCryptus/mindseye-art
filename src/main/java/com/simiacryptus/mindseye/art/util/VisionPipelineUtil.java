@@ -91,7 +91,7 @@ public class VisionPipelineUtil {
         }
       }
     });
-    if (interceptLog) log.subreport("cuda_log", sublog -> {
+    if (interceptLog) log.subreport(sublog -> {
       CudaSystem.addLog(new Consumer<String>() {
         PrintWriter out;
         long remainingOut = 0;
@@ -125,7 +125,7 @@ public class VisionPipelineUtil {
         }
       });
       return null;
-    });
+    }, log.getName() + "_" + "cuda_log");
 
     return new Closeable() {
       @Override
