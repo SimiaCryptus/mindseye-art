@@ -36,7 +36,7 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
 
   @Override
   public String name() {
-    return inner.name();
+    return inner.name() + "/append=" + layer.getName();
   }
 
   @Override
@@ -49,7 +49,7 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
 
   @Override
   public String getPipelineName() {
-    return inner.getPipelineName() + "/append=" + layer.getName();
+    return inner.getPipelineName();
   }
 
   @Override

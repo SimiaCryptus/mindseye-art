@@ -115,7 +115,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     getVisionPipeline().getLayers().keySet().forEach((e) -> {
       log.h1(e.name());
       DAGNetwork layer = (DAGNetwork) e.getLayer();
-      log.subreport(e.name(), sublog -> {
+      log.subreport(sublog -> {
         new StandardLayerTests() {
           {
             testingBatchSize = 1;
@@ -145,7 +145,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
           }
         }.run(sublog);
         return null;
-      });
+      }, log.getName() + "_" + e.name());
       dims[0] = VisionPipelineUtil.evalDims(dims[0], e.getLayer());
       layer.freeRef();
     });
