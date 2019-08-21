@@ -24,7 +24,7 @@ import com.simiacryptus.mindseye.art.ops.ChannelMeanEnhancer;
 import com.simiacryptus.mindseye.art.ops.ChannelMeanMatcher;
 import com.simiacryptus.mindseye.art.ops.ContentMatcher;
 import com.simiacryptus.mindseye.art.ops.GramMatrixMatcher;
-import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
+import com.simiacryptus.mindseye.art.util.ImageArtUtil;
 import com.simiacryptus.mindseye.eval.ArrayTrainable;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
@@ -41,7 +41,8 @@ import com.simiacryptus.mindseye.opt.orient.GradientDescent;
 import com.simiacryptus.mindseye.opt.orient.TrustRegionStrategy;
 import com.simiacryptus.mindseye.opt.region.RangeConstraint;
 import com.simiacryptus.mindseye.opt.region.TrustRegion;
-import com.simiacryptus.mindseye.test.TestUtil;
+import com.simiacryptus.mindseye.util.ImageUtil;
+import com.simiacryptus.notebook.NullNotebookOutput;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ public class OptimizationTest {
   private static final Logger log = LoggerFactory.getLogger(OptimizationTest.class);
 
   public static void train(Tensor image, PipelineNetwork network, int maxIterations, LineSearchStrategy lineSearch) {
-    TestUtil.monitorImage(image, false, 5, false);
+    ImageUtil.monitorImage(image, false, 5, false);
     new IterativeTrainer(new ArrayTrainable(new Tensor[][]{{image}}, MultiPrecision.setPrecision(network, Precision.Float)).setMask(true))
         .setOrientation(new TrustRegionStrategy(new GradientDescent()) {
           @Override
@@ -89,15 +90,16 @@ public class OptimizationTest {
 
   @Test
   public void testDream() throws InterruptedException {
-    Tensor image = Tensor.fromRGB(VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500));
+    Tensor image = Tensor.fromRGB(ImageArtUtil.load(new NullNotebookOutput(), "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500));
     train(image, new ChannelMeanEnhancer().build(Inception5H.Inc5H_3b, image), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1));
     Thread.sleep(100000);
   }
 
   @Test
   public void testStyleTransfer() throws InterruptedException {
-    Tensor contentImage = Tensor.fromRGB(VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500));
-    Tensor styleImage = Tensor.fromRGB(VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200));
+    NullNotebookOutput log = new NullNotebookOutput();
+    Tensor contentImage = Tensor.fromRGB(ImageArtUtil.load(log, "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500));
+    Tensor styleImage = Tensor.fromRGB(ImageArtUtil.load(log, "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200));
     train(contentImage, MultiPrecision.setPrecision(SumInputsLayer.combine
         (
             new GramMatrixMatcher().build(Inception5H.Inc5H_1a, styleImage),
@@ -112,10 +114,11 @@ public class OptimizationTest {
 
   @Test
   public void testMeanMatch() throws InterruptedException {
+    NullNotebookOutput log = new NullNotebookOutput();
     train(
-        Tensor.fromRGB(VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500)),
+        Tensor.fromRGB(ImageArtUtil.load(log, "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500)),
         new ChannelMeanMatcher().build(Inception5H.Inc5H_1a,
-            Tensor.fromRGB(VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200))),
+            Tensor.fromRGB(ImageArtUtil.load(log, "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200))),
         100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1)
     );
     Thread.sleep(100000);
@@ -123,10 +126,11 @@ public class OptimizationTest {
 
   @Test
   public void testGramMatch() throws InterruptedException {
+    NullNotebookOutput log = new NullNotebookOutput();
     train(
-        Tensor.fromRGB(VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500)),
+        Tensor.fromRGB(ImageArtUtil.load(log, "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500)),
         new GramMatrixMatcher().build(Inception5H.Inc5H_2a,
-            Tensor.fromRGB(VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200))),
+            Tensor.fromRGB(ImageArtUtil.load(log, "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200))),
         100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1)
     );
     Thread.sleep(100000);
