@@ -22,7 +22,6 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.art.models.Inception5H;
 import com.simiacryptus.mindseye.art.models.VGG16;
 import com.simiacryptus.mindseye.art.models.VGG19;
-import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.MeanSqLossLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
@@ -47,12 +46,18 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   private static final Logger log = LoggerFactory.getLogger(VisionPipelineTest.class);
 
   public static void testDims(VisionPipelineLayer inceptionVision, int[] inputDims, int[] expectedOutputDims) {
-    int[] actuals = VisionPipelineUtil.evalDims(inputDims, inceptionVision.getLayer());
+    Layer layer = inceptionVision.getLayer();
+    int[] dimensions = layer.evalDims(inputDims);
+    layer.freeRef();
+    int[] actuals = dimensions;
     Assert.assertArrayEquals(Arrays.toString(actuals), expectedOutputDims, actuals);
   }
 
   public static int[] testDims(VisionPipelineLayer inceptionVision, int... inputDims) {
-    return VisionPipelineUtil.evalDims(inputDims, inceptionVision.getLayer());
+    Layer layer = inceptionVision.getLayer();
+    int[] dimensions = layer.evalDims(inputDims);
+    layer.freeRef();
+    return dimensions;
   }
 
   public static int[] testDims(VisionPipeline<? extends VisionPipelineLayer> pipeline, int... dims) {
@@ -146,12 +151,13 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
         }.run(sublog);
         return null;
       }, log.getName() + "_" + e.name());
-      dims[0] = VisionPipelineUtil.evalDims(dims[0], e.getLayer());
+      Layer layer1 = e.getLayer();
+      int[] dimensions = layer1.evalDims(dims[0]);
+      layer1.freeRef();
+      dims[0] = dimensions;
       layer.freeRef();
     });
   }
-
-  public abstract void layerPins(NotebookOutput log);
 
   public static class VGG16Test extends VisionPipelineTest {
     public void inoutDims(NotebookOutput log) {
@@ -178,34 +184,34 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
     public void layerPins(NotebookOutput log) {
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_0, new int[]{226, 226, 3});
+//        ImageArtUtil.testPinConnectivity(VGG16_0, new int[]{226, 226, 3});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_1a, new int[]{226, 226, 3});
+//        ImageArtUtil.testPinConnectivity(VGG16_1a, new int[]{226, 226, 3});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_1b, new int[]{226, 226, 64});
+//        ImageArtUtil.testPinConnectivity(VGG16_1b, new int[]{226, 226, 64});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_1c, new int[]{113, 113, 128});
+//        ImageArtUtil.testPinConnectivity(VGG16_1c, new int[]{113, 113, 128});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_1d, new int[]{56, 56, 256});
+//        ImageArtUtil.testPinConnectivity(VGG16_1d, new int[]{56, 56, 256});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_1e, new int[]{29, 29, 512});
+//        ImageArtUtil.testPinConnectivity(VGG16_1e, new int[]{29, 29, 512});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_2a, new int[]{15, 15, 512});
+//        ImageArtUtil.testPinConnectivity(VGG16_2a, new int[]{15, 15, 512});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_2b, new int[]{8, 2 * 8, 512});
+//        ImageArtUtil.testPinConnectivity(VGG16_2b, new int[]{8, 2 * 8, 512});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_3a, new int[]{14, 14, 4096});
+//        ImageArtUtil.testPinConnectivity(VGG16_3a, new int[]{14, 14, 4096});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG16_3b, new int[]{14, 14, 1000});
+//        ImageArtUtil.testPinConnectivity(VGG16_3b, new int[]{14, 14, 1000});
 //      });
     }
 
@@ -245,34 +251,34 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
     public void layerPins(NotebookOutput log) {
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_0b, new int[]{226, 226, 3});
+//        ImageArtUtil.testPinConnectivity(VGG19_0b, new int[]{226, 226, 3});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_1a, new int[]{226, 226, 3});
+//        ImageArtUtil.testPinConnectivity(VGG19_1a, new int[]{226, 226, 3});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_1b, new int[]{226, 226, 64});
+//        ImageArtUtil.testPinConnectivity(VGG19_1b, new int[]{226, 226, 64});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_1c, new int[]{113, 113, 128});
+//        ImageArtUtil.testPinConnectivity(VGG19_1c, new int[]{113, 113, 128});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_1d, new int[]{56, 56, 256});
+//        ImageArtUtil.testPinConnectivity(VGG19_1d, new int[]{56, 56, 256});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_1e, new int[]{29, 29, 512});
+//        ImageArtUtil.testPinConnectivity(VGG19_1e, new int[]{29, 29, 512});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_2a, new int[]{15, 15, 512});
+//        ImageArtUtil.testPinConnectivity(VGG19_2a, new int[]{15, 15, 512});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_2b, new int[]{8, 2 * 8, 512});
+//        ImageArtUtil.testPinConnectivity(VGG19_2b, new int[]{8, 2 * 8, 512});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_3a, new int[]{14, 14, 4096});
+//        ImageArtUtil.testPinConnectivity(VGG19_3a, new int[]{14, 14, 4096});
 //      });
 //      log.run(() -> {
-//        VisionPipelineUtil.testPinConnectivity(VGG19_3b, new int[]{14, 14, 1000});
+//        ImageArtUtil.testPinConnectivity(VGG19_3b, new int[]{14, 14, 1000});
 //      });
     }
 
@@ -322,44 +328,6 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     @Override
     public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
       return Inception5H.getVisionPipeline();
-    }
-
-
-    public void layerPins(NotebookOutput log) {
-      int sizeMultiplier = 1;
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_1a, 32 * sizeMultiplier, 24 * sizeMultiplier, 3);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_2a, 16 * sizeMultiplier, 12 * sizeMultiplier, 64);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_3a, 8 * sizeMultiplier, 6 * sizeMultiplier, 192);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_3b, 4 * sizeMultiplier, 3 * sizeMultiplier, 256);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4a, 4 * sizeMultiplier, 3 * sizeMultiplier, 480);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4b, 2 * sizeMultiplier, 2 * sizeMultiplier, 508);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4c, 2 * sizeMultiplier, 2 * sizeMultiplier, 512);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4d, 2 * sizeMultiplier, 2 * sizeMultiplier, 512);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_4e, 2 * sizeMultiplier, 2 * sizeMultiplier, 528);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_5a, 2 * sizeMultiplier, 2 * sizeMultiplier, 832);
-      });
-      log.run(() -> {
-        VisionPipelineUtil.testPinConnectivity(Inc5H_5b, 1 * sizeMultiplier, 1 * sizeMultiplier, 832);
-      });
     }
 
     @Override

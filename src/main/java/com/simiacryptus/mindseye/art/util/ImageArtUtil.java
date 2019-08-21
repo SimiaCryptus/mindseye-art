@@ -20,19 +20,16 @@
 package com.simiacryptus.mindseye.art.util;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.simiacryptus.mindseye.art.VisionPipelineLayer;
-import com.simiacryptus.mindseye.lang.Coordinate;
-import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.CudaSystem;
-import com.simiacryptus.mindseye.layers.cudnn.ImgBandBiasLayer;
 import com.simiacryptus.mindseye.layers.cudnn.conv.SimpleConvolutionLayer;
 import com.simiacryptus.mindseye.layers.tensorflow.TFLayer;
-import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.mindseye.test.TestUtil;
+import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.mindseye.util.TFConverter;
+import com.simiacryptus.notebook.MarkdownNotebookOutput;
 import com.simiacryptus.notebook.NotebookOutput;
+import com.simiacryptus.notebook.UploadImageQuery;
 import com.simiacryptus.tensorflow.GraphModel;
 import com.simiacryptus.util.FastRandom;
 import com.simiacryptus.util.JsonUtil;
@@ -44,8 +41,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.s3a.S3AFileSystem;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.tensorflow.framework.GraphDef;
 
 import javax.annotation.Nonnull;
@@ -57,12 +52,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class VisionPipelineUtil {
-
-  private static final Logger log = LoggerFactory.getLogger(VisionPipelineUtil.class);
+public class ImageArtUtil {
 
   public static Closeable cudaReports(NotebookOutput log, boolean interceptLog) {
     Closeable handler_info = log.getHttpd().addGET("cuda/info.txt", "text/plain", outputStream -> {
@@ -163,144 +155,113 @@ public class VisionPipelineUtil {
     return graphs;
   }
 
+  public static BufferedImage load(NotebookOutput log, final CharSequence image, final int imageSize) {
+    return ImageUtil.load(() -> getImage(image, log), imageSize);
+  }
+
+  public static BufferedImage load(NotebookOutput log, final CharSequence image, final int width, final int height) {
+    return ImageUtil.load(() -> getImage(image, log), width, height);
+  }
+
+  public static Tensor loadTensor(NotebookOutput log, final CharSequence image, final int imageSize) {
+    return getImageTensor(image, log, imageSize, imageSize);
+  }
+
+  public static Tensor loadTensor(NotebookOutput log, final CharSequence image, final int width, final int height) {
+    return getImageTensor(image, log, width, height);
+  }
+
+  public static BufferedImage getImage(@Nonnull final CharSequence file, NotebookOutput log) {
+    Tensor imageTensor = getImageTensor(file, log);
+    return null==imageTensor?null:imageTensor.toImage();
+  }
+
+  public static Tensor getImageTensor(@Nonnull final CharSequence file, NotebookOutput log) {
+    String fileStr = file.toString();
+    int length = fileStr.split("\\:")[0].length();
+    if (length <= 0 || length >= Math.min(7,fileStr.length())) {
+      if (fileStr.contains(" * ")) {
+        Tensor sampleImage = Arrays.stream(fileStr.split(" * ")).map(x -> getImageTensor(x, log)).filter(x -> x != null).findFirst().get();
+        return Arrays.stream(fileStr.split(" * ")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
+          Tensor r = a.mapCoordsAndFree(c -> a.get(c) * b.get(c));
+          b.freeRef();
+          return r;
+        }).get();
+      } else if (fileStr.contains(" + ")) {
+        Tensor sampleImage = Arrays.stream(fileStr.split(" + ")).map(x -> getImageTensor(x, log)).filter(x -> x != null).findFirst().get();
+        return Arrays.stream(fileStr.split(" + ")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
+          Tensor r = a.mapCoordsAndFree(c -> a.get(c) + b.get(c));
+          b.freeRef();
+          return r;
+        }).get();
+      }
+      return null;
+    }
+    return getTensor(log, file);
+  }
+
+  @Nonnull
+  public static Tensor getImageTensor(@Nonnull final CharSequence file, NotebookOutput log, int width, int height) {
+    String fileStr = file.toString();
+    int length = fileStr.split("\\:")[0].length();
+    if (length <= 0 || length >= Math.min(7,fileStr.length())) {
+      if (fileStr.contains(" + ")) {
+        Tensor sampleImage = Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
+        return Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
+          Tensor r = a.mapCoordsAndFree(c -> a.get(c) + b.get(c));
+          b.freeRef();
+          return r;
+        }).get();
+      } else if (fileStr.contains(" * ")) {
+        Tensor sampleImage = Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
+        return Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
+          Tensor r = a.mapCoordsAndFree(c -> a.get(c) * b.get(c));
+          b.freeRef();
+          return r;
+        }).get();
+      } else if (fileStr.trim().toLowerCase().equals("plasma")) {
+        return new Plasma().paint(width, height);
+      } else if (fileStr.trim().toLowerCase().equals("noise")) {
+        return new Tensor(width, height, 3).mapAndFree(x -> FastRandom.INSTANCE.random() * 100);
+      } else if (fileStr.matches("\\-?\\d+(?:\\.\\d*)?(?:[eE]\\-?\\d+)?")) {
+        double v = Double.parseDouble(fileStr);
+        return new Tensor(width, height, 3).mapAndFree(x -> v);
+      }
+    }
+    return getTensor(log, file);
+  }
+
   @NotNull
-  public static ArrayList<GraphDef> getNodes(GraphModel graphModel, List<String> nodes) {
-    ArrayList<GraphDef> graphs = new ArrayList<>();
-    graphs.add(graphModel.getChild(nodes.get(0)).subgraph(new HashSet<>(Arrays.asList())));
-    for (int i = 1; i < nodes.size(); i++) {
-      graphs.add(graphModel.getChild(nodes.get(i)).subgraph(new HashSet<>(Arrays.asList(nodes.get(i - 1)))));
-    }
-    return graphs;
-  }
-
-  public static void testPinConnectivity(VisionPipelineLayer layer, int... inputDims) {
-    DAGNetwork liveTestingNetwork = (DAGNetwork) layer.getLayer();
-    liveTestingNetwork.visitLayers(l -> {
-      if (l instanceof SimpleConvolutionLayer) {
-        Tensor kernel = ((SimpleConvolutionLayer) l).getKernel().map(x -> 1.0);
-        ((SimpleConvolutionLayer) l).set(kernel);
-        kernel.freeRef();
-      } else if (l instanceof ImgBandBiasLayer) {
-        ((ImgBandBiasLayer) l).setWeights(x -> 0);
-      } else if (l instanceof DAGNetwork) {
-        // Ignore
-      } else if (!l.state().isEmpty()) {
-        throw new RuntimeException(l.getClass().toString());
-      }
-    });
-    int[] outputDims = evalDims(inputDims, liveTestingNetwork.addRef());
-    log.info(String.format("testPins(%s,%s) => %s", layer, Arrays.toString(inputDims), Arrays.toString(outputDims)));
-    Tensor coordSource = new Tensor(inputDims);
-    Map<Coordinate, List<Coordinate>> fwdPinMapping = coordSource.coordStream(true).distinct().filter(x -> x.getCoords()[2] == 0).collect(Collectors.toMap(
-        inputPin -> inputPin,
-        inputPin -> {
-          Tensor testInput = new Tensor(inputDims).setAll(0.0).set(inputPin, 1.0);
-          Tensor testOutput = liveTestingNetwork.eval(testInput).getDataAndFree().getAndFree(0).mapAndFree(outValue -> outValue == 0.0 ? 0.0 : 1.0);
-          List<Coordinate> coordinates = testOutput.coordStream(true).filter(c -> testOutput.get(c) != 0.0 && c.getCoords()[2] == 0).collect(Collectors.toList());
-          testOutput.freeRef();
-          testInput.freeRef();
-          return coordinates;
-        }));
-    coordSource.freeRef();
-    liveTestingNetwork.freeRef();
-
-    Map<Coordinate, Integer> fwdSizes = fwdPinMapping.entrySet().stream().collect(Collectors.groupingBy(
-        e -> e.getKey(), Collectors.summingInt(e -> e.getValue().size())));
-    log.info("fwdSizes=" + fwdSizes.entrySet().stream().collect(Collectors.groupingBy(x -> x.getValue(), Collectors.counting())).toString());
-    int minDividedKernelSize = IntStream.range(0, 2).map(d -> {
-      return (int) Math.floor((double) layer.getKernelSize()[d] / layer.getStrides()[d]);
-    }).reduce((a, b) -> a * b).getAsInt();
-    int maxDividedKernelSize = IntStream.range(0, 2).map(d -> {
-      return (int) Math.ceil((double) layer.getKernelSize()[d] / layer.getStrides()[d]);
-    }).reduce((a, b) -> a * b).getAsInt();
-    if (!fwdSizes.entrySet().stream().filter(e -> e.getValue() == maxDividedKernelSize).findAny().isPresent()) {
-      log.warn("No Fully Represented Input Found");
-    }
-    int kernelSize = IntStream.range(0, 2).map(d -> {
-      return layer.getKernelSize()[d];
-    }).reduce((a, b) -> a * b).getAsInt();
-
-    Map<Coordinate, List<Coordinate>> bakPinMapping = fwdPinMapping.entrySet().stream().flatMap(fwdEntry -> fwdEntry.getValue().stream()
-        .map(outputCoord -> new Coordinate[]{fwdEntry.getKey(), outputCoord}))
-        .collect(Collectors.groupingBy(x -> x[1])).entrySet().stream().collect(Collectors.toMap(
-            e -> e.getKey(),
-            e -> e.getValue().stream().map(x -> x[0]).collect(Collectors.toList())));
-    Map<Coordinate, Integer> bakSizes = bakPinMapping.entrySet().stream().collect(Collectors.groupingBy(
-        e -> e.getKey(), Collectors.summingInt(e -> e.getValue().size())));
-    log.info("bakSizes=" + bakSizes.entrySet().stream().collect(Collectors.groupingBy(x -> x.getValue(), Collectors.counting())).toString());
-    if (!bakSizes.entrySet().stream().filter(e -> e.getValue() == kernelSize).findAny().isPresent()) {
-      log.warn("No Fully Represented Output Found");
-    }
-
-    fwdSizes.entrySet().stream().filter(e -> e.getValue() > maxDividedKernelSize).forEach(e -> {
-      log.info("Overrepresented Input: " + e.getKey() + " = " + e.getValue());
-    });
-    fwdSizes.entrySet().stream().filter(e -> e.getValue() < minDividedKernelSize).forEach(e -> {
-      int[] coords = e.getKey().getCoords();
-      int[] inputBorders = layer.getInputBorders();
-      int[] array = IntStream.range(0, inputBorders.length).filter(d -> {
-        if (inputBorders[d] > coords[d]) return true;
-        return ((inputDims[d]) - inputBorders[d]) <= coords[d];
-      }).toArray();
-      if (array.length == 0) {
-        log.warn("Underrepresented Input: " + e.getKey() + " = " + e.getValue());
-      }
-    });
-
-    bakSizes.entrySet().stream().filter(e -> e.getValue() < kernelSize).forEach(e -> {
-      int[] coords = e.getKey().getCoords();
-      int[] outputBorders = layer.getOutputBorders();
-      int[] array = IntStream.range(0, outputBorders.length).filter(d -> {
-        if (outputBorders[d] > coords[d]) return true;
-        return ((outputDims[d]) - outputBorders[d]) <= coords[d];
-      }).toArray();
-      if (0 == array.length) {
-        log.warn("Underrepresented Output: " + e.getKey() + " = " + e.getValue());
-      }
-    });
-  }
-
-  public static int[] evalDims(int[] inputDims, Layer layer) {
-    Tensor input = new Tensor(inputDims);
-    Tensor tensor = layer.eval(input).getDataAndFree().getAndFree(0);
-    input.freeRef();
-    int[] dimensions = tensor.getDimensions();
-    tensor.freeRef();
-    layer.freeRef();
-    return dimensions;
-  }
-
-  public static BufferedImage load(final CharSequence image, final int imageSize) {
-    if (image.length() == 0) return new Tensor(imageSize, imageSize, 3).mapAndFree(x -> FastRandom.INSTANCE.random() * 50).toImage();
-    BufferedImage source = getImage(image);
-    return imageSize <= 0 ? source : TestUtil.resize(source, imageSize, true);
-  }
-
-  @Nonnull
-  public static BufferedImage load(@Nonnull final CharSequence image, final int width, final int height) {
-    BufferedImage source = getImage(image);
-    return width <= 0 ? source : TestUtil.resize(source, width, height);
-  }
-
-  @Nonnull
-  public static BufferedImage getImage(@Nonnull final CharSequence file) {
-    if (file.toString().startsWith("http")) {
+  public static Tensor getTensor(NotebookOutput log, @Nonnull CharSequence file) {
+    String fileStr = file.toString();
+    if (fileStr.trim().toLowerCase().startsWith("upload:")) {
+      String key = fileStr.substring("upload:".length());
+      MarkdownNotebookOutput markdownLog = (MarkdownNotebookOutput) log;
+      return (Tensor) markdownLog.uploadCache.computeIfAbsent(key, k -> {
+        try {
+          UploadImageQuery uploadImageQuery = new UploadImageQuery(k, log);
+          return Tensor.fromRGB(ImageIO.read(uploadImageQuery.print().get()));
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
+    } else if (fileStr.startsWith("http")) {
       try {
-        BufferedImage read = ImageIO.read(new URL(file.toString()));
+        BufferedImage read = ImageIO.read(new URL(fileStr));
         if (null == read) throw new IllegalArgumentException("Error reading " + file);
-        return read;
+        return Tensor.fromRGB(read);
       } catch (Throwable e) {
         throw new RuntimeException("Error reading " + file, e);
       }
     }
-    FileSystem fileSystem = getFileSystem(file.toString());
-    Path path = new Path(file.toString());
+    FileSystem fileSystem = getFileSystem(fileStr);
+    Path path = new Path(fileStr);
     try {
       if (!fileSystem.exists(path)) throw new IllegalArgumentException("Not Found: " + path);
       try (FSDataInputStream open = fileSystem.open(path)) {
         byte[] bytes = IOUtils.toByteArray(open);
         try (ByteArrayInputStream in = new ByteArrayInputStream(bytes)) {
-          return ImageIO.read(in);
+          return Tensor.fromRGB(ImageIO.read(in));
         }
       }
     } catch (Throwable e) {
@@ -322,12 +283,9 @@ public class VisionPipelineUtil {
   @Nonnull
   public static Configuration getHadoopConfig() {
     Configuration configuration = new Configuration(false);
-
     File tempDir = new File("temp");
     tempDir.mkdirs();
     configuration.set("hadoop.tmp.dir", tempDir.getAbsolutePath());
-//    configuration.set("fs.http.impl", org.apache.hadoop.fs.http.HttpFileSystem.class.getCanonicalName());
-//    configuration.set("fs.https.impl", org.apache.hadoop.fs.http.HttpsFileSystem.class.getCanonicalName());
     configuration.set("fs.git.impl", com.simiacryptus.hadoop_jgit.GitFileSystem.class.getCanonicalName());
     configuration.set("fs.s3a.impl", S3AFileSystem.class.getCanonicalName());
     configuration.set("fs.s3.impl", S3AFileSystem.class.getCanonicalName());

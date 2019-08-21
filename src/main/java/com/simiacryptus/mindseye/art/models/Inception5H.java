@@ -21,7 +21,7 @@ package com.simiacryptus.mindseye.art.models;
 
 import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
-import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
+import com.simiacryptus.mindseye.art.util.ImageArtUtil;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.tensorflow.ImageNetworkPipeline;
 
@@ -64,7 +64,7 @@ public enum Inception5H implements VisionPipelineLayer {
     if (null == inception5h) {
       synchronized (Inception5H.class) {
         if (null == inception5h) {
-          inception5h = VisionPipelineUtil.convertPipeline(ImageNetworkPipeline.loadGraphZip(
+          inception5h = ImageArtUtil.convertPipeline(ImageNetworkPipeline.loadGraphZip(
               "https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip",
               "tensorflow_inception_graph.pb"
               ), "conv2d0",

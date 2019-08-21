@@ -20,7 +20,7 @@
 package com.simiacryptus.mindseye.art.util;
 
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.mindseye.test.TestUtil;
+import com.simiacryptus.mindseye.util.ImageUtil;
 
 import javax.annotation.Nonnull;
 import java.util.function.DoubleUnaryOperator;
@@ -60,7 +60,7 @@ public class Plasma {
       image.freeRef();
       image = newImage;
     }
-    Tensor tensor = Tensor.fromRGB(TestUtil.resize(image.toImage(), width, height));
+    Tensor tensor = Tensor.fromRGB(ImageUtil.resize(image.toImage(), width, height));
     image.freeRef();
     return tensor;
   }

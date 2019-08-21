@@ -22,7 +22,7 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.art.models.Inception5H;
 import com.simiacryptus.mindseye.art.ops.ContentMatcher;
 import com.simiacryptus.mindseye.art.ops.GramMatrixMatcher;
-import com.simiacryptus.mindseye.art.util.VisionPipelineUtil;
+import com.simiacryptus.mindseye.art.util.ImageArtUtil;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
@@ -31,6 +31,7 @@ import com.simiacryptus.mindseye.layers.java.LayerTestBase;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
+import com.simiacryptus.notebook.NullNotebookOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +40,8 @@ import java.util.Random;
 
 public class NetworkTest extends LayerTestBase {
   private static final Logger log = LoggerFactory.getLogger(NetworkTest.class);
-  private static final BufferedImage styleImage = VisionPipelineUtil.load("https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200);
-  private static final BufferedImage contentImage = VisionPipelineUtil.load("https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500);
+  private static final BufferedImage styleImage = ImageArtUtil.load(new NullNotebookOutput(), "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200);
+  private static final BufferedImage contentImage = ImageArtUtil.load(new NullNotebookOutput(), "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500);
   private static final DAGNetwork layer = build();
 
   public NetworkTest() {
