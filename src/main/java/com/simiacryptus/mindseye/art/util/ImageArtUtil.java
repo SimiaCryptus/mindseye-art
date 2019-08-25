@@ -156,55 +156,49 @@ public class ImageArtUtil {
   }
 
   public static BufferedImage load(NotebookOutput log, final CharSequence image, final int imageSize) {
-    return ImageUtil.load(() -> getImage(image, log), imageSize);
+    return getImageTensor(image, log, imageSize).toImage();
   }
 
   public static BufferedImage load(NotebookOutput log, final CharSequence image, final int width, final int height) {
-    return ImageUtil.load(() -> getImage(image, log), width, height);
+    return getImageTensor(image, log, width, height).toImage();
   }
 
-  public static Tensor loadTensor(NotebookOutput log, final CharSequence image, final int imageSize) {
-    return getImageTensor(image, log, imageSize, imageSize);
-  }
-
-  public static Tensor loadTensor(NotebookOutput log, final CharSequence image, final int width, final int height) {
-    return getImageTensor(image, log, width, height);
-  }
-
-  public static BufferedImage getImage(@Nonnull final CharSequence file, NotebookOutput log) {
-    Tensor imageTensor = getImageTensor(file, log);
-    return null==imageTensor?null:imageTensor.toImage();
-  }
-
-  public static Tensor getImageTensor(@Nonnull final CharSequence file, NotebookOutput log) {
+  @Nonnull
+  public static Tensor getImageTensor(@Nonnull final CharSequence file, NotebookOutput log, int width) {
     String fileStr = file.toString();
     int length = fileStr.split("\\:")[0].length();
-    if (length <= 0 || length >= Math.min(7,fileStr.length())) {
-      if (fileStr.contains(" * ")) {
-        Tensor sampleImage = Arrays.stream(fileStr.split(" * ")).map(x -> getImageTensor(x, log)).filter(x -> x != null).findFirst().get();
-        return Arrays.stream(fileStr.split(" * ")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
-          Tensor r = a.mapCoordsAndFree(c -> a.get(c) * b.get(c));
-          b.freeRef();
-          return r;
-        }).get();
-      } else if (fileStr.contains(" + ")) {
-        Tensor sampleImage = Arrays.stream(fileStr.split(" + ")).map(x -> getImageTensor(x, log)).filter(x -> x != null).findFirst().get();
-        return Arrays.stream(fileStr.split(" + ")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
+    if (length <= 0 || length >= Math.min(7, fileStr.length())) {
+      if (fileStr.contains(" + ")) {
+        Tensor sampleImage = Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
+        return Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
           Tensor r = a.mapCoordsAndFree(c -> a.get(c) + b.get(c));
           b.freeRef();
           return r;
         }).get();
+      } else if (fileStr.contains(" * ")) {
+        Tensor sampleImage = Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
+        return Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
+          Tensor r = a.mapCoordsAndFree(c -> a.get(c) * b.get(c));
+          b.freeRef();
+          return r;
+        }).get();
+      } else if (fileStr.trim().toLowerCase().equals("plasma")) {
+        return new Plasma().paint(width, width);
+      } else if (fileStr.trim().toLowerCase().equals("noise")) {
+        return new Tensor(width, width, 3).mapAndFree(x -> FastRandom.INSTANCE.random() * 100);
+      } else if (fileStr.matches("\\-?\\d+(?:\\.\\d*)?(?:[eE]\\-?\\d+)?")) {
+        double v = Double.parseDouble(fileStr);
+        return new Tensor(width, width, 3).mapAndFree(x -> v);
       }
-      return null;
     }
-    return getTensor(log, file);
+    return Tensor.fromRGB(ImageUtil.resize(getTensor(log, file).toImage(), width, true));
   }
 
   @Nonnull
   public static Tensor getImageTensor(@Nonnull final CharSequence file, NotebookOutput log, int width, int height) {
     String fileStr = file.toString();
     int length = fileStr.split("\\:")[0].length();
-    if (length <= 0 || length >= Math.min(7,fileStr.length())) {
+    if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
         Tensor sampleImage = Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
         return Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
@@ -228,7 +222,7 @@ public class ImageArtUtil {
         return new Tensor(width, height, 3).mapAndFree(x -> v);
       }
     }
-    return getTensor(log, file);
+    return Tensor.fromRGB(ImageUtil.resize(getTensor(log, file).toImage(), width, height));
   }
 
   @NotNull
