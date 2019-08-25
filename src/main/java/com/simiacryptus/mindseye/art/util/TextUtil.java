@@ -19,6 +19,8 @@
 
 package com.simiacryptus.mindseye.art.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
@@ -33,14 +35,36 @@ public class TextUtil {
       final String fontName,
       final int style
   ) {
-    Font font = fitSize(text, resolution, padding, fontName, style);
+    return draw(text, resolution, padding, fitWidth(text, resolution, padding, fontName, style));
+  }
+
+  @NotNull
+  public static BufferedImage draw(String text, int resolution, int padding, Font font) {
     Rectangle2D bounds = measure(font, text);
     double aspect_ratio = (2.0 * padding + bounds.getHeight()) / (2.0 * padding + bounds.getWidth());
-    BufferedImage image = new BufferedImage(resolution, (int) (aspect_ratio * resolution), BufferedImage.TYPE_INT_RGB);
+    return draw(text, resolution, (int) (aspect_ratio * resolution), padding, font, bounds);
+  }
+
+  @NotNull
+  public static BufferedImage drawHeight(String text, int resolution, int padding, Font font) {
+    Rectangle2D bounds = measure(font, text);
+    double aspect_ratio = (2.0 * padding + bounds.getHeight()) / (2.0 * padding + bounds.getWidth());
+    return draw(text, (int) (resolution / aspect_ratio), resolution, padding, font, bounds);
+  }
+
+  public @NotNull
+  static BufferedImage draw(String text, int width, int height, int padding, Font font, Rectangle2D bounds) {
+    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     Graphics2D graphics = (Graphics2D) image.getGraphics();
     graphics.setColor(Color.WHITE);
     graphics.setFont(font);
-    int y = (int) ((Rectangle2D.Double) bounds).y + padding;
+    double initY = ((Rectangle2D.Double) bounds).y + padding;
+    int y = (int) initY;
+    for (final String line : text.split("\n")) {
+      Rectangle2D stringBounds = graphics.getFontMetrics().getStringBounds(line, graphics);
+      y += stringBounds.getHeight();
+    }
+    y = (int) (initY + (((height - padding) - (y - initY)) / 2));
     for (final String line : text.split("\n")) {
       Rectangle2D stringBounds = graphics.getFontMetrics().getStringBounds(line, graphics);
       double centeringOffset = (bounds.getWidth() - stringBounds.getWidth()) / 2;
@@ -52,19 +76,17 @@ public class TextUtil {
 
   @Nonnull
   public static Rectangle2D measure(final Font font, final String text) {
-    final Rectangle2D bounds;
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
     graphics.setFont(font);
     String[] lines = text.split("\n");
     double width = Arrays.stream(lines).mapToInt(t -> (int) graphics.getFontMetrics().getStringBounds(t, graphics).getWidth()).max().getAsInt();
     int height = Arrays.stream(lines).mapToInt(t -> (int) graphics.getFontMetrics().getLineMetrics(t, graphics).getAscent()).sum();
     double line1height = graphics.getFontMetrics().getLineMetrics(lines[0], graphics).getAscent();
-    bounds = new Rectangle2D.Double(0, line1height, width, height);
-    return bounds;
+    return new Rectangle2D.Double(0, line1height, width, height);
   }
 
   @Nonnull
-  public static Font fitSize(
+  public static Font fitWidth(
       final String text,
       final int resolution,
       final int padding,
@@ -81,6 +103,48 @@ public class TextUtil {
           t,
           graphics
       ).getWidth()).max().getAsInt();
+    }
+    size -= 2;
+    font = new Font(fontName, style, size);
+    return font;
+  }
+
+  @Nonnull
+  public static Font fitHeight(
+      final String text,
+      final int resolution,
+      final int padding,
+      final String fontName, final int style
+  ) {
+    final Font font;
+    double height = 0;
+    int size = 12;
+    while (height < (resolution - 2 * padding) && size < 10000) {
+      size += 2;
+      height = measure(new Font(fontName, style, size), text).getHeight();
+    }
+    size -= 2;
+    font = new Font(fontName, style, size);
+    return font;
+  }
+
+  @Nonnull
+  public static Font fit(
+      final String text,
+      final int max_width,
+      final int max_height,
+      final int padding,
+      final String fontName, final int style
+  ) {
+    final Font font;
+    double height = 0;
+    double width = 0;
+    int size = 12;
+    while (height < (max_height - 2 * padding) && width < (max_width - 2 * padding) && size < 10000) {
+      size += 2;
+      Rectangle2D measure = measure(new Font(fontName, style, size), text);
+      height = measure.getHeight();
+      width = measure.getWidth();
     }
     size -= 2;
     font = new Font(fontName, style, size);
