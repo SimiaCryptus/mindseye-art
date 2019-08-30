@@ -27,42 +27,30 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public enum VGG16 implements VisionPipelineLayer {
-  VGG16_0(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 3, 3, getVgg16_hdf5()::phase0),
-  VGG16_1a(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 3, 64, getVgg16_hdf5()::phase1a),
-  VGG16_1b1(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1b1),
-  VGG16_1b2(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1b2),
-  VGG16_1c1(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1c1),
-  VGG16_1c2(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1c2),
-  VGG16_1c3(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1c3),
-  VGG16_1d1(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1d1),
-  VGG16_1d2(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1d2),
-  VGG16_1d3(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1d3),
-  VGG16_1e1(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1e1),
-  VGG16_1e2(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1e2),
-  VGG16_1e3(new int[]{0, 0}, new int[]{0, 0}, new int[]{5, 5}, new int[]{2, 2}, 64, 128, getVgg16_hdf5()::phase1e3),
-  VGG16_2(new int[]{0, 0}, new int[]{0, 0}, new int[]{7, 7}, new int[]{2, 2}, 512, 4096, getVgg16_hdf5()::phase2),
-  VGG16_3a(new int[]{0, 0}, new int[]{0, 0}, new int[]{7, 7}, new int[]{2, 2}, 512, 512, getVgg16_hdf5()::phase3a),
-  VGG16_3b(new int[]{0, 0}, new int[]{0, 0}, new int[]{7, 7}, new int[]{2, 2}, 512, 512, getVgg16_hdf5()::phase3b);
+  VGG16_0(getVgg16_hdf5()::phase0),
+  VGG16_1a(getVgg16_hdf5()::phase1a),
+  VGG16_1b1(getVgg16_hdf5()::phase1b1),
+  VGG16_1b2(getVgg16_hdf5()::phase1b2),
+  VGG16_1c1(getVgg16_hdf5()::phase1c1),
+  VGG16_1c2(getVgg16_hdf5()::phase1c2),
+  VGG16_1c3(getVgg16_hdf5()::phase1c3),
+  VGG16_1d1(getVgg16_hdf5()::phase1d1),
+  VGG16_1d2(getVgg16_hdf5()::phase1d2),
+  VGG16_1d3(getVgg16_hdf5()::phase1d3),
+  VGG16_1e1(getVgg16_hdf5()::phase1e1),
+  VGG16_1e2(getVgg16_hdf5()::phase1e2),
+  VGG16_1e3(getVgg16_hdf5()::phase1e3),
+  VGG16_2(getVgg16_hdf5()::phase2),
+  VGG16_3a(getVgg16_hdf5()::phase3a),
+  VGG16_3b(getVgg16_hdf5()::phase3b);
 
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
   private static VGG16_HDF5 vgg16_hdf5 = null;
   private final Consumer<PipelineNetwork> fn;
-  private final int[] inputBorders;
-  private final int[] outputBorders;
-  private final int[] kenelSize;
-  private final int[] strides;
-  private final int inputChannels;
-  private final int outputChannels;
   private volatile PipelineNetwork pipeline = null;
 
-  VGG16(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, Consumer<PipelineNetwork> fn) {
+  VGG16(Consumer<PipelineNetwork> fn) {
     this.fn = fn;
-    this.inputChannels = inputChannels;
-    this.outputChannels = outputChannels;
-    this.inputBorders = inputBorders;
-    this.outputBorders = outputBorders;
-    this.kenelSize = kenelSize;
-    this.strides = strides;
   }
 
   public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
@@ -96,36 +84,6 @@ public enum VGG16 implements VisionPipelineLayer {
       }
     }
     return pipeline.copyPipeline();
-  }
-
-  @Override
-  public int[] getInputBorders() {
-    return this.inputBorders;
-  }
-
-  @Override
-  public int[] getOutputBorders() {
-    return this.outputBorders;
-  }
-
-  @Override
-  public int getInputChannels() {
-    return inputChannels;
-  }
-
-  @Override
-  public int getOutputChannels() {
-    return outputChannels;
-  }
-
-  @Override
-  public int[] getKernelSize() {
-    return this.kenelSize;
-  }
-
-  @Override
-  public int[] getStrides() {
-    return this.strides;
   }
 
   @Override

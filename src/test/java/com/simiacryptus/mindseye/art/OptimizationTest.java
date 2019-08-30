@@ -20,7 +20,7 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.art.models.Inception5H;
-import com.simiacryptus.mindseye.art.ops.ChannelMeanEnhancer;
+import com.simiacryptus.mindseye.art.ops.ChannelPowerEnhancer;
 import com.simiacryptus.mindseye.art.ops.ChannelMeanMatcher;
 import com.simiacryptus.mindseye.art.ops.ContentMatcher;
 import com.simiacryptus.mindseye.art.ops.GramMatrixMatcher;
@@ -91,7 +91,7 @@ public class OptimizationTest {
   @Test
   public void testDream() throws InterruptedException {
     Tensor image = Tensor.fromRGB(ImageArtUtil.load(new NullNotebookOutput(), "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500));
-    train(image, new ChannelMeanEnhancer().build(Inception5H.Inc5H_3b, image), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1));
+    train(image, new ChannelPowerEnhancer().build(Inception5H.Inc5H_3b, image), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1));
     Thread.sleep(100000);
   }
 

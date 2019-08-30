@@ -56,36 +56,6 @@ public class StaticVisionPipelineLayer implements VisionPipelineLayer {
   }
 
   @Override
-  public int[] getInputBorders() {
-    return new int[0];
-  }
-
-  @Override
-  public int[] getOutputBorders() {
-    return new int[0];
-  }
-
-  @Override
-  public int getInputChannels() {
-    return 0;
-  }
-
-  @Override
-  public int getOutputChannels() {
-    return 0;
-  }
-
-  @Override
-  public int[] getKernelSize() {
-    return new int[0];
-  }
-
-  @Override
-  public int[] getStrides() {
-    return new int[0];
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

@@ -88,36 +88,6 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   }
 
   @Override
-  public int[] getInputBorders() {
-    return this.inputBorders;
-  }
-
-  @Override
-  public int[] getOutputBorders() {
-    return this.outputBorders;
-  }
-
-  @Override
-  public int getInputChannels() {
-    return inputChannels;
-  }
-
-  @Override
-  public int getOutputChannels() {
-    return outputChannels;
-  }
-
-  @Override
-  public int[] getKernelSize() {
-    return this.kenelSize;
-  }
-
-  @Override
-  public int[] getStrides() {
-    return this.strides;
-  }
-
-  @Override
   public String getPipelineName() {
     return getVisionPipeline().name;
   }

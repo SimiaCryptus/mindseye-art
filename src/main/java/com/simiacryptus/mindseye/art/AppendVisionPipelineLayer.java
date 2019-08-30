@@ -65,36 +65,6 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
   }
 
   @Override
-  public int[] getInputBorders() {
-    return inner.getInputBorders();
-  }
-
-  @Override
-  public int[] getOutputBorders() {
-    return inner.getOutputBorders();
-  }
-
-  @Override
-  public int getInputChannels() {
-    return inner.getInputChannels();
-  }
-
-  @Override
-  public int getOutputChannels() {
-    return inner.getOutputChannels();
-  }
-
-  @Override
-  public int[] getKernelSize() {
-    return inner.getKernelSize();
-  }
-
-  @Override
-  public int[] getStrides() {
-    return inner.getStrides();
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

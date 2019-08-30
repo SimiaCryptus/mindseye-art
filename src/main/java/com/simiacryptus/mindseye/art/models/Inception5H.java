@@ -28,36 +28,24 @@ import com.simiacryptus.tensorflow.ImageNetworkPipeline;
 import java.util.Map;
 
 public enum Inception5H implements VisionPipelineLayer {
-  Inc5H_1a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 64, "conv2d0"),
-  Inc5H_2a(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 64, 192, "localresponsenorm1"),
-  Inc5H_3a(new int[]{0, 0}, new int[]{1, 1}, new int[]{3, 3}, new int[]{2, 2}, 192, 256, "mixed3a"),
-  Inc5H_3b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 256, 480, "mixed3b"),
-  Inc5H_4a(new int[]{0, 0}, new int[]{1, 1}, new int[]{3, 3}, new int[]{2, 2}, 480, 508, "mixed4a"),
-  Inc5H_4b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 508, 512, "mixed4b"),
-  Inc5H_4c(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 512, 512, "mixed4c"),
-  Inc5H_4d(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 512, 528, "mixed4d"),
-  Inc5H_4e(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 528, 832, "mixed4e"),
-  Inc5H_5a(new int[]{1, 1}, new int[]{1, 1}, new int[]{2, 2}, new int[]{2, 2}, 832, 832, "mixed5a"),
-  Inc5H_5b(new int[]{0, 0}, new int[]{0, 0}, new int[]{1, 1}, new int[]{1, 1}, 832, 1024, "mixed5b");
+  Inc5H_1a("conv2d0"),
+  Inc5H_2a("localresponsenorm1"),
+  Inc5H_3a("mixed3a"),
+  Inc5H_3b("mixed3b"),
+  Inc5H_4a("mixed4a"),
+  Inc5H_4b("mixed4b"),
+  Inc5H_4c("mixed4c"),
+  Inc5H_4d("mixed4d"),
+  Inc5H_4e("mixed4e"),
+  Inc5H_5a("mixed5a"),
+  Inc5H_5b("mixed5b");
 
   private static transient Map<String, PipelineNetwork> inception5h = null;
   private static volatile VisionPipeline<Inception5H> visionPipeline = null;
   private final String layerId;
-  private final int[] inputBorders;
-  private final int[] outputBorders;
-  private final int[] kenelSize;
-  private final int[] strides;
-  private final int inputChannels;
-  private final int outputChannels;
 
-  Inception5H(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, String layerId) {
-    this.inputChannels = inputChannels;
-    this.outputChannels = outputChannels;
+  Inception5H(String layerId) {
     this.layerId = layerId;
-    this.inputBorders = inputBorders;
-    this.outputBorders = outputBorders;
-    this.kenelSize = kenelSize;
-    this.strides = strides;
   }
 
   public static Map<String, PipelineNetwork> layerMap() {
@@ -98,36 +86,6 @@ public enum Inception5H implements VisionPipelineLayer {
   @Override
   public PipelineNetwork getLayer() {
     return (PipelineNetwork) layerMap().get(this.layerId).copyPipeline().setName(name());
-  }
-
-  @Override
-  public int[] getInputBorders() {
-    return this.inputBorders;
-  }
-
-  @Override
-  public int[] getOutputBorders() {
-    return this.outputBorders;
-  }
-
-  @Override
-  public int getInputChannels() {
-    return inputChannels;
-  }
-
-  @Override
-  public int getOutputChannels() {
-    return outputChannels;
-  }
-
-  @Override
-  public int[] getKernelSize() {
-    return this.kenelSize;
-  }
-
-  @Override
-  public int[] getStrides() {
-    return this.strides;
   }
 
   @Override
