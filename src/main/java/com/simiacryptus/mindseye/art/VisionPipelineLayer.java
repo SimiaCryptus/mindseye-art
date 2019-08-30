@@ -47,22 +47,9 @@ public interface VisionPipelineLayer {
   @Nonnull
   Layer getLayer();
 
-  int[] getInputBorders();
-
-  int[] getOutputBorders();
-
-  int getInputChannels();
-
-  int getOutputChannels();
-
-  int[] getKernelSize();
-
-  int[] getStrides();
-
   default VisionPipelineLayer prependAvgPool(int radius) {
     return prependPool(radius, PoolingLayer.PoolingMode.Avg);
   }
-
 
   default VisionPipelineLayer appendAvgPool(int radius) {
     return appendPool(radius, PoolingLayer.PoolingMode.Avg);

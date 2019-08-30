@@ -27,7 +27,7 @@ import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
-public class ChannelMeanEnhancer implements VisualModifier {
+public class ChannelPowerEnhancer implements VisualModifier {
 
   private boolean averaging = true;
   private boolean balanced = true;
@@ -49,7 +49,7 @@ public class ChannelMeanEnhancer implements VisualModifier {
     return averaging;
   }
 
-  public ChannelMeanEnhancer setAveraging(boolean averaging) {
+  public ChannelPowerEnhancer setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
@@ -58,7 +58,7 @@ public class ChannelMeanEnhancer implements VisualModifier {
     return balanced;
   }
 
-  public ChannelMeanEnhancer setBalanced(boolean balanced) {
+  public ChannelPowerEnhancer setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }

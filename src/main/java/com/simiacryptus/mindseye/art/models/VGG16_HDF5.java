@@ -207,6 +207,9 @@ class VGG16_HDF5 {
             .permuteDimensionsAndFree(fullyconnectedOrder)), pipeline);
     add(new ImgBandBiasLayer(1000)
         .setAndFree((hdf5.readDataSet("param_1", "layer_36"))), pipeline);
+  }
+
+  public void phase3c(PipelineNetwork pipeline) {
     add(new SoftmaxActivationLayer()
         .setAlgorithm(SoftmaxActivationLayer.SoftmaxAlgorithm.ACCURATE)
         .setMode(SoftmaxActivationLayer.SoftmaxMode.CHANNEL), pipeline);
