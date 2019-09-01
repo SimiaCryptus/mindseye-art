@@ -43,15 +43,15 @@ public class ContentMatcher implements VisualModifier {
     String name = (layer != null ? layer.getName() : "Original") + " Content";
     Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
     double mag = balanced ? baseContent.rms() : 1;
+    if(!Double.isFinite(mag) || mag < 0) throw new RuntimeException("RMS = " + mag);
     DAGNode head = network.getHead();
     DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
     constNode.getLayer().setName(name);
     network.wrap(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
     network.wrap(PipelineNetwork.wrap(1,
+        new LinearActivationLayer().setScale(0 == mag ? 1 : Math.pow(mag, -1)),
         new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(0 == mag ? 1 : Math.pow(mag, -2))
-//        ,new NthPowerActivationLayer().setPower(0.5)
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()
     ).setName(String.format("RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
