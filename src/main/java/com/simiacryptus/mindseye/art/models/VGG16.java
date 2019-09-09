@@ -27,7 +27,9 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public enum VGG16 implements VisionPipelineLayer {
-  VGG16_0(getVgg16_hdf5()::phase0),
+  VGG16_0a(x -> {
+  }),
+  VGG16_0b(getVgg16_hdf5()::phase0b),
   VGG16_1a(getVgg16_hdf5()::phase1a),
   VGG16_1b1(getVgg16_hdf5()::phase1b1),
   VGG16_1b2(getVgg16_hdf5()::phase1b2),

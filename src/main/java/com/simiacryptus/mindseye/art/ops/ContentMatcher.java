@@ -43,7 +43,7 @@ public class ContentMatcher implements VisualModifier {
     String name = (layer != null ? layer.getName() : "Original") + " Content";
     Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
     double mag = balanced ? baseContent.rms() : 1;
-    if(!Double.isFinite(mag) || mag < 0) throw new RuntimeException("RMS = " + mag);
+    if (!Double.isFinite(mag) || mag < 0) throw new RuntimeException("RMS = " + mag);
     DAGNode head = network.getHead();
     DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
     constNode.getLayer().setName(name);

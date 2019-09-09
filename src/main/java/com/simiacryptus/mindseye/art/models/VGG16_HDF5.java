@@ -95,7 +95,7 @@ class VGG16_HDF5 {
   }
 
 
-  public void phase0(PipelineNetwork pipeline) {
+  public void phase0b(PipelineNetwork pipeline) {
     //add(new ImgMinSizeLayer(226, 226), pipeline);
     add(new ImgBandBiasLayer(3).setAndFree(new Tensor(-103.939, -116.779, -123.68)), pipeline);
     addConvolutionLayer(3, 3, 64, ActivationLayer.Mode.RELU, "layer_1", pipeline);

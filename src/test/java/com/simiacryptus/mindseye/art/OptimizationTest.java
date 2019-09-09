@@ -20,8 +20,8 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.art.models.Inception5H;
-import com.simiacryptus.mindseye.art.ops.ChannelPowerEnhancer;
 import com.simiacryptus.mindseye.art.ops.ChannelMeanMatcher;
+import com.simiacryptus.mindseye.art.ops.ChannelPowerEnhancer;
 import com.simiacryptus.mindseye.art.ops.ContentMatcher;
 import com.simiacryptus.mindseye.art.ops.GramMatrixMatcher;
 import com.simiacryptus.mindseye.art.util.ImageArtUtil;
