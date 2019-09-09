@@ -162,7 +162,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   public static class VGG16Test extends VisionPipelineTest {
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
-        testDims(VGG16_0, new int[]{226, 226, 3}, new int[]{226, 226, 3});
+        testDims(VGG16_0b, new int[]{226, 226, 3}, new int[]{226, 226, 3});
         testDims(VGG16_1a, new int[]{226, 226, 3}, new int[]{226, 226, 64});
         testDims(VGG16_1b1, new int[]{226, 226, 64}, new int[]{113, 113, 128});
         testDims(VGG16_1c1, new int[]{113, 113, 128}, new int[]{57, 57, 256});
@@ -182,38 +182,6 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       });
     }
 
-    public void layerPins(NotebookOutput log) {
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_0, new int[]{226, 226, 3});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_1a, new int[]{226, 226, 3});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_1b, new int[]{226, 226, 64});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_1c, new int[]{113, 113, 128});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_1d, new int[]{56, 56, 256});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_1e, new int[]{29, 29, 512});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_2a, new int[]{15, 15, 512});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_2b, new int[]{8, 2 * 8, 512});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_3a, new int[]{14, 14, 4096});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG16_3b, new int[]{14, 14, 1000});
-//      });
-    }
 
     @Override
     public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
@@ -249,38 +217,6 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       });
     }
 
-    public void layerPins(NotebookOutput log) {
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_0b, new int[]{226, 226, 3});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_1a, new int[]{226, 226, 3});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_1b, new int[]{226, 226, 64});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_1c, new int[]{113, 113, 128});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_1d, new int[]{56, 56, 256});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_1e, new int[]{29, 29, 512});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_2a, new int[]{15, 15, 512});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_2b, new int[]{8, 2 * 8, 512});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_3a, new int[]{14, 14, 4096});
-//      });
-//      log.run(() -> {
-//        ImageArtUtil.testPinConnectivity(VGG19_3b, new int[]{14, 14, 1000});
-//      });
-    }
 
     @Override
     public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {

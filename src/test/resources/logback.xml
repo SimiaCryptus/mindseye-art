@@ -28,6 +28,7 @@
     </appender>
 
     <logger name="com.simiacryptus" level="INFO"/>
+    <logger name="org.apache" level="WARN"/>
 
     <root level="info">
         <appender-ref ref="STDOUT"/>

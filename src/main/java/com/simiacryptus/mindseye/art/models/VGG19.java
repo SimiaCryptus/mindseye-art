@@ -27,7 +27,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public enum VGG19 implements VisionPipelineLayer {
-  VGG19_0a(p -> {}),
+  VGG19_0a(p -> {
+  }),
   VGG19_0b(getVGG19_hdf5()::phase0),
   VGG19_1a(getVGG19_hdf5()::phase1a),
   VGG19_1b1(getVGG19_hdf5()::phase1b1),
