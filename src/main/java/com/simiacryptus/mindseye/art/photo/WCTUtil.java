@@ -35,7 +35,10 @@ public class WCTUtil {
   public static PipelineNetwork applicator(Tensor encodedStyle, Layer normalNetwork) {
     final Tensor meanSignal = means(encodedStyle);
     final Tensor signalPower = rms(encodedStyle, meanSignal);
-    return applicator(meanSignal, signalPower, normalNetwork);
+    final PipelineNetwork applicator = applicator(meanSignal, signalPower, normalNetwork);
+    meanSignal.freeRef();
+    signalPower.freeRef();
+    return applicator;
   }
 
   public static PipelineNetwork applicator(Tensor meanSignal, Tensor signalPower, Layer normalNetwork) {
@@ -57,7 +60,7 @@ public class WCTUtil {
     final InnerNode centered = normalizer.wrap(
         new ImgBandDynamicBiasLayer(),
         normalizer.getInput(0),
-        normalizer.wrap(new ScaleLayer(-1), avgNode.addRef())
+        normalizer.wrap(new ScaleLayer(-1), avgNode)
     );
     final InnerNode scales = normalizer.wrap(
         PipelineNetwork.wrap(1,
@@ -77,15 +80,23 @@ public class WCTUtil {
   }
 
   public static Tensor means(Tensor encodedStyle) {
-    return new BandAvgReducerLayer().eval(encodedStyle).getDataAndFree().getAndFree(0);
+    final BandAvgReducerLayer avgReducerLayer = new BandAvgReducerLayer();
+    final Tensor tensor = avgReducerLayer.eval(encodedStyle).getDataAndFree().getAndFree(0);
+    avgReducerLayer.freeRef();
+    return tensor;
   }
 
   public static Tensor rms(Tensor normalFeatures, Tensor normalMeanSignal) {
-    return PipelineNetwork.wrap(1,
-        new ImgBandBiasLayer(normalMeanSignal.scale(-1)),
+    final Tensor scale = normalMeanSignal.scale(-1);
+    final PipelineNetwork wrap = PipelineNetwork.wrap(1,
+        new ImgBandBiasLayer(scale),
         new SquareActivationLayer(),
         new BandAvgReducerLayer(),
         new NthPowerActivationLayer().setPower(0.5)
-    ).eval(normalFeatures).getDataAndFree().getAndFree(0);
+    );
+    scale.freeRef();
+    final Tensor tensor = wrap.eval(normalFeatures).getDataAndFree().getAndFree(0);
+    wrap.freeRef();
+    return tensor;
   }
 }

@@ -19,10 +19,12 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
+import com.simiacryptus.lang.ref.ReferenceCountingBase;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.SerialPrecision;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.ZipSerializable;
+import com.simiacryptus.mindseye.network.PipelineNetwork;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,7 +38,12 @@ import java.util.function.UnaryOperator;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-public class FastPhotoStyleTransfer implements Function<Tensor, UnaryOperator<Tensor>> {
+/**
+ * Implemented process detailed in:
+ * A Closed-form Solution to Photorealistic Image Stylization
+ * https://arxiv.org/pdf/1802.06474.pdf
+ */
+public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Function<Tensor, UnaryOperator<Tensor>> {
 
   public final Layer encode_1;
   public final Layer decode_1;
@@ -46,6 +53,7 @@ public class FastPhotoStyleTransfer implements Function<Tensor, UnaryOperator<Te
   public final Layer decode_3;
   public final Layer encode_4;
   public final Layer decode_4;
+  private boolean useCuda = true;
   private boolean smooth = true;
   private double lambda = 1e-4;
   private double epsilon = 1e-7;
@@ -79,8 +87,31 @@ public class FastPhotoStyleTransfer implements Function<Tensor, UnaryOperator<Te
   public static Tensor transfer(Tensor contentImage, Tensor styleImage, Layer encode, Layer decode) {
     final Tensor encodedContent = encode.eval(contentImage).getDataAndFree().getAndFree(0);
     final Tensor encodedStyle = encode.eval(styleImage).getDataAndFree().getAndFree(0);
-    final Tensor encodedTransformed = WCTUtil.applicator(encodedStyle).eval(encodedContent).getDataAndFree().getAndFree(0);
-    return decode.eval(encodedTransformed, contentImage).getDataAndFree().getAndFree(0);
+    final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle);
+    encodedStyle.freeRef();
+    final Tensor encodedTransformed = applicator.eval(encodedContent).getDataAndFree().getAndFree(0);
+    encodedContent.freeRef();
+    applicator.freeRef();
+    final Tensor tensor = decode.eval(encodedTransformed, contentImage).getDataAndFree().getAndFree(0);
+    encodedTransformed.freeRef();
+    return tensor;
+  }
+
+  public static double getRadius(int distA, int distB) {
+    return Math.sqrt(distA * distA + distB * distB) + 1e-4;
+  }
+
+  @Override
+  protected void _free() {
+    encode_1.freeRef();
+    decode_1.freeRef();
+    encode_2.freeRef();
+    decode_2.freeRef();
+    encode_3.freeRef();
+    decode_3.freeRef();
+    encode_4.freeRef();
+    decode_4.freeRef();
+    super._free();
   }
 
   public void writeZip(@Nonnull File out, SerialPrecision precision) {
@@ -99,30 +130,31 @@ public class FastPhotoStyleTransfer implements Function<Tensor, UnaryOperator<Te
     }
   }
 
-  /**
-   * Implemented process detailed in:
-   * A Closed-form Solution to Photorealistic Image Stylization
-   * https://arxiv.org/pdf/1802.06474.pdf
-   */
-  public UnaryOperator<Tensor> apply(Tensor contentImage) {
-    final UnaryOperator<Tensor> photoSmooth = photoSmooth(contentImage);
-    return (Tensor styleImage) -> photoSmooth.apply(photoWCT(styleImage, contentImage));
+  public RefOperator<Tensor> apply(Tensor contentImage) {
+    return new StyleOperator(contentImage);
   }
 
   public Tensor photoWCT(Tensor style, Tensor content) {
-    return photoWCT_1(style,
-        photoWCT_2(style,
-            photoWCT_3(style,
-                photoWCT_4(style,
-                    content
-                ))));
+    return
+        photoWCT_1(style,
+            photoWCT_2(style,
+                photoWCT_3(style,
+                    photoWCT_4(style,
+                        content
+                    ))));
   }
 
   public @NotNull Tensor photoWCT_1(Tensor style, Tensor content) {
     final Tensor encodedContent = encode_1.eval(content).getDataAndFree().getAndFree(0);
     final Tensor encodedStyle = encode_1.eval(style).getDataAndFree().getAndFree(0);
-    final Tensor encodedTransformed = WCTUtil.applicator(encodedStyle).eval(encodedContent).getDataAndFree().getAndFree(0);
-    return decode_1.eval(encodedTransformed).getDataAndFree().getAndFree(0);
+    final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle);
+    final Tensor encodedTransformed = applicator.eval(encodedContent).getDataAndFree().getAndFree(0);
+    encodedContent.freeRef();
+    applicator.freeRef();
+    encodedStyle.freeRef();
+    final Tensor tensor = decode_1.eval(encodedTransformed).getDataAndFree().getAndFree(0);
+    encodedTransformed.freeRef();
+    return tensor;
   }
 
   @NotNull
@@ -140,9 +172,15 @@ public class FastPhotoStyleTransfer implements Function<Tensor, UnaryOperator<Te
   }
 
   @Nullable
-  public UnaryOperator<Tensor> photoSmooth(Tensor content) {
-    if (isSmooth()) return new PixelGraph(content).smoothingTransform(getLambda(), getEpsilon());
-    else return x -> x;
+  public RefOperator<Tensor> photoSmooth(Tensor content) {
+    if (isSmooth()) {
+      RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), getRadius(1, 1), -1);
+//      RasterAffinity affinity = new MattingAffinity(content, topology);
+      RasterAffinity affinity = new RelativeAffinity(content, topology);
+      //RasterAffinity affinity = new GaussianAffinity(content, 20, topology);
+      //affinity = new TruncatedAffinity(affinity).setMin(1e-2);
+      return (isUseCuda() ? new RasterSolver_Cuda() : new RasterSolver_EJML()).smoothingTransform(getLambda(), affinity);
+    } else return new NullOperator();
   }
 
   public boolean isSmooth() {
@@ -170,5 +208,46 @@ public class FastPhotoStyleTransfer implements Function<Tensor, UnaryOperator<Te
   public FastPhotoStyleTransfer setEpsilon(double epsilon) {
     this.epsilon = epsilon;
     return this;
+  }
+
+  public boolean isUseCuda() {
+    return useCuda;
+  }
+
+  public FastPhotoStyleTransfer setUseCuda(boolean useCuda) {
+    this.useCuda = useCuda;
+    return this;
+  }
+
+  private static class NullOperator<T> extends ReferenceCountingBase implements RefOperator<T> {
+    @Override
+    public T apply(T tensor) {
+      return tensor;
+    }
+  }
+
+  private class StyleOperator extends ReferenceCountingBase implements RefOperator<Tensor> {
+    final RefOperator<Tensor> photoSmooth;
+    private final Tensor contentImage;
+
+    public StyleOperator(Tensor contentImage) {
+      this.contentImage = contentImage;
+      photoSmooth = photoSmooth(contentImage);
+    }
+
+    @Override
+    protected void _free() {
+      contentImage.freeRef();
+      photoSmooth.freeRef();
+      super._free();
+    }
+
+    @Override
+    public Tensor apply(Tensor styleImage) {
+      final Tensor tensor = FastPhotoStyleTransfer.this.photoWCT(styleImage, contentImage);
+      final Tensor tensor1 = photoSmooth.apply(tensor);
+      tensor.freeRef();
+      return tensor1;
+    }
   }
 }
