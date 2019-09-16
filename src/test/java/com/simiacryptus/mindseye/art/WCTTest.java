@@ -19,10 +19,8 @@
 
 package com.simiacryptus.mindseye.art;
 
-import com.simiacryptus.mindseye.art.models.Inception5H;
-import com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer;
-import com.simiacryptus.mindseye.art.photo.PixelGraph;
-import com.simiacryptus.mindseye.art.photo.WCTUtil;
+import com.simiacryptus.mindseye.art.photo.*;
+import com.simiacryptus.mindseye.art.util.Plasma;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.SerialPrecision;
 import com.simiacryptus.mindseye.lang.Tensor;
@@ -36,30 +34,39 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipFile;
 
+import static com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer.getRadius;
 import static com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer.transfer;
+import static com.simiacryptus.mindseye.art.photo.RasterAffinity.adjust;
+import static com.simiacryptus.mindseye.art.photo.RasterAffinity.degree;
 
 public class WCTTest extends NotebookReportBase {
 
 //  private String contentImage = "file:///C:/Users/andre/Downloads/winter-with-snow-on-the-ground-landscape.jpg";
 //  private String styleImage = "file:///C:/Users/andre/Downloads/wisconsin-77930_1280.jpg";
 
-  private String contentImage = "file:///C:/Users/andre/Downloads/Herstmonceux_castle_summer_2005_(8414515391).jpg";
-  private String styleImage = "file:///C:/Users/andre/Downloads/5212832572_4388ede3fc_o.jpg";
+  private String contentImage =
+      "file:///C:/Users/andre/Downloads/pictures/E17-E.jpg";
+  //"file:///C:/Users/andre/Downloads/Herstmonceux_castle_summer_2005_(8414515391).jpg";
+  private String styleImage =
+      //"file:///C:/Users/andre/Downloads/5212832572_4388ede3fc_o.jpg";
+      "file:///C:/Users/andre/Downloads/pictures/IMG_20190706_134939599_HDR.jpg";
 
-//  private String contentImage = "https://upload.wikimedia.org/wikipedia/commons/b/b0/Group_portrait_of_Civil_War_generals_n.d._%283200501542%29.jpg";
+  //  private String contentImage = "https://upload.wikimedia.org/wikipedia/commons/b/b0/Group_portrait_of_Civil_War_generals_n.d._%283200501542%29.jpg";
 //  private String styleImage = "https://upload.wikimedia.org/wikipedia/commons/b/b6/Gilbert_Stuart_Williamstown_Portrait_of_George_Washington.jpg";
-  private int imageSize = 800;
-  private boolean verbose = true;
+  private int imageSize = 600;
+  private boolean verbose = false;
 
   @Nonnull
   @Override
   public ReportType getReportType() {
-    return ReportType.Components;
+    return ReportType.Applications;
   }
 
   @Test
@@ -79,22 +86,24 @@ public class WCTTest extends NotebookReportBase {
 
   @NotNull
   private Tensor styleImage() {
-    return Tensor.fromRGB(
+    return resize(ImageUtil.getTensor(styleImage));
+  }
+
+  @NotNull
+  private Tensor resize(Tensor tensor) {
+    final Tensor resized = Tensor.fromRGB(
         ImageUtil.resize(
-            ImageUtil.getTensor(styleImage).toImage(),
+            tensor.toImage(),
             imageSize,
             true)
     );
+    tensor.freeRef();
+    return resized;
   }
 
   @NotNull
   private Tensor contentImage() {
-    return Tensor.fromRGB(
-        ImageUtil.resize(
-            ImageUtil.getTensor(contentImage).toImage(),
-            imageSize,
-            true)
-    );
+    return resize(ImageUtil.getTensor(contentImage));
   }
 
   @Test
@@ -256,7 +265,7 @@ public class WCTTest extends NotebookReportBase {
     });
 
     log.eval(() -> {
-      return new PixelGraph(contentImage).smoothingTransform(1e-4, 1e-7).apply(content_1).toImage();
+      return toImage(new RasterSolver_EJML().smoothingTransform(1e-4, new MattingAffinity(contentImage)).apply(content_1));
     });
 
   }
@@ -276,6 +285,35 @@ public class WCTTest extends NotebookReportBase {
       return styleImage.toImage();
     });
 
+    final FastPhotoStyleTransfer fastPhotoStyleTransfer = getFastPhotoStyleTransfer(log);
+    if (verbose) {
+      log.eval(() -> {
+        return toImage(fastPhotoStyleTransfer.photoWCT_1(styleImage, contentImage));
+      });
+      log.eval(() -> {
+        return toImage(fastPhotoStyleTransfer.photoWCT_2(styleImage, contentImage));
+      });
+      log.eval(() -> {
+        return toImage(fastPhotoStyleTransfer.photoWCT_3(styleImage, contentImage));
+      });
+      log.eval(() -> {
+        return toImage(fastPhotoStyleTransfer.photoWCT_4(styleImage, contentImage));
+      });
+      log.eval(() -> {
+        return toImage(fastPhotoStyleTransfer.photoWCT(styleImage, contentImage));
+      });
+    }
+    log.eval(() -> {
+      final RefOperator<Tensor> operator = fastPhotoStyleTransfer
+          .setLambda(1e-4).setEpsilon(1e-4).apply(contentImage);
+      final BufferedImage image = toImage(operator.apply(styleImage));
+      operator.freeRef();
+      return image;
+    });
+    fastPhotoStyleTransfer.freeRef();
+  }
+
+  private FastPhotoStyleTransfer getFastPhotoStyleTransfer(NotebookOutput log) {
     File localFile = log.eval(() -> {
       return Util.cacheFile(new URI("https://simiacryptus.s3-us-west-2.amazonaws.com/photo_wct.zip"));
     });
@@ -292,27 +330,93 @@ public class WCTTest extends NotebookReportBase {
         return FastPhotoStyleTransfer.fromZip(new ZipFile(localFile));
       });
     }
-    if (verbose) {
-      log.eval(() -> {
-        return fastPhotoStyleTransfer.photoWCT_1(styleImage, contentImage).toImage();
-      });
-      log.eval(() -> {
-        return fastPhotoStyleTransfer.photoWCT_2(styleImage, contentImage).toImage();
-      });
-      log.eval(() -> {
-        return fastPhotoStyleTransfer.photoWCT_3(styleImage, contentImage).toImage();
-      });
-      log.eval(() -> {
-        return fastPhotoStyleTransfer.photoWCT_4(styleImage, contentImage).toImage();
-      });
-      log.eval(() -> {
-        return fastPhotoStyleTransfer.photoWCT(styleImage, contentImage).toImage();
-      });
-    }
+    return fastPhotoStyleTransfer;
+  }
+
+  @Test
+  public void photoBlur() {
+    run(this::photoBlur);
+  }
+
+  private void photoBlur(NotebookOutput log) {
+    Tensor content = contentImage();
     log.eval(() -> {
-      return fastPhotoStyleTransfer.setLambda(1e-1).setEpsilon(1e-9)
-          .apply(contentImage).apply(styleImage).toImage();
+      return content.toImage();
     });
+
+    final int[] dimensions = content.getDimensions();
+    final Tensor[] tensors = new Tensor[]{
+        new Plasma().paint(dimensions[0], dimensions[1]),
+        rawStyledContent(content, log),
+        content
+    };
+
+    test(log, log.eval(() -> {
+      RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), -1);
+      RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(10).setGraphPower1(3).setMixing(0.5);
+      affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
+    }), tensors);
+
+
+//    test(log, log.eval(() -> {
+//      RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(2, 1), -1);
+//      RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(30).setGraphPower1(3).setMixing(0.5);
+//      affinity = new TruncatedAffinity(affinity).setMin(1e-2);
+//      affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+//      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
+//    }), tensors);
+
+
+//    test(log, content, styled, log.eval(() -> {
+//      RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), getRadius(1, 1), -1);
+//      RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(50).setMixing(0.2)
+//          .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+//      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
+//    }));
+//    test(log, content, styled, log.eval(() -> {
+//      RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), getRadius(1, 1), -1);
+//      RasterAffinity affinity = new MattingAffinity(content, topology).setGraphPower1(4).setMixing(3e-1)
+//          .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+//      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
+//    }));
+//    test(log, content, styled, log.eval(() -> {
+//      RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), getRadius(1, 1), -1);
+//      RasterAffinity affinity = new GaussianAffinity(content, 50, topology)
+//          .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+//      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
+//    }));
+  }
+
+  private Tensor rawStyledContent(Tensor content, NotebookOutput log) {
+    Tensor styled;
+    Tensor styleImage = styleImage();
+    log.eval(() -> {
+      return styleImage.toImage();
+    });
+    final FastPhotoStyleTransfer fastPhotoStyleTransfer = getFastPhotoStyleTransfer(log);
+    final AtomicReference<Tensor> styledImage = new AtomicReference<>();
+    log.eval(() -> {
+      styledImage.set(fastPhotoStyleTransfer.setLambda(1e-4).setEpsilon(1e-4).photoWCT(styleImage, content));
+      return styledImage.get().toImage();
+    });
+    styled = styledImage.get();
+    return styled;
+  }
+
+  private void test(NotebookOutput log, RefOperator<Tensor> smoothingTransform, Tensor... styled) {
+    Arrays.stream(styled).filter(x -> x != null).forEach(tensor -> {
+      log.eval(() -> {
+        return smoothingTransform.apply(tensor).toImage();
+      });
+    });
+    smoothingTransform.freeRef();
+  }
+
+  private BufferedImage toImage(Tensor tensor) {
+    final BufferedImage bufferedImage = tensor.toImage();
+    tensor.freeRef();
+    return bufferedImage;
   }
 
   private void wct_test(NotebookOutput log, Layer encoder, Layer decoder, Tensor contentImage, Tensor styleImage) {
@@ -372,10 +476,11 @@ public class WCTTest extends NotebookReportBase {
         return restyled.toImage();
       });
       log.eval(() -> {
-        return new PixelGraph(contentImage).smoothingTransform(1e-4, 1e-7).apply(restyled).toImage();
+        return toImage(new RasterSolver_EJML().smoothingTransform(1e-4, new MattingAffinity(contentImage)).apply(restyled));
       });
+      restyled.freeRef();
       if (verbose) log.eval(() -> {
-        return decoder.eval(originalFeatures, contentImage).getDataAndFree().getAndFree(0).toImage();
+        return toImage(decoder.eval(originalFeatures, contentImage).getDataAndFree().getAndFree(0));
       });
     } else {
       final Tensor restyled = log.eval(() -> {
@@ -385,10 +490,10 @@ public class WCTTest extends NotebookReportBase {
         return restyled.toImage();
       });
       log.eval(() -> {
-        return new PixelGraph(contentImage).smoothingTransform(1e-4, 5e-2).apply(restyled).toImage();
+        return toImage(new RasterSolver_EJML().smoothingTransform(1e-4, new MattingAffinity(contentImage)).apply(restyled));
       });
       if (verbose) log.eval(() -> {
-        return decoder.eval(originalFeatures).getDataAndFree().getAndFree(0).toImage();
+        return toImage(decoder.eval(originalFeatures).getDataAndFree().getAndFree(0));
       });
     }
   }
@@ -410,7 +515,7 @@ public class WCTTest extends NotebookReportBase {
 
   @Override
   protected Class<?> getTargetClass() {
-    return Inception5H.class;
+    return FastPhotoStyleTransfer.class;
   }
 
 }

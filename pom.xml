@@ -132,6 +132,45 @@
         </dependency>
         <dependency>
             <groupId>org.jcuda</groupId>
+            <artifactId>jcusparse</artifactId>
+            <version>${jcudnn.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jcuda</groupId>
+            <artifactId>jcusolver</artifactId>
+            <version>${jcudnn.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jcuda</groupId>
+            <artifactId>jcusparse-natives</artifactId>
+            <classifier>linux-x86_64</classifier>
+            <scope>test</scope>
+            <version>${jcudnn.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jcuda</groupId>
+            <artifactId>jcusparse-natives</artifactId>
+            <classifier>windows-x86_64</classifier>
+            <scope>test</scope>
+            <version>${jcudnn.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jcuda</groupId>
+            <artifactId>jcusolver-natives</artifactId>
+            <classifier>linux-x86_64</classifier>
+            <scope>test</scope>
+            <version>${jcudnn.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jcuda</groupId>
+            <artifactId>jcusolver-natives</artifactId>
+            <classifier>windows-x86_64</classifier>
+            <scope>test</scope>
+            <version>${jcudnn.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jcuda</groupId>
             <artifactId>jcudnn-natives</artifactId>
             <classifier>linux-x86_64</classifier>
             <scope>test</scope>
