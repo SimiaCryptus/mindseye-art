@@ -19,7 +19,18 @@
 
 package com.simiacryptus.mindseye.art;
 
-import com.simiacryptus.mindseye.art.photo.*;
+import com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer;
+import com.simiacryptus.mindseye.art.photo.SmoothSolver_EJML;
+import com.simiacryptus.mindseye.art.photo.WCTUtil;
+import com.simiacryptus.mindseye.art.photo.affinity.GaussianAffinity;
+import com.simiacryptus.mindseye.art.photo.affinity.MattingAffinity;
+import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
+import com.simiacryptus.mindseye.art.photo.affinity.RelativeAffinity;
+import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
+import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
+import com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology;
+import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
+import com.simiacryptus.mindseye.art.photo.topology.SearchRadiusTopology;
 import com.simiacryptus.mindseye.art.util.Plasma;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.SerialPrecision;
@@ -41,10 +52,10 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipFile;
 
-import static com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer.getRadius;
 import static com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer.transfer;
-import static com.simiacryptus.mindseye.art.photo.RasterAffinity.adjust;
-import static com.simiacryptus.mindseye.art.photo.RasterAffinity.degree;
+import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.adjust;
+import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.degree;
+import static com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology.getRadius;
 
 public class WCTTest extends NotebookReportBase {
 
@@ -56,7 +67,7 @@ public class WCTTest extends NotebookReportBase {
   //"file:///C:/Users/andre/Downloads/Herstmonceux_castle_summer_2005_(8414515391).jpg";
   private String styleImage =
       //"file:///C:/Users/andre/Downloads/5212832572_4388ede3fc_o.jpg";
-      "file:///C:/Users/andre/Downloads/pictures/IMG_20190706_134939599_HDR.jpg";
+      "file:///C:/Users/andre/Downloads/pictures/1920x1080-kaufman_63748_5.jpg";
 
   //  private String contentImage = "https://upload.wikimedia.org/wikipedia/commons/b/b0/Group_portrait_of_Civil_War_generals_n.d._%283200501542%29.jpg";
 //  private String styleImage = "https://upload.wikimedia.org/wikipedia/commons/b/b6/Gilbert_Stuart_Williamstown_Portrait_of_George_Washington.jpg";
@@ -265,7 +276,8 @@ public class WCTTest extends NotebookReportBase {
     });
 
     log.eval(() -> {
-      return toImage(new RasterSolver_EJML().smoothingTransform(1e-4, new MattingAffinity(contentImage)).apply(content_1));
+      final MattingAffinity affinity = new MattingAffinity(contentImage);
+      return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(content_1));
     });
 
   }
@@ -351,41 +363,112 @@ public class WCTTest extends NotebookReportBase {
         content
     };
 
-    test(log, log.eval(() -> {
-      RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), -1);
-      RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(10).setGraphPower1(3).setMixing(0.5);
-      affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
-    }), tensors);
+    for (boolean selfRef : new boolean[]{true, false}) {
+      for (boolean sqrt : new boolean[]{true, false}) {
+        log.h1(String.format("SelfRef: %s, Sqrt: %s", selfRef, sqrt));
 
+        log.h3("RadiusRasterTopology - MattingAffinity");
+        test(log, log.eval(() -> {
+          RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+          RasterAffinity affinity = new MattingAffinity(content, topology).setGraphPower1(2).setMixing(0.5);
+          if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+          return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+        }), tensors);
 
-//    test(log, log.eval(() -> {
-//      RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(2, 1), -1);
-//      RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(30).setGraphPower1(3).setMixing(0.5);
-//      affinity = new TruncatedAffinity(affinity).setMin(1e-2);
-//      affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-//      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
-//    }), tensors);
+        for (int contrast : new int[]{20, 50, 100}) {
+          log.h2("Contrast: " + contrast);
 
+          log.h3("SearchRadiusTopology");
+          test(log, log.eval(() -> {
+            RasterTopology topology = new SearchRadiusTopology(content).setSelfRef(selfRef).setVerbose(true);
+            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
+            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+          }), tensors);
 
-//    test(log, content, styled, log.eval(() -> {
-//      RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), getRadius(1, 1), -1);
-//      RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(50).setMixing(0.2)
-//          .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-//      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
-//    }));
-//    test(log, content, styled, log.eval(() -> {
-//      RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), getRadius(1, 1), -1);
-//      RasterAffinity affinity = new MattingAffinity(content, topology).setGraphPower1(4).setMixing(3e-1)
-//          .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-//      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
-//    }));
-//    test(log, content, styled, log.eval(() -> {
-//      RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), getRadius(1, 1), -1);
-//      RasterAffinity affinity = new GaussianAffinity(content, 50, topology)
-//          .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-//      return new RasterSolver_Cuda().smoothingTransform(1e-4, affinity);
-//    }));
+          log.h3("RadiusRasterTopology");
+          test(log, log.eval(() -> {
+            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
+            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+          }), tensors);
+
+          log.h3("RadiusRasterTopology - GaussianAffinity");
+          test(log, log.eval(() -> {
+            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+            RasterAffinity affinity = new GaussianAffinity(content, contrast, topology);
+            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+          }), tensors);
+
+        }
+      }
+    }
+
+  }
+
+  @Test
+  public void photoBlur_Survey() {
+    run(this::photoBlur_Survey);
+  }
+
+  private void photoBlur_Survey(NotebookOutput log) {
+    Tensor content = contentImage();
+    log.eval(() -> {
+      return content.toImage();
+    });
+
+    final int[] dimensions = content.getDimensions();
+    final Tensor[] tensors = new Tensor[]{
+        new Plasma().paint(dimensions[0], dimensions[1]),
+        rawStyledContent(content, log),
+        content
+    };
+
+    for (boolean selfRef : new boolean[]{true, false}) {
+      for (boolean sqrt : new boolean[]{true, false}) {
+        log.h1(String.format("SelfRef: %s, Sqrt: %s", selfRef, sqrt));
+
+//        log.h3("RadiusRasterTopology - MattingAffinity");
+//        test(log, log.eval(() -> {
+//          RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+//          RasterAffinity affinity = new MattingAffinity(content, topology).setGraphPower1(2).setMixing(0.5);
+//          if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+//          return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+//        }), tensors);
+
+        for (int contrast : new int[]{20, 50, 100}) {
+          log.h2("Contrast: " + contrast);
+
+          log.h3("SearchRadiusTopology");
+          test(log, log.eval(() -> {
+            RasterTopology topology = new SearchRadiusTopology(content).setSelfRef(selfRef).setVerbose(true);
+            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
+            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+          }), tensors);
+
+//          log.h3("RadiusRasterTopology");
+//          test(log, log.eval(() -> {
+//            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+//            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
+//            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+//            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+//          }), tensors);
+//
+//          log.h3("RadiusRasterTopology - GaussianAffinity");
+//          test(log, log.eval(() -> {
+//            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+//            RasterAffinity affinity = new GaussianAffinity(content, contrast, topology);
+//            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+//            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+//          }), tensors);
+
+        }
+      }
+    }
+
   }
 
   private Tensor rawStyledContent(Tensor content, NotebookOutput log) {
@@ -405,12 +488,17 @@ public class WCTTest extends NotebookReportBase {
   }
 
   private void test(NotebookOutput log, RefOperator<Tensor> smoothingTransform, Tensor... styled) {
-    Arrays.stream(styled).filter(x -> x != null).forEach(tensor -> {
-      log.eval(() -> {
-        return smoothingTransform.apply(tensor).toImage();
+    try {
+      Arrays.stream(styled).filter(x -> x != null).forEach(tensor -> {
+        log.eval(() -> {
+          return smoothingTransform.apply(tensor).toImage();
+        });
       });
-    });
-    smoothingTransform.freeRef();
+      smoothingTransform.freeRef();
+    } catch (Throwable e) {
+      e.printStackTrace();
+      System.gc();
+    }
   }
 
   private BufferedImage toImage(Tensor tensor) {
@@ -476,7 +564,8 @@ public class WCTTest extends NotebookReportBase {
         return restyled.toImage();
       });
       log.eval(() -> {
-        return toImage(new RasterSolver_EJML().smoothingTransform(1e-4, new MattingAffinity(contentImage)).apply(restyled));
+        final MattingAffinity affinity = new MattingAffinity(contentImage);
+        return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(restyled));
       });
       restyled.freeRef();
       if (verbose) log.eval(() -> {
@@ -490,7 +579,8 @@ public class WCTTest extends NotebookReportBase {
         return restyled.toImage();
       });
       log.eval(() -> {
-        return toImage(new RasterSolver_EJML().smoothingTransform(1e-4, new MattingAffinity(contentImage)).apply(restyled));
+        final MattingAffinity affinity = new MattingAffinity(contentImage);
+        return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(restyled));
       });
       if (verbose) log.eval(() -> {
         return toImage(decoder.eval(originalFeatures).getDataAndFree().getAndFree(0));

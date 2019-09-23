@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.cuda;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -27,25 +27,21 @@ import java.util.function.DoubleBinaryOperator;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-public class SparseMatrix {
+public class SparseMatrixFloat {
   public final int[] rowIndices;
   public final int[] colIndices;
   public final float[] values;
   public final int rows;
   public final int cols;
 
-
-  public SparseMatrix(int[] rowIndices, int[] colIndices, float[] values, int rows, int cols) {
+  public SparseMatrixFloat(int[] rowIndices, int[] colIndices, float[] values, int rows, int cols) {
     this.rows = rows;
     this.cols = cols;
     assert rowIndices.length == colIndices.length;
     assert rowIndices.length == values.length;
-    assert Arrays.stream(rowIndices).allMatch(x -> x >= 0 && x < rows);
-    assert Arrays.stream(colIndices).allMatch(x -> x >= 0 && x < cols);
-    final int[] sortedAndFiltered = subtractIndices(index(rowIndices), zeros(values));
-    this.rowIndices = reorder(rowIndices, sortedAndFiltered);
-    this.colIndices = reorder(colIndices, sortedAndFiltered);
-    this.values = reorder(values, sortedAndFiltered);
+    this.rowIndices = rowIndices;
+    this.colIndices = colIndices;
+    this.values = values;
   }
 
   public static float[] toFloat(double[] doubles) {
@@ -85,11 +81,15 @@ public class SparseMatrix {
   }
 
   public static int[] index(int[] data) {
-    return IntStream.range(0, data.length).mapToObj(x -> x).sorted(Comparator.comparing(i -> data[i])).mapToInt(x -> x).toArray();
+    return index(data, Comparator.comparing(i -> data[i]));
   }
 
-  public static int[] subtractIndices(int[] left, int[] right) {
-    return Arrays.stream(left).filter(i -> 0 > Arrays.binarySearch(right, i)).toArray();
+  public static int[] index(int[] data, Comparator<Integer> comparator) {
+    return IntStream.range(0, data.length).mapToObj(x -> x).sorted(comparator).mapToInt(x -> x).toArray();
+  }
+
+  public static int[] filterValues(int[] base, int[] filter) {
+    return Arrays.stream(base).filter(i -> 0 > Arrays.binarySearch(filter, i)).toArray();
   }
 
   public static int[] zeros(float[] values) {
@@ -100,14 +100,69 @@ public class SparseMatrix {
     return IntStream.range(0, values.length).filter(i -> Math.abs(values[i]) < tol).sorted().toArray();
   }
 
-  public static SparseMatrix identity(int size) {
+  public static SparseMatrixFloat identity(int size) {
     final float[] values = new float[size];
     Arrays.fill(values, 1.0f);
-    return new SparseMatrix(
+    return new SparseMatrixFloat(
         IntStream.range(0, size).toArray(),
         IntStream.range(0, size).toArray(),
         values,
-        size, size);
+        size, size).sortAndPrune();
+  }
+
+  public SparseMatrixFloat project(int[] projection) {
+    final int[] rowIndices = Arrays.stream(this.rowIndices).map(i -> projection[i]).toArray();
+    final int[] colIndices = Arrays.stream(this.colIndices).map(i -> projection[i]).toArray();
+    return new SparseMatrixFloat(
+        rowIndices,
+        colIndices,
+        values,
+        Arrays.stream(rowIndices).max().getAsInt() + 1,
+        Arrays.stream(colIndices).max().getAsInt() + 1
+    ).sortAndPrune().aggregate();
+  }
+
+  protected SparseMatrixFloat aggregate() {
+    assert rowIndices.length == colIndices.length;
+    assert rowIndices.length == values.length;
+    assert Arrays.stream(rowIndices).allMatch(x -> x >= 0 && x < rows);
+    assert Arrays.stream(colIndices).allMatch(x -> x >= 0 && x < cols);
+    final int[] rowIndices_copy = new int[rowIndices.length];
+    final int[] colIndices_copy = new int[colIndices.length];
+    final float[] values_copy = new float[values.length];
+    int j = 0;
+    for (int i = 0; i < rowIndices.length; i++) {
+      if (i < rowIndices.length - 1 && rowIndices[i] == rowIndices[i + 1] && colIndices[i] == colIndices[i + 1]) {
+        values[i + 1] += values[i];
+      } else {
+        rowIndices_copy[j] = rowIndices[i];
+        colIndices_copy[j] = colIndices[i];
+        values_copy[j] = values[i];
+        j++;
+      }
+    }
+    return new SparseMatrixFloat(
+        Arrays.copyOfRange(rowIndices_copy, 0, j),
+        Arrays.copyOfRange(colIndices_copy, 0, j),
+        Arrays.copyOfRange(values_copy, 0, j),
+        rows, cols
+    );
+  }
+
+  public SparseMatrixFloat sortAndPrune() {
+    assert rowIndices.length == colIndices.length;
+    assert rowIndices.length == values.length;
+    assert Arrays.stream(rowIndices).allMatch(x -> x >= 0 && x < rows);
+    assert Arrays.stream(colIndices).allMatch(x -> x >= 0 && x < cols);
+    final Comparator<Integer> comparator = Comparator.comparing((Integer i) -> rowIndices[i])
+        .thenComparing((Integer i) -> colIndices[i]);
+    final int[] sortedAndFiltered = filterValues(index(rowIndices, comparator), zeros(values));
+    return new SparseMatrixFloat(
+        reorder(rowIndices, sortedAndFiltered),
+        reorder(colIndices, sortedAndFiltered),
+        reorder(values, sortedAndFiltered),
+        rows, cols
+    );
   }
 
   public int getNumNonZeros() {
@@ -122,28 +177,28 @@ public class SparseMatrix {
     return doubles;
   }
 
-  public SparseMatrix copy() {
-    return new SparseMatrix(rowIndices, colIndices, values, rows, cols);
+  public SparseMatrixFloat copy() {
+    return new SparseMatrixFloat(rowIndices, colIndices, values, rows, cols).sortAndPrune();
   }
 
-  public SparseMatrix transpose() {
-    return new SparseMatrix(colIndices, rowIndices, values, cols, rows);
+  public SparseMatrixFloat transpose() {
+    return new SparseMatrixFloat(colIndices, rowIndices, values, cols, rows).sortAndPrune();
   }
 
-  public SparseMatrix scale(double alpha) {
+  public SparseMatrixFloat scale(double alpha) {
     final float[] values = new float[this.values.length];
     for (int i = 0; i < values.length; i++) {
       values[i] = (float) (this.values[i] * alpha);
     }
-    return new SparseMatrix(rowIndices, colIndices, values, rows, cols);
+    return new SparseMatrixFloat(rowIndices, colIndices, values, rows, cols).sortAndPrune();
   }
 
-  public SparseMatrix minus(SparseMatrix right) {
+  public SparseMatrixFloat minus(SparseMatrixFloat right) {
     return binaryOp(right, (a, b) -> a - b);
   }
 
   @NotNull
-  public SparseMatrix binaryOp(SparseMatrix right, DoubleBinaryOperator fn) {
+  public SparseMatrixFloat binaryOp(SparseMatrixFloat right, DoubleBinaryOperator fn) {
     assert right.rows == rows : right.rows + " != " + rows;
     assert right.cols == cols : right.cols + " != " + cols;
 
@@ -165,7 +220,7 @@ public class SparseMatrix {
     ).distinct().toArray();
     long[] finalIndices_left = indices_left;
     long[] finalIndices_right = indices_right;
-    return new SparseMatrix(
+    return new SparseMatrixFloat(
         IntStream.range(0, finalIndices.length).mapToLong(i -> finalIndices[i])
             .mapToInt(elementIndex -> {
               final int i1 = (int) (elementIndex / cols);
@@ -183,6 +238,22 @@ public class SparseMatrix {
               final float value_left = idx_left < 0 || finalIndices_left[idx_left] != elementIndex ? 0 : sortedValues_left[idx_left];
               return fn.applyAsDouble(value_left, value_right);
             }).toArray()),
-        rows, cols);
+        rows, cols).sortAndPrune();
+  }
+
+  public int[] getCols(int row) {
+    final int begin = Arrays.binarySearch(rowIndices, row);
+    if (begin < 0) return new int[]{};
+    final int nnz = rowIndices.length;
+    int end = IntStream.range(begin, nnz).filter(r -> rowIndices[r] != row).findFirst().orElse(nnz + 1);
+    return Arrays.copyOfRange(colIndices, begin, end);
+  }
+
+  public float[] getVals(int row) {
+    final int begin = Arrays.binarySearch(rowIndices, row);
+    if (begin < 0) return new float[]{};
+    final int nnz = rowIndices.length;
+    int end = IntStream.range(begin, nnz).filter(r -> rowIndices[r] != row).findFirst().orElse(nnz + 1);
+    return Arrays.copyOfRange(values, begin, end);
   }
 }

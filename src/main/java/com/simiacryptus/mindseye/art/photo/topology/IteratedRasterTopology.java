@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.topology;
 
 import java.util.Arrays;
 import java.util.List;

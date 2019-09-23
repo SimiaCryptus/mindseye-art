@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.lang.ref.LazyVal;
 import com.simiacryptus.lang.ref.ReferenceCountingBase;
@@ -36,9 +36,9 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
 
-  public final SparseMatrix matrix;
+  public final SparseMatrixFloat matrix;
 
-  public CudaSparseMatrix(SparseMatrix matrix) {
+  public CudaSparseMatrix(SparseMatrixFloat matrix) {
     this.matrix = matrix;
   }
 
@@ -90,15 +90,15 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
     public final Pointer rowIndices;
     public final Pointer columnIndices;
     public final Pointer values;
-    private final SparseMatrix matrix;
-    private final int rows;
+    public final SparseMatrixFloat matrix;
+    public final int rows;
 
     public GpuCopy(CudaSparseMatrix cudaCoo) {
       this.matrix = cudaCoo.matrix;
       rows = matrix.rows;
-      rowIndices = CudaSparseMatrix.toDevice(matrix.rowIndices);
-      columnIndices = CudaSparseMatrix.toDevice(matrix.colIndices);
-      values = CudaSparseMatrix.toDevice(matrix.values);
+      rowIndices = toDevice(matrix.rowIndices);
+      columnIndices = toDevice(matrix.colIndices);
+      values = toDevice(matrix.values);
     }
 
     public Pointer csrRows(cusparseHandle handle) {

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.affinity;
 
 import java.util.Arrays;
 import java.util.List;
@@ -69,7 +69,4 @@ public interface RasterAffinity {
 
   List<double[]> affinityList(List<int[]> graphEdges);
 
-  RasterTopology getTopology();
-
-  RasterAffinity setTopology(RasterTopology topology);
 }

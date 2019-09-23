@@ -17,8 +17,11 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.affinity;
 
+import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
+import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
+import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 import org.ejml.simple.SimpleMatrix;
 
@@ -28,7 +31,7 @@ import org.ejml.simple.SimpleMatrix;
  */
 public class RelativeAffinity extends ContextAffinity {
   private final double introversion = 8.0;
-  private double epsilon = 1e-8;
+  private double epsilon = 1e-5;
   private double contrast = 5e0;
 
   public RelativeAffinity(Tensor content) {
@@ -42,11 +45,10 @@ public class RelativeAffinity extends ContextAffinity {
 
   @Override
   protected double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize, int globalSize) {
-    int bands = dimensions[2];
     assert neighborhoodSize > 0;
-    final SimpleMatrix invert = cov.plus(SimpleMatrix.identity(bands).scale(getEpsilon() / neighborhoodSize)).invert();
+    final SimpleMatrix invert = MultivariateFrameOfReference.safeInvert(cov, getEpsilon() / neighborhoodSize);
     final SimpleMatrix vect = vector_i.minus(vector_j);
-    double v = vect.dot(invert.mult(vect));
+    double v = invert == null ? vect.dot(vect) : vect.dot(invert.mult(vect));
     assert v >= 0;
     v = Math.exp(-getContrast() * v) / getIntroversion();
     return v;

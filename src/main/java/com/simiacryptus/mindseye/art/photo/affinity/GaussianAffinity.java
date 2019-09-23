@@ -17,8 +17,10 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.affinity;
 
+import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
+import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 
 import java.util.Arrays;
@@ -26,15 +28,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/**
- * Implements Matting Affinity
- * <p>
- * See Also: A Closed Form Solution to Natural Image Matting
- * http://cs.brown.edu/courses/cs129/results/final/valayshah/Matting-Levin-Lischinski-Weiss-CVPR06.pdf
- * <p>
- * Replaced with experimental metric
- * See Also: https://en.wikipedia.org/wiki/Mahalanobis_distance
- */
 public class GaussianAffinity implements RasterAffinity {
   protected final Tensor content;
   private final double sigma;
@@ -73,12 +66,10 @@ public class GaussianAffinity implements RasterAffinity {
     }).toArray();
   }
 
-  @Override
   public RasterTopology getTopology() {
     return topology;
   }
 
-  @Override
   public GaussianAffinity setTopology(RasterTopology topology) {
     this.topology = topology;
     return this;

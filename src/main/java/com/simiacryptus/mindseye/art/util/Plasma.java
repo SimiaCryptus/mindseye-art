@@ -23,12 +23,14 @@ import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.util.ImageUtil;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 
 public class Plasma {
   private int bands;
-  private double noiseAmplitude;
+  private double[] noiseAmplitude;
   private double noisePower;
 
   public Plasma() {
@@ -56,22 +58,23 @@ public class Plasma {
   private Tensor expandPlasma(Tensor image, final int width, final int height) {
     image.addRef();
     while (image.getDimensions()[0] < Math.max(width, height)) {
-      Tensor newImage = expandPlasma(image, Math.pow(noiseAmplitude / image.getDimensions()[0], noisePower));
+      final double factor = Math.pow(image.getDimensions()[0], noisePower);
+      Tensor newImage = expandPlasma(image, Arrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
       image.freeRef();
       image = newImage;
     }
-    Tensor tensor = Tensor.fromRGB(ImageUtil.resize(image.toImage(), width, height));
+    Tensor tensor = Tensor.fromRGB(ImageUtil.resize(image.toRgbImage(), width, height));
     image.freeRef();
     return tensor;
   }
 
-  private Tensor expandPlasma(final Tensor seed, double noise) {
+  private Tensor expandPlasma(final Tensor seed, double... noise) {
     int bands = seed.getDimensions()[2];
     int width = seed.getDimensions()[0] * 2;
     int height = seed.getDimensions()[1] * 2;
     Tensor returnValue = new Tensor(width, height, bands);
-    DoubleUnaryOperator fn1 = x -> Math.max(Math.min(x + noise * (Math.random() - 0.5), 255), 0);
-    DoubleUnaryOperator fn2 = x -> Math.max(Math.min(x + Math.sqrt(2) * noise * (Math.random() - 0.5), 255), 0);
+    IntFunction<DoubleUnaryOperator> fn1 = b -> x -> Math.max(Math.min(x + noise[b % noise.length] * (Math.random() - 0.5), 255), 0);
+    IntFunction<DoubleUnaryOperator> fn2 = b -> x -> Math.max(Math.min(x + Math.sqrt(2) * noise[b % noise.length] * (Math.random() - 0.5), 255), 0);
     IntUnaryOperator addrX = x -> {
       while (x >= width) x -= width;
       while (x < 0) x += width;
@@ -89,23 +92,25 @@ public class Plasma {
           returnValue.set(x, y, band, value);
         }
       }
+      final DoubleUnaryOperator f2_band = fn2.apply(band);
       for (int x = 1; x < width; x += 2) {
         for (int y = 1; y < height; y += 2) {
           double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y - 1), band)) +
               (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y + 1), band)) +
               (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y - 1), band)) +
               (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y + 1), band));
-          value = fn2.applyAsDouble(value / 4);
+          value = f2_band.applyAsDouble(value / 4);
           returnValue.set(x, y, band, value);
         }
       }
+      final DoubleUnaryOperator f1_band = fn1.apply(band);
       for (int x = 0; x < width; x += 2) {
         for (int y = 1; y < height; y += 2) {
           double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y), band)) +
               (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band)) +
               (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band)) +
               (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band));
-          value = fn1.applyAsDouble(value / 4);
+          value = f1_band.applyAsDouble(value / 4);
           returnValue.set(x, y, band, value);
         }
       }
@@ -115,7 +120,7 @@ public class Plasma {
               (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band)) +
               (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band)) +
               (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band));
-          value = fn1.applyAsDouble(value / 4);
+          value = f1_band.applyAsDouble(value / 4);
           returnValue.set(x, y, band, value);
         }
       }
@@ -132,11 +137,11 @@ public class Plasma {
     return this;
   }
 
-  public double getNoiseAmplitude() {
+  public double[] getNoiseAmplitude() {
     return noiseAmplitude;
   }
 
-  public Plasma setNoiseAmplitude(double noiseAmplitude) {
+  public Plasma setNoiseAmplitude(double... noiseAmplitude) {
     this.noiseAmplitude = noiseAmplitude;
     return this;
   }

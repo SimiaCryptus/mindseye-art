@@ -20,13 +20,18 @@
 package com.simiacryptus.mindseye.art.photo;
 
 import com.simiacryptus.lang.ref.ReferenceCountingBase;
+import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
+import com.simiacryptus.mindseye.art.photo.affinity.RelativeAffinity;
+import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
+import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
+import com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology;
+import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.SerialPrecision;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.ZipSerializable;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -37,6 +42,9 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+
+import static com.simiacryptus.mindseye.lang.Layer.fromJson;
+import static com.simiacryptus.util.JsonUtil.toJson;
 
 /**
  * Implemented process detailed in:
@@ -73,14 +81,14 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   public static FastPhotoStyleTransfer fromZip(@Nonnull final ZipFile zipfile) {
     @Nonnull HashMap<CharSequence, byte[]> resources = ZipSerializable.extract(zipfile);
     return new FastPhotoStyleTransfer(
-        Layer.fromJson(ZipSerializable.toJson(resources.get("decode_1.json")), resources),
-        Layer.fromJson(ZipSerializable.toJson(resources.get("encode_1.json")), resources),
-        Layer.fromJson(ZipSerializable.toJson(resources.get("decode_2.json")), resources),
-        Layer.fromJson(ZipSerializable.toJson(resources.get("encode_2.json")), resources),
-        Layer.fromJson(ZipSerializable.toJson(resources.get("decode_3.json")), resources),
-        Layer.fromJson(ZipSerializable.toJson(resources.get("encode_3.json")), resources),
-        Layer.fromJson(ZipSerializable.toJson(resources.get("decode_4.json")), resources),
-        Layer.fromJson(ZipSerializable.toJson(resources.get("encode_4.json")), resources)
+        fromJson(toJson(resources.get("decode_1.json")), resources),
+        fromJson(toJson(resources.get("encode_1.json")), resources),
+        fromJson(toJson(resources.get("decode_2.json")), resources),
+        fromJson(toJson(resources.get("encode_2.json")), resources),
+        fromJson(toJson(resources.get("decode_3.json")), resources),
+        fromJson(toJson(resources.get("encode_3.json")), resources),
+        fromJson(toJson(resources.get("decode_4.json")), resources),
+        fromJson(toJson(resources.get("encode_4.json")), resources)
     );
   }
 
@@ -95,10 +103,6 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     final Tensor tensor = decode.eval(encodedTransformed, contentImage).getDataAndFree().getAndFree(0);
     encodedTransformed.freeRef();
     return tensor;
-  }
-
-  public static double getRadius(int distA, int distB) {
-    return Math.sqrt(distA * distA + distB * distB) + 1e-4;
   }
 
   @Override
@@ -171,15 +175,14 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     return transfer(content, style, encode_4, decode_4);
   }
 
-  @Nullable
   public RefOperator<Tensor> photoSmooth(Tensor content) {
     if (isSmooth()) {
-      RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), getRadius(1, 1), -1);
+      RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), RadiusRasterTopology.getRadius(1, 1), -1);
 //      RasterAffinity affinity = new MattingAffinity(content, topology);
       RasterAffinity affinity = new RelativeAffinity(content, topology);
       //RasterAffinity affinity = new GaussianAffinity(content, 20, topology);
       //affinity = new TruncatedAffinity(affinity).setMin(1e-2);
-      return (isUseCuda() ? new RasterSolver_Cuda() : new RasterSolver_EJML()).smoothingTransform(getLambda(), affinity);
+      return (isUseCuda() ? new SmoothSolver_Cuda() : new SmoothSolver_EJML()).solve(topology, affinity, getLambda());
     } else return new NullOperator();
   }
 

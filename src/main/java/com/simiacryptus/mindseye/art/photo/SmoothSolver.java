@@ -19,26 +19,11 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
-import java.util.List;
+import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
+import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
+import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
+import com.simiacryptus.mindseye.lang.Tensor;
 
-public abstract class AffinityWrapper implements RasterAffinity {
-
-  RasterAffinity inner;
-
-  public AffinityWrapper(RasterAffinity inner) {
-    this.inner = inner;
-  }
-
-  @Override
-  public abstract List<double[]> affinityList(List<int[]> graphEdges);
-
-  @Override
-  public RasterTopology getTopology() {
-    return inner.getTopology();
-  }
-
-  @Override
-  public RasterAffinity setTopology(RasterTopology topology) {
-    return inner.setTopology(topology);
-  }
+public interface SmoothSolver {
+  RefOperator<Tensor> solve(RasterTopology topology, RasterAffinity affinity, double lambda);
 }

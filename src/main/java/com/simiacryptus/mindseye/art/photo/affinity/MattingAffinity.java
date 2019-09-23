@@ -17,8 +17,10 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.affinity;
 
+import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
+import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 import org.ejml.simple.SimpleMatrix;
 
@@ -30,7 +32,7 @@ import org.ejml.simple.SimpleMatrix;
  * <p>
  */
 public class MattingAffinity extends ContextAffinity {
-  private double epsilon = 1e-7;
+  private double epsilon = 1e-4;
 
   public MattingAffinity(Tensor content) {
     this(content, new SimpleRasterTopology(content.getDimensions()));
