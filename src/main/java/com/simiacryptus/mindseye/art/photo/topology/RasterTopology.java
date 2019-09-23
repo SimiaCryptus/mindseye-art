@@ -17,11 +17,18 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.topology;
 
-import com.simiacryptus.mindseye.lang.Tensor;
-import org.jetbrains.annotations.NotNull;
+import java.util.List;
 
-public interface RasterSolver {
-  @NotNull RefOperator<Tensor> smoothingTransform(double lambda, RasterAffinity affinity);
+public interface RasterTopology {
+  List<int[]> connectivity();
+
+  int getIndexFromCoords(int x, int y);
+
+  int[] getCoordsFromIndex(int i);
+
+  int[] getDimensions();
+
+
 }

@@ -17,16 +17,15 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.affinity;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public interface RasterTopology {
-  List<int[]> connectivity();
-
-  int getIndexFromCoords(int x, int y);
-
-  int[] getCoordsFromIndex(int i);
-
-  int[] getDimensions();
+public class ConstAffinity implements RasterAffinity {
+  @Override
+  public List<double[]> affinityList(List<int[]> graphEdges) {
+    return graphEdges.stream().map(x -> Arrays.stream(x).mapToDouble(i -> 1.0 / x.length).toArray()).collect(Collectors.toList());
+  }
 }

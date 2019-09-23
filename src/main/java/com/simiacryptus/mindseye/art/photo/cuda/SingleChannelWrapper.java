@@ -17,29 +17,29 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.cuda;
 
-import com.simiacryptus.lang.ref.ReferenceCounting;
 import com.simiacryptus.lang.ref.ReferenceCountingBase;
 
-import java.util.function.UnaryOperator;
+import java.util.Arrays;
 
-public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
-  static <T> RefOperator<T> wrap(UnaryOperator<T> inner) {
-    return new RefOperatorWrapper<T>(inner);
+class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<double[][]> {
+  private final RefOperator<double[][]> unaryOperator;
+
+  public SingleChannelWrapper(RefOperator<double[][]> unaryOperator) {
+    this.unaryOperator = unaryOperator;
   }
 
-  class RefOperatorWrapper<T> extends ReferenceCountingBase implements RefOperator<T> {
+  @Override
+  public double[][] apply(double[][] img) {
+    return Arrays.stream(img)
+        .map(x -> unaryOperator.apply(new double[][]{x})[0])
+        .toArray(i -> new double[i][]);
+  }
 
-    private UnaryOperator<T> inner;
-
-    public RefOperatorWrapper(UnaryOperator<T> inner) {
-      this.inner = inner;
-    }
-
-    @Override
-    public T apply(T t) {
-      return inner.apply(t);
-    }
+  @Override
+  protected void _free() {
+    this.unaryOperator.freeRef();
+    super._free();
   }
 }

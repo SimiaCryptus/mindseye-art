@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.simiacryptus.mindseye.art.photo;
+package com.simiacryptus.mindseye.art.photo.topology;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +32,10 @@ public class RadiusRasterTopology implements RasterTopology {
     this.dimensions = dimensions;
     this.maxRadius = maxRadius;
     this.minRadius = minRadius;
+  }
+
+  public static double getRadius(int distA, int distB) {
+    return Math.sqrt(distA * distA + distB * distB) + 1e-4;
   }
 
   @Override
@@ -73,16 +77,4 @@ public class RadiusRasterTopology implements RasterTopology {
     final int y = (i - x) / dimensions[0];
     return new int[]{x, y};
   }
-//
-//  @Override
-//  public int getIndexFromCoords(int x, int y) {
-//    return y + dimensions[1] * x;
-//  }
-//
-//  @Override
-//  public int[] getCoordsFromIndex(int i) {
-//    final int y = i % dimensions[1];
-//    final int x = (i - y) / dimensions[1];
-//    return new int[]{x, y};
-//  }
 }

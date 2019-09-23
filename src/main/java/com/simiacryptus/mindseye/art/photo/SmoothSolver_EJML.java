@@ -19,6 +19,9 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
+import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
+import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
+import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.DMatrixSparseCSC;
@@ -32,7 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
-public class RasterSolver_EJML implements RasterSolver {
+public class SmoothSolver_EJML implements SmoothSolver {
 
   public static UnaryOperator<SimpleMatrix> solve(DMatrixSparseCSC affinity, double lambda) {
     final double alpha = 1.0 / (1.0 + lambda);
@@ -47,8 +50,8 @@ public class RasterSolver_EJML implements RasterSolver {
   }
 
   @NotNull
-  public static DMatrixSparseCSC laplacian(RasterAffinity affinity) {
-    return laplacian(affinity.getTopology().connectivity(), affinity.affinityList(affinity.getTopology().connectivity()));
+  public static DMatrixSparseCSC laplacian(RasterAffinity affinity, RasterTopology topology) {
+    return laplacian(topology.connectivity(), affinity.affinityList(topology.connectivity()));
   }
 
   @NotNull
@@ -106,9 +109,8 @@ public class RasterSolver_EJML implements RasterSolver {
     return rescaled;
   }
 
-  @NotNull
-  public RefOperator<Tensor> smoothingTransform(double lambda, RasterAffinity affinity) {
-    return RefOperator.wrap(wrap(solve(laplacian(affinity), lambda), affinity.getTopology()));
+  public RefOperator<Tensor> solve(RasterTopology topology, RasterAffinity affinity, double lambda) {
+    return RefOperator.wrap(wrap(solve(laplacian(affinity, topology), lambda), topology));
   }
 
 
