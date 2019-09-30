@@ -39,15 +39,16 @@ public class SmoothSolver_Cuda implements SmoothSolver {
 
   public static @NotNull CudaSparseMatrix laplacian(List<int[]> graphEdges, List<double[]> affinityList) {
     final int pixels = graphEdges.size();
+    final double[] doubles = RasterAffinity.normalize(graphEdges, affinityList).stream()
+        .flatMapToDouble(x -> Arrays.stream(x)).toArray();
     return new CudaSparseMatrix(
         new SparseMatrixFloat(
             IntStream.range(0, pixels).flatMap(i1 -> Arrays.stream(graphEdges.get(i1))).toArray(),
             IntStream.range(0, pixels).flatMap(i -> Arrays.stream(graphEdges.get(i)).map(j -> i)).toArray(),
-            SparseMatrixFloat.toFloat(
-                RasterAffinity.normalize(graphEdges, affinityList).stream()
-                    .flatMapToDouble(x -> Arrays.stream(x)).toArray()
-            ),
-            pixels, pixels).sortAndPrune());
+            SparseMatrixFloat.toFloat(doubles),
+            pixels,
+            pixels
+        ).sortAndPrune().assertSymmetric());
   }
 
   @Override

@@ -26,6 +26,6 @@ import java.util.stream.Collectors;
 public class ConstAffinity implements RasterAffinity {
   @Override
   public List<double[]> affinityList(List<int[]> graphEdges) {
-    return graphEdges.stream().map(x -> Arrays.stream(x).mapToDouble(i -> 1.0 / x.length).toArray()).collect(Collectors.toList());
+    return graphEdges.stream().map(x -> Arrays.stream(x).mapToDouble(i -> 1.0).toArray()).collect(Collectors.toList());
   }
 }
