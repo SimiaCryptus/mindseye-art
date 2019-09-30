@@ -20,8 +20,9 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer;
+import com.simiacryptus.mindseye.art.photo.RegionAssembler;
 import com.simiacryptus.mindseye.art.photo.SegmentUtil;
-import com.simiacryptus.mindseye.art.photo.affinity.ConstAffinity;
+import com.simiacryptus.mindseye.art.photo.affinity.ContextAffinity;
 import com.simiacryptus.mindseye.art.photo.affinity.RelativeAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
 import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
@@ -36,12 +37,12 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
+import java.awt.image.BufferedImage;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
+import static com.simiacryptus.mindseye.art.photo.RegionAssembler.volumeEntropy;
 import static com.simiacryptus.mindseye.art.photo.SegmentUtil.*;
-import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.adjust;
-import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.degree;
 
 public class SegmentTest extends NotebookReportBase {
 
@@ -66,76 +67,91 @@ public class SegmentTest extends NotebookReportBase {
 
   private void segment(NotebookOutput log) {
     Tensor content = contentImage();
+    log.eval(() ->
+        content.toImage()
+    );
+    final AtomicReference<int[]> pixelMap = new AtomicReference(null);
     log.eval(() -> {
-      return content.toImage();
-    });
-    final RasterTopology topology_simple = new SimpleRasterTopology(content.getDimensions());
-    RasterTopology topology_content = new SearchRadiusTopology(content)
-        .setNeighborhoodSize(6)
-        .setSelfRef(true)
-        .setVerbose(true);
-    final Tensor contentIslands = new SmoothSolver_Cuda().solve(
-        topology_content, new RelativeAffinity(content, topology_content)
-            .setContrast(30)
-            .setGraphPower1(2)
-            .setMixing(0.5)
-            .wrap((graphEdges, innerResult) -> adjust(
-                graphEdges,
-                innerResult,
-                degree(innerResult),
-                0.5)),
-        1e-4).iterate(5, content);
-    log.eval(() -> {
-      return contentIslands.toRgbImage();
-    });
-
-    final SparseMatrixFloat graph = SmoothSolver_Cuda.laplacian(new ConstAffinity(), topology_simple).matrix;
-    int[] islands = log.eval(() -> {
-      return SegmentUtil.markIslands(
-          topology_simple, graph, contentIslands::getPixel,
-          (a, b) -> IntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i]).map(x -> x * x).average().getAsDouble() < 4,
-          128
+      RasterTopology topology = new SearchRadiusTopology(content)
+          .setNeighborhoodSize(6).setSelfRef(true).setVerbose(true).cached();
+      final BufferedImage flattenedColors = flattenColors(content, topology,
+          new RelativeAffinity(content, topology)
+              .setContrast(50)
+              .setGraphPower1(2)
+              .setMixing(0.1), 4);
+      final Tensor flattenedTensor = Tensor.fromRGB(flattenedColors);
+      final int[] dimensions = topology.getDimensions();
+      final int pixels = dimensions[0] * dimensions[1];
+      final int[] islands = markIslands(
+          topology, flattenedTensor::getPixel,
+          (a, b) -> IntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i]).map(x -> x * x).average().getAsDouble() < 0.5,
+          128,
+          pixels
       );
+      pixelMap.set(islands);
+      return flattenedColors;
     });
-
     log.eval(() -> {
-      printHistogram(islands);
-      return randomColors(topology_simple, content, islands);
-    });
-
-    final SparseMatrixFloat island_graph = graph.project(islands);
-    log.eval(() ->
-        String.format("Rows=%d, NumNonZeros=%d", island_graph.rows, island_graph.getNumNonZeros())
-    );
-    final int[] islands_refined = removeTinyInclusions(islands, island_graph, 8);
-
-    log.eval(() -> {
-      final int[] refined = Arrays.stream(islands)
-          .map(i -> islands_refined[i])
-          .toArray();
-      printHistogram(refined);
-      return randomColors(topology_simple, content, refined);
-    });
-    final SparseMatrixFloat refined_graph = island_graph.project(islands_refined);
-    log.eval(() ->
-        String.format("Rows=%d, NumNonZeros=%d", refined_graph.rows, refined_graph.getNumNonZeros())
-    );
-
-    final int[] islands_joined = reduceIslands(refined_graph, 5000);
-    log.eval(() -> {
-      final int[] refined = Arrays.stream(islands)
-          .map(i -> islands_refined[i])
-          .map(i -> islands_joined[i])
-          .toArray();
-      printHistogram(refined);
-      return randomColors(topology_simple, content, refined);
-    });
-
+      final SimpleRasterTopology topology = new SimpleRasterTopology(content.getDimensions());
+      return new JoinProcess(
+          content,
+          topology,
+          new RelativeAffinity(content, topology)
+              .setContrast(50)
+              .setGraphPower1(2)
+              .setMixing(0.1),
+          pixelMap.get());
+    }).run(log);
   }
 
   @Override
   protected Class<?> getTargetClass() {
     return FastPhotoStyleTransfer.class;
   }
+
+  private static class JoinProcess {
+    private final Tensor content;
+    private final RasterTopology topology;
+    private SparseMatrixFloat graph;
+    private int[] pixelMap;
+
+    public JoinProcess(Tensor content, RasterTopology topology, ContextAffinity affinity, int[] pixelMap) {
+      graph = SmoothSolver_Cuda.laplacian(affinity, topology).matrix.assertSymmetric();
+      this.pixelMap = pixelMap;
+      this.content = content;
+      this.topology = topology;
+    }
+
+    public void run(NotebookOutput log) {
+      graph = (graph.project(pixelMap).assertSymmetric());
+      display(log);
+      update(log.eval(() ->
+          volumeEntropy(graph, pixelMap, content, topology).reduceTo(5000)
+      ));
+      display(log);
+      update(log.eval(() ->
+          volumeEntropy(graph, pixelMap, content, topology).reduceTo(500)
+      ));
+      display(log);
+      update(log.eval(() ->
+          volumeEntropy(graph, pixelMap, content, topology).reduceTo(50)
+      ));
+      display(log);
+    }
+
+    public void update(RegionAssembler eval) {
+      graph = graph.project(eval.getProjection());
+      pixelMap = eval.getPixelMap();
+    }
+
+    public void display(NotebookOutput log) {
+      log.eval(() -> {
+        System.out.println(String.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
+        printHistogram(pixelMap);
+        return paintWithRandomColors(topology, content, pixelMap, graph);
+      });
+    }
+  }
+
 
 }

@@ -23,9 +23,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.function.DoubleBinaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+
+import static java.util.Arrays.binarySearch;
 
 public class SparseMatrixFloat {
   public final int[] rowIndices;
@@ -89,7 +93,7 @@ public class SparseMatrixFloat {
   }
 
   public static int[] filterValues(int[] base, int[] filter) {
-    return Arrays.stream(base).filter(i -> 0 > Arrays.binarySearch(filter, i)).toArray();
+    return Arrays.stream(base).filter(i -> 0 > binarySearch(filter, i)).toArray();
   }
 
   public static int[] zeros(float[] values) {
@@ -110,6 +114,18 @@ public class SparseMatrixFloat {
         size, size).sortAndPrune();
   }
 
+  public static int binarySearch_first(int[] ints, int row) {
+    final int search = binarySearch(ints, row);
+    if (search <= 0) return search;
+    return IntStream.iterate(search - 1, x -> x - 1).limit(search).filter(r -> r >= 0 && ints[r] != row).findFirst().orElse(-1) + 1;
+  }
+
+  public static int binarySearch_first(long[] ints, long row) {
+    final int search = binarySearch(ints, row);
+    if (search <= 0) return search;
+    return IntStream.iterate(search - 1, x -> x - 1).limit(search).filter(r -> r >= 0 && ints[r] != row).findFirst().orElse(-1) + 1;
+  }
+
   public SparseMatrixFloat project(int[] projection) {
     final int[] rowIndices = Arrays.stream(this.rowIndices).map(i -> projection[i]).toArray();
     final int[] colIndices = Arrays.stream(this.colIndices).map(i -> projection[i]).toArray();
@@ -117,6 +133,28 @@ public class SparseMatrixFloat {
         rowIndices,
         colIndices,
         values,
+        Arrays.stream(rowIndices).max().getAsInt() + 1,
+        Arrays.stream(colIndices).max().getAsInt() + 1
+    ).sortAndPrune().aggregate();
+  }
+
+  public int[] activeRows() {
+    return Arrays.stream(rowIndices).distinct().sorted().toArray();
+  }
+
+  public SparseMatrixFloat select(int[] projection) {
+    final Map<Integer, Integer> reverseIndex = IntStream.range(0, projection.length).mapToObj(x -> x).collect(Collectors.toMap(x -> projection[x], x -> x));
+    final int[] indices = IntStream.range(0, this.rowIndices.length).filter(i -> reverseIndex.containsKey(this.rowIndices[i]) && reverseIndex.containsKey(this.colIndices[i])).toArray();
+    final int[] rowIndices = Arrays.stream(indices).map(i -> this.rowIndices[i]).map(i -> reverseIndex.get(i)).toArray();
+    final int[] colIndices = Arrays.stream(indices).map(i -> this.colIndices[i]).map(i -> reverseIndex.get(i)).toArray();
+    final float[] floats = new float[indices.length];
+    for (int i = 0; i < floats.length; i++) {
+      floats[i] = values[indices[i]];
+    }
+    return new SparseMatrixFloat(
+        rowIndices,
+        colIndices,
+        floats,
         Arrays.stream(rowIndices).max().getAsInt() + 1,
         Arrays.stream(colIndices).max().getAsInt() + 1
     ).sortAndPrune().aggregate();
@@ -166,7 +204,7 @@ public class SparseMatrixFloat {
   }
 
   public int getNumNonZeros() {
-    return this.values.length;
+    return this.rowIndices.length;
   }
 
   public double[] getValues() {
@@ -232,8 +270,8 @@ public class SparseMatrixFloat {
             .mapToInt(elementIndex -> (int) (elementIndex % cols)).toArray(),
         toFloat(IntStream.range(0, finalIndices.length)
             .mapToLong(i -> finalIndices[i]).mapToDouble(elementIndex -> {
-              final int idx_left = Arrays.binarySearch(finalIndices_left, elementIndex);
-              final int idx_right = Arrays.binarySearch(finalIndices_right, elementIndex);
+              final int idx_left = binarySearch_first(finalIndices_left, elementIndex);
+              final int idx_right = binarySearch_first(finalIndices_right, elementIndex);
               final float value_right = idx_right < 0 || finalIndices_right[idx_right] != elementIndex ? 0 : sortedValues_right[idx_right];
               final float value_left = idx_left < 0 || finalIndices_left[idx_left] != elementIndex ? 0 : sortedValues_left[idx_left];
               return fn.applyAsDouble(value_left, value_right);
@@ -242,18 +280,70 @@ public class SparseMatrixFloat {
   }
 
   public int[] getCols(int row) {
-    final int begin = Arrays.binarySearch(rowIndices, row);
+    final int begin = rowStart(row);
     if (begin < 0) return new int[]{};
-    final int nnz = rowIndices.length;
-    int end = IntStream.range(begin, nnz).filter(r -> rowIndices[r] != row).findFirst().orElse(nnz + 1);
+    int end = getEnd(row, begin);
     return Arrays.copyOfRange(colIndices, begin, end);
   }
 
+  public int getEnd(int row, int begin) {
+    return IntStream.range(begin, rowIndices.length)
+        .filter(r -> rowIndices[r] != row)
+        .findFirst().orElse(rowIndices.length);
+  }
+
+  public int rowStart(int row) {
+    final int[] ints = this.rowIndices;
+    return binarySearch_first(ints, row);
+  }
+
   public float[] getVals(int row) {
-    final int begin = Arrays.binarySearch(rowIndices, row);
+    final int begin = rowStart(row);
     if (begin < 0) return new float[]{};
-    final int nnz = rowIndices.length;
-    int end = IntStream.range(begin, nnz).filter(r -> rowIndices[r] != row).findFirst().orElse(nnz + 1);
+    int end = getEnd(row, begin);
     return Arrays.copyOfRange(values, begin, end);
+  }
+
+  public double getValSum(int row) {
+    final int[] rowIndices = this.rowIndices;
+    assert values.length == rowIndices.length;
+    final int begin = binarySearch_first(rowIndices, row);
+    if (begin < 0 || begin >= rowIndices.length) return 0;
+    final int nnz = rowIndices.length;
+    assert begin < nnz;
+    int end = IntStream.range(begin, nnz).filter(i -> rowIndices[i] != row).findFirst().orElse(nnz);
+    return IntStream.range(begin, end).filter(i -> colIndices[i] != row).mapToDouble(i -> values[i]).sum();
+  }
+
+  public SparseMatrixFloat assertSymmetric() {
+    assert Arrays.stream(this.activeRows()).map(x -> this.getCols(x).length).sum() == this.getNumNonZeros();
+    assert Arrays.stream(this.activeRows()).map(x -> this.getVals(x).length).sum() == this.getNumNonZeros();
+    assert transpose().equals(this, 1e-4);
+    return this;
+  }
+
+  private boolean equals(SparseMatrixFloat other, double tolerance) {
+    if (rowIndices.length != other.rowIndices.length) {
+      return false;
+    }
+    if (colIndices.length != other.colIndices.length) {
+      return false;
+    }
+    if (values.length != other.values.length) {
+      return false;
+    }
+    for (int i = 0; i < rowIndices.length; i++)
+      if (rowIndices[i] != other.rowIndices[i]) {
+        return false;
+      }
+    for (int i = 0; i < colIndices.length; i++)
+      if (colIndices[i] != other.colIndices[i]) {
+        return false;
+      }
+    for (int i = 0; i < values.length; i++)
+      if (Math.abs(values[i] - other.values[i]) > tolerance) {
+        return false;
+      }
+    return true;
   }
 }

@@ -21,7 +21,13 @@ package com.simiacryptus.mindseye.art.photo.topology;
 
 import java.util.List;
 
+
 public interface RasterTopology {
+
+  default RasterTopology cached() {
+    return new RasterTopologyWrapper.CachedRasterTopology(this);
+  }
+
   List<int[]> connectivity();
 
   int getIndexFromCoords(int x, int y);
