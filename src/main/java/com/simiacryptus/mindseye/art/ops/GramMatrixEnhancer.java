@@ -44,7 +44,7 @@ public class GramMatrixEnhancer implements VisualModifier {
   private double max = 1;
   private boolean averaging = true;
   private boolean balanced = true;
-  private int tileSize = 600;
+  private int tileSize = 1000;
   private int padding = 8;
 
   @NotNull
@@ -61,15 +61,19 @@ public class GramMatrixEnhancer implements VisualModifier {
   }
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+  public PipelineNetwork build(PipelineNetwork network, Tensor mask, Tensor... style) {
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
     network.wrap(new GramianLayer(GramMatrixMatcher.getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
-    int pixels = Arrays.stream(image).mapToInt(x -> {
+    int pixels = Arrays.stream(style).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
-    Tensor result = GramMatrixMatcher.eval(pixels, network, getTileSize(), padding, image);
+    Tensor result = GramMatrixMatcher.eval(pixels, network, getTileSize(), padding, style);
     double mag = balanced ? result.rms() : 1;
+    if (null != mask) {
+      final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, mask, Precision.Float));
+      network.wrap(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
+    }
     network.wrap(loss(result, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
   }

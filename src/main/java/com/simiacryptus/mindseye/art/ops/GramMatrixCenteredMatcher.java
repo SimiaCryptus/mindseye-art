@@ -91,8 +91,8 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
   }
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
-    return buildWithModel(network, null, image);
+  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+    return buildWithModel(network, null, style);
   }
 
   @NotNull

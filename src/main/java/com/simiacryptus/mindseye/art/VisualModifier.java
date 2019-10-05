@@ -24,20 +24,28 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.mindseye.util.ImageUtil;
+import org.jetbrains.annotations.NotNull;
 
 public interface VisualModifier {
-  PipelineNetwork build(PipelineNetwork network, Tensor... image);
+  @NotNull
+  public static Tensor resize(Tensor content, Tensor dims) {
+    final int[] dimensions = content.getDimensions();
+    return Tensor.fromRGB(ImageUtil.resize(dims.toRgbImage(), dimensions[0], dimensions[1]));
+  }
+
+  PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style);
 
   default PipelineNetwork build(VisionPipelineLayer layer, Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
     network.assertAlive();
-    PipelineNetwork pipelineNetwork = build(network, image);
+    PipelineNetwork pipelineNetwork = build(network, null, image);
     network.freeRef();
     return pipelineNetwork;
   }
 
   default PipelineNetwork build(Tensor... image) {
-    return build((PipelineNetwork) new PipelineNetwork().setName("Input"), image);
+    return build((PipelineNetwork) new PipelineNetwork().setName("Input"), null, image);
   }
 
   default VisualModifier combine(VisualModifier right) {
@@ -48,11 +56,15 @@ public interface VisualModifier {
         return String.format("(%s+%s)", left.toString(), right);
       }
 
+      public boolean withMask() {
+        return left.withMask() || right.withMask();
+      }
+
       @Override
-      public PipelineNetwork build(PipelineNetwork original, Tensor... image) {
+      public PipelineNetwork build(PipelineNetwork original, Tensor content, Tensor... style) {
         return (PipelineNetwork) SumInputsLayer.combine(
-            VisualModifier.this.build(original, image),
-            right.build(original, image)
+            VisualModifier.this.build(original, content, style),
+            right.build(original, content, style)
         ).freeze();
       }
     };
@@ -66,9 +78,13 @@ public interface VisualModifier {
         return String.format("(%s*%s)", left.toString(), scale);
       }
 
+      public boolean withMask() {
+        return left.withMask();
+      }
+
       @Override
-      public PipelineNetwork build(PipelineNetwork original, Tensor... image) {
-        PipelineNetwork build = VisualModifier.this.build(original, image);
+      public PipelineNetwork build(PipelineNetwork original, Tensor content, Tensor... style) {
+        PipelineNetwork build = VisualModifier.this.build(original, content, style);
         build.wrap(new LinearActivationLayer().setScale(scale).freeze());
         return (PipelineNetwork) build.freeze();
       }
@@ -83,13 +99,38 @@ public interface VisualModifier {
         return String.format("(%s^%s)", left.toString(), power);
       }
 
+      public boolean withMask() {
+        return left.withMask();
+      }
+
       @Override
-      public PipelineNetwork build(PipelineNetwork original, Tensor... image) {
-        PipelineNetwork build = VisualModifier.this.build(original, image);
+      public PipelineNetwork build(PipelineNetwork original, Tensor content, Tensor... style) {
+        PipelineNetwork build = VisualModifier.this.build(original, content, style);
         build.wrap(new NthPowerActivationLayer().setPower(power).freeze());
         return (PipelineNetwork) build.freeze();
       }
     };
   }
 
+  default boolean withMask() {
+    return false;
+  }
+
+  @NotNull
+  default VisualModifier withMask(Tensor maskedInput) {
+    final VisualModifier inner = this;
+    return new VisualModifier() {
+      public boolean withMask() {
+        return true;
+      }
+
+      @Override
+      public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+        final Tensor resizedMaskedInput = resize(content, maskedInput);
+        return inner.build(network, resizedMaskedInput, style);
+        //return inner.build(gateNetwork(network, finalMask), finalMask, style);
+      }
+    };
+
+  }
 }

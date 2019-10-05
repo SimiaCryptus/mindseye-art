@@ -41,7 +41,7 @@ public class GramMatrixMatcher implements VisualModifier {
   private final Precision precision = Precision.Float;
   private boolean averaging = true;
   private boolean balanced = true;
-  private int tileSize = 600;
+  private int tileSize = 1000;
 
   @NotNull
   public static Layer loss(Tensor result, double mag, boolean averaging) {
@@ -91,8 +91,8 @@ public class GramMatrixMatcher implements VisualModifier {
   }
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
-    return buildWithModel(network, null, image);
+  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+    return buildWithModel(network, null, style);
   }
 
   @NotNull

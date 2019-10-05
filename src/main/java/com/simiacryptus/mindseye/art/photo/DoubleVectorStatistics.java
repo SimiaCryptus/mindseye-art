@@ -31,6 +31,7 @@ public class DoubleVectorStatistics implements Consumer<double[]> {
 
   final DoubleSummaryStatistics[] firstOrder;
   final DoubleSummaryStatistics[] secondOrder;
+
   public DoubleVectorStatistics(int length) {
     firstOrder = IntStream.range(0, length).mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);
     secondOrder = IntStream.range(0, length).mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);

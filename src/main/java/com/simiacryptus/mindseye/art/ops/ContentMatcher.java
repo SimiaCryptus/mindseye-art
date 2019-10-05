@@ -36,12 +36,12 @@ public class ContentMatcher implements VisualModifier {
   private boolean balanced = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
-    if (1 != image.length) throw new IllegalArgumentException();
+  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+    if (1 != style.length) throw new IllegalArgumentException();
     network = network.copyPipeline();
     Layer layer = network.getHead().getLayer();
     String name = (layer != null ? layer.getName() : "Original") + " Content";
-    Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(style).getDataAndFree().getAndFree(0);
     double mag = balanced ? baseContent.rms() : 1;
     if (!Double.isFinite(mag) || mag < 0) throw new RuntimeException("RMS = " + mag);
     DAGNode head = network.getHead();

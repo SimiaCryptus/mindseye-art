@@ -36,9 +36,9 @@ public class ContentInceptionMatcher implements VisualModifier {
   private boolean balanced = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
     network = network.copyPipeline();
-    Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(style).getDataAndFree().getAndFree(0);
     BandAvgReducerLayer bandAvgReducerLayer = new BandAvgReducerLayer();
     Tensor bandAvg = bandAvgReducerLayer.eval(baseContent).getDataAndFree().getAndFree(0);
     ImgBandBiasLayer offsetLayer = new ImgBandBiasLayer(bandAvg.scale(-1));

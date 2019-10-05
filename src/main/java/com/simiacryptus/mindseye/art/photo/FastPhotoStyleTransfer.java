@@ -92,10 +92,10 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     );
   }
 
-  public static Tensor transfer(Tensor contentImage, Tensor styleImage, Layer encode, Layer decode) {
+  public static Tensor transfer(Tensor contentImage, Tensor styleImage, Layer encode, Layer decode, double contentDensity, double styleDensity) {
     final Tensor encodedContent = encode.eval(contentImage).getDataAndFree().getAndFree(0);
     final Tensor encodedStyle = encode.eval(styleImage).getDataAndFree().getAndFree(0);
-    final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle);
+    final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, contentDensity, styleDensity);
     encodedStyle.freeRef();
     final Tensor encodedTransformed = applicator.eval(encodedContent).getDataAndFree().getAndFree(0);
     encodedContent.freeRef();
@@ -139,19 +139,28 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   }
 
   public Tensor photoWCT(Tensor style, Tensor content) {
-    return
-        photoWCT_1(style,
-            photoWCT_2(style,
-                photoWCT_3(style,
-                    photoWCT_4(style,
-                        content
-                    ))));
+    return photoWCT(style, content, 1.0, 1.0);
+  }
+
+  @NotNull
+  public Tensor photoWCT(Tensor style, Tensor content, double contentDensity, double styleDensity) {
+    return photoWCT_1(style,
+        photoWCT_2(style,
+            photoWCT_3(style,
+                photoWCT_4(style, content, contentDensity, styleDensity),
+                contentDensity, styleDensity),
+            contentDensity, styleDensity),
+        contentDensity, styleDensity);
   }
 
   public @NotNull Tensor photoWCT_1(Tensor style, Tensor content) {
+    return photoWCT_1(style, content, 1.0, 1.0);
+  }
+
+  public @NotNull Tensor photoWCT_1(Tensor style, Tensor content, double contentDensity, double styleDensity) {
     final Tensor encodedContent = encode_1.eval(content).getDataAndFree().getAndFree(0);
     final Tensor encodedStyle = encode_1.eval(style).getDataAndFree().getAndFree(0);
-    final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle);
+    final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, contentDensity, styleDensity);
     final Tensor encodedTransformed = applicator.eval(encodedContent).getDataAndFree().getAndFree(0);
     encodedContent.freeRef();
     applicator.freeRef();
@@ -163,16 +172,30 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
 
   @NotNull
   public Tensor photoWCT_2(Tensor style, Tensor content) {
-    return transfer(content, style, encode_2, decode_2);
+    return photoWCT_2(style, content, 1.0, 1.0);
+  }
+
+  @NotNull
+  public Tensor photoWCT_2(Tensor style, Tensor content, double contentDensity, double styleDensity) {
+    return transfer(content, style, encode_2, decode_2, contentDensity, styleDensity);
   }
 
   @NotNull
   public Tensor photoWCT_3(Tensor style, Tensor content) {
-    return transfer(content, style, encode_3, decode_3);
+    return photoWCT_3(style, content, 1.0, 1.0);
+  }
+
+  @NotNull
+  public Tensor photoWCT_3(Tensor style, Tensor content, double contentDensity, double styleDensity) {
+    return transfer(content, style, encode_3, decode_3, contentDensity, styleDensity);
   }
 
   public Tensor photoWCT_4(Tensor style, Tensor content) {
-    return transfer(content, style, encode_4, decode_4);
+    return photoWCT_4(style, content, 1.0, 1.0);
+  }
+
+  public Tensor photoWCT_4(Tensor style, Tensor content, double contentDensity, double styleDensity) {
+    return transfer(content, style, encode_4, decode_4, contentDensity, styleDensity);
   }
 
   public RefOperator<Tensor> photoSmooth(Tensor content) {

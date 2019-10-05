@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.photo;
 
 import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
+import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
 import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
@@ -132,13 +133,18 @@ public class SegmentUtil {
 
   @NotNull
   public static BufferedImage flattenColors(Tensor content, RasterTopology topology, RasterAffinity affinity, int n) {
-    return new SmoothSolver_Cuda().solve(
+    final RefOperator<Tensor> solver = new SmoothSolver_Cuda().solve(
         topology, affinity.wrap((graphEdges, innerResult) -> adjust(
             graphEdges,
             innerResult,
             degree(innerResult),
             0.5)),
-        1e-4).iterate(n, content).toRgbImage();
+        1e-4);
+    final Tensor tensor = solver.iterate(n, content.addRef());
+    solver.freeRef();
+    final BufferedImage image = tensor.toRgbImage();
+    tensor.freeRef();
+    return image;
   }
 
   public static BufferedImage paintWithRandomColors(RasterTopology topology, Tensor content, int[] pixelMap, SparseMatrixFloat graph) {
@@ -184,11 +190,15 @@ public class SegmentUtil {
 
   @NotNull
   public static BufferedImage paint(RasterTopology topology, Tensor content, int[] pixelMap, Map<Integer, double[]> colors) {
-    return content.mapCoords(c -> {
+    final Tensor tensor = content.mapCoords(c -> {
       final int[] coords = c.getCoords();
       final int regionId = pixelMap[topology.getIndexFromCoords(coords[0], coords[1])];
       final double[] color = colors.get(regionId);
       return null == color ? 0 : color[coords[2]];
-    }).toImage();
+    });
+    final BufferedImage image = tensor.toImage();
+    tensor.freeRef();
+    return image;
   }
+
 }
