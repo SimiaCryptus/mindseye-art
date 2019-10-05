@@ -34,9 +34,9 @@ public class ChannelMeanMatcher implements VisualModifier {
   private boolean averaging = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
     Tensor meanSignal = null;
-    return buildWithModel(network, meanSignal, image);
+    return buildWithModel(network, meanSignal, style);
   }
 
   @NotNull

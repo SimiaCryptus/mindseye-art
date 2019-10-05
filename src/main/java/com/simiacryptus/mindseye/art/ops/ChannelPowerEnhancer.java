@@ -33,9 +33,9 @@ public class ChannelPowerEnhancer implements VisualModifier {
   private boolean balanced = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
     network = network.copyPipeline();
-    double mag = balanced ? network.eval(image).getDataAndFree().getAndFree(0).rmsAndFree() : 1;
+    double mag = balanced ? network.eval(style).getDataAndFree().getAndFree(0).rmsAndFree() : 1;
     network.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),

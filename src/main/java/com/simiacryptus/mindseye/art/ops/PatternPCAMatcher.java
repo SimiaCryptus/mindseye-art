@@ -47,9 +47,9 @@ public class PatternPCAMatcher implements VisualModifier {
   private int bands = 16;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
     network = network.copyPipeline();
-    Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(style).getDataAndFree().getAndFree(0);
     int[] contentDimensions = baseContent.getDimensions();
     List<Tensor> components;
     PipelineNetwork signalProjection;

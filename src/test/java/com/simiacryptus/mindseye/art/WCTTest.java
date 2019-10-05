@@ -246,21 +246,21 @@ public class WCTTest extends NotebookReportBase {
 
     final Layer encode_4 = VGG_WCT_Import.encode_4();
     final Layer decode_4 = VGG_WCT_Import.photo_decode_4();
-    final Tensor content_4 = transfer(contentImage, styleImage, encode_4, decode_4);
+    final Tensor content_4 = transfer(contentImage, styleImage, encode_4, decode_4, 1.0, 1.0);
     log.eval(() -> {
       return content_4.toImage();
     });
 
     final Layer encode_3 = VGG_WCT_Import.encode_3();
     final Layer decode_3 = VGG_WCT_Import.photo_decode_3();
-    final Tensor content_3 = transfer(content_4, styleImage, encode_3, decode_3);
+    final Tensor content_3 = transfer(content_4, styleImage, encode_3, decode_3, 1.0, 1.0);
     log.eval(() -> {
       return content_3.toImage();
     });
 
     final Layer encode_2 = VGG_WCT_Import.encode_2();
     final Layer decode_2 = VGG_WCT_Import.photo_decode_2();
-    final Tensor content_2 = transfer(content_3, styleImage, encode_2, decode_2);
+    final Tensor content_2 = transfer(content_3, styleImage, encode_2, decode_2, 1.0, 1.0);
     log.eval(() -> {
       return content_2.toImage();
     });
@@ -269,7 +269,7 @@ public class WCTTest extends NotebookReportBase {
     final Layer decode_1 = VGG_WCT_Import.decode_1();
     final Tensor encodedContent = encode_1.eval(content_2).getDataAndFree().getAndFree(0);
     final Tensor encodedStyle = encode_1.eval(styleImage).getDataAndFree().getAndFree(0);
-    final Tensor encodedTransformed = WCTUtil.applicator(encodedStyle).eval(encodedContent).getDataAndFree().getAndFree(0);
+    final Tensor encodedTransformed = WCTUtil.applicator(encodedStyle, 1.0, 1.0).eval(encodedContent).getDataAndFree().getAndFree(0);
     final Tensor content_1 = decode_1.eval(encodedTransformed).getDataAndFree().getAndFree(0);
     log.eval(() -> {
       return content_1.toImage();

@@ -55,7 +55,9 @@ public class SmoothSolver_Cuda implements SmoothSolver {
   public RefOperator<Tensor> solve(RasterTopology topology, RasterAffinity affinity, double lambda) {
     double alpha = 1.0 / (1.0 + lambda);
     final CudaSparseMatrix laplacian = laplacian(affinity, topology);
-    return new TensorOperator(new SingleChannelWrapper(new CudaMatrixSolver(forwardMatrix(laplacian, alpha), 1 - alpha)), topology.getDimensions(), topology);
+    final SparseMatrixFloat forwardMatrix = forwardMatrix(laplacian, alpha);
+    laplacian.freeRef();
+    return new TensorOperator(new SingleChannelWrapper(new CudaMatrixSolver(forwardMatrix, 1 - alpha)), topology.getDimensions(), topology);
   }
 
   public SparseMatrixFloat forwardMatrix(@NotNull CudaSparseMatrix laplacian, double alpha) {

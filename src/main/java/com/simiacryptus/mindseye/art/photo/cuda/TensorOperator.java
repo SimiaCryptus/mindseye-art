@@ -52,7 +52,7 @@ public class TensorOperator extends ReferenceCountingBase implements RefOperator
       return doubles;
     }).toArray(i -> new double[i][]);
     double[][] smoothed = inner.apply(imageMatrix);
-    return tensor.mapCoords(coordinate -> {
+    return tensor.mapCoordsAndFree(coordinate -> {
       final int[] c = coordinate.getCoords();
       final int channel = 3 <= dimensions.length ? c[2] : 0;
       return Math.min(Math.max(smoothed[channel][topology.getIndexFromCoords(c[0], c[1])], 0), 255);

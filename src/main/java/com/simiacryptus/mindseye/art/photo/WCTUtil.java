@@ -25,47 +25,45 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import org.jetbrains.annotations.NotNull;
 
 public class WCTUtil {
 
-  public static PipelineNetwork applicator(Tensor encodedStyle) {
-    return applicator(encodedStyle, normalizer());
+  public static PipelineNetwork applicator(Tensor encodedStyle, double contentDensity, double styleDensity) {
+    return PipelineNetwork.wrap(1, normalizer(contentDensity), renormalizer(encodedStyle, styleDensity));
   }
 
-  public static PipelineNetwork applicator(Tensor encodedStyle, Layer normalNetwork) {
-    final Tensor meanSignal = means(encodedStyle);
-    final Tensor signalPower = rms(encodedStyle, meanSignal);
-    final PipelineNetwork applicator = applicator(meanSignal, signalPower, normalNetwork);
-    meanSignal.freeRef();
-    signalPower.freeRef();
-    return applicator;
-  }
-
-  public static PipelineNetwork applicator(Tensor meanSignal, Tensor signalPower, Layer normalNetwork) {
-    final PipelineNetwork applicator = new PipelineNetwork(1);
-    applicator.wrap(
+  @NotNull
+  public static PipelineNetwork renormalizer(Tensor encodedStyle, double styleDensity) {
+    final Tensor meanSignal = means(encodedStyle).scaleInPlace(1.0 / styleDensity);
+    final Tensor signalPower = rms(encodedStyle, meanSignal).scaleInPlace(Math.sqrt(1.0 / styleDensity));
+    final PipelineNetwork renormalizer = new PipelineNetwork(1);
+    renormalizer.wrap(
         new ImgBandBiasLayer(meanSignal),
-        applicator.wrap(
+        renormalizer.wrap(
             new ProductLayer(),
-            applicator.getInput(0),
-            applicator.constValue(signalPower)
+            renormalizer.getInput(0),
+            renormalizer.constValue(signalPower)
         )
     ).freeRef();
-    return PipelineNetwork.wrap(1, normalNetwork, applicator);
+    meanSignal.freeRef();
+    signalPower.freeRef();
+    return renormalizer;
   }
 
-  public static Layer normalizer() {
+  public static Layer normalizer(double maskFactor) {
     final PipelineNetwork normalizer = new PipelineNetwork(1);
     final InnerNode avgNode = normalizer.wrap(new BandAvgReducerLayer());
     final InnerNode centered = normalizer.wrap(
         new ImgBandDynamicBiasLayer(),
         normalizer.getInput(0),
-        normalizer.wrap(new ScaleLayer(-1), avgNode)
+        normalizer.wrap(new ScaleLayer(-1 / maskFactor), avgNode)
     );
     final InnerNode scales = normalizer.wrap(
         PipelineNetwork.wrap(1,
             new SquareActivationLayer(),
             new BandAvgReducerLayer(),
+            new ScaleLayer(1 / maskFactor),
             new NthPowerActivationLayer().setPower(-0.5)
         ),
         centered.addRef()
@@ -98,5 +96,13 @@ public class WCTUtil {
     final Tensor tensor = wrap.eval(normalFeatures).getDataAndFree().getAndFree(0);
     wrap.freeRef();
     return tensor;
+  }
+
+  public static Layer normalizer() {
+    return normalizer(1.0);
+  }
+
+  public static PipelineNetwork applicator(Tensor encodedStyle) {
+    return applicator(encodedStyle, 1.0, 1.0);
   }
 }

@@ -39,9 +39,9 @@ public class ContentConvolutionMatcher implements VisualModifier {
   private PoolingLayer.PoolingMode poolingMode = PoolingLayer.PoolingMode.Max;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor... image) {
+  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
     network = network.copyPipeline();
-    Tensor baseContent = network.eval(image).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(style).getDataAndFree().getAndFree(0);
     double mag = balanced ? baseContent.rms() : 1;
     int[] baseContentDimensions = baseContent.getDimensions();
     int patternSize = (int) Math.ceil(Math.sqrt(getPatternSize() / baseContentDimensions[2]));
