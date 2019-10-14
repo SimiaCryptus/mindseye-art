@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 public class GramMatrixEnhancer implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixEnhancer.class);
@@ -44,7 +45,7 @@ public class GramMatrixEnhancer implements VisualModifier {
   private double max = 1;
   private boolean averaging = true;
   private boolean balanced = true;
-  private int tileSize = 1000;
+  private int tileSize = 600;
   private int padding = 8;
 
   @NotNull
@@ -63,17 +64,24 @@ public class GramMatrixEnhancer implements VisualModifier {
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor mask, Tensor... style) {
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
-    network.wrap(new GramianLayer(GramMatrixMatcher.getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
+    final UUID uuid = GramMatrixMatcher.getAppendUUID(network, GramianLayer.class);
     int pixels = Arrays.stream(style).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
-    Tensor result = GramMatrixMatcher.eval(pixels, network, getTileSize(), padding, style);
-    double mag = balanced ? result.rms() : 1;
+
+    final PipelineNetwork copy = network.copyPipeline();
+    copy.wrap(new GramianLayer(uuid).setPrecision(precision)).freeRef();
+    Tensor result = GramMatrixMatcher.eval(pixels, copy, getTileSize(), padding, style);
+    copy.freeRef();
+
     if (null != mask) {
       final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, mask, Precision.Float));
       network.wrap(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
     }
+    network.wrap(new GramianLayer(uuid).setPrecision(precision)).freeRef();
+
+    double mag = balanced ? result.rms() : 1;
     network.wrap(loss(result, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
   }

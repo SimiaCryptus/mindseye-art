@@ -94,7 +94,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
 
   @Override
   public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline();
+    return getVisionPipeline().addRef();
   }
 
 }

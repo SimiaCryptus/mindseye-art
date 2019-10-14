@@ -95,7 +95,7 @@ public enum Inception5H implements VisionPipelineLayer {
 
   @Override
   public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline();
+    return getVisionPipeline().addRef();
   }
 
 }

@@ -42,11 +42,13 @@ public class PrependVisionPipelineLayer implements VisionPipelineLayer {
   @Override
   public VisionPipeline<VisionPipelineLayer> getPipeline() {
     StaticVisionPipelineLayer staticVisionPipelineLayer = new StaticVisionPipelineLayer(getPipelineName(), layer);
+    final VisionPipeline<?> innerPipeline = inner.getPipeline();
     VisionPipeline<VisionPipelineLayer> visionPipeline = new VisionPipeline<>(getPipelineName(), Stream.concat(
         Stream.of(staticVisionPipelineLayer),
-        inner.getPipeline().getLayers().keySet().stream().map(x -> new com.simiacryptus.mindseye.art.PrependVisionPipelineLayer(x, layer))
+        innerPipeline.getLayers().keySet().stream().map(x -> new com.simiacryptus.mindseye.art.PrependVisionPipelineLayer(x, layer))
     ).toArray(i -> new VisionPipelineLayer[i]));
     staticVisionPipelineLayer.reference.set(visionPipeline);
+    innerPipeline.freeRef();
     return visionPipeline;
   }
 

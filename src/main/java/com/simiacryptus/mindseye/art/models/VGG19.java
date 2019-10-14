@@ -98,7 +98,7 @@ public enum VGG19 implements VisionPipelineLayer {
 
   @Override
   public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline();
+    return getVisionPipeline().addRef();
   }
 
 }

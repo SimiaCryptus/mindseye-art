@@ -41,10 +41,13 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
 
   @Override
   public VisionPipeline<VisionPipelineLayer> getPipeline() {
-    return new VisionPipeline<>(
+    final VisionPipeline<?> innerPipeline = inner.getPipeline();
+    final VisionPipeline<VisionPipelineLayer> pipeline = new VisionPipeline<>(
         getPipelineName(),
-        inner.getPipeline().getLayers().keySet().stream().map(x -> new com.simiacryptus.mindseye.art.AppendVisionPipelineLayer(x, layer)).toArray(i -> new VisionPipelineLayer[i])
+        innerPipeline.getLayers().keySet().stream().map(x -> new AppendVisionPipelineLayer(x, layer)).toArray(i -> new VisionPipelineLayer[i])
     );
+    innerPipeline.freeRef();
+    return pipeline;
   }
 
   @Override
@@ -59,9 +62,9 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
 
   @Override
   public PipelineNetwork getNetwork() {
-    PipelineNetwork pipelineNetwork = inner.getNetwork().copyPipeline();
-    pipelineNetwork.add(layer);
-    return pipelineNetwork;
+    final PipelineNetwork network = inner.getNetwork();
+    network.add(layer);
+    return network;
   }
 
   @Override

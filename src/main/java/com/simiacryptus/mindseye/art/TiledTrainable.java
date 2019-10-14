@@ -45,13 +45,14 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
 
   private static final Logger logger = LoggerFactory.getLogger(TiledTrainable.class);
 
-  private final Tensor canvas;
-  private final Layer filter;
+  public final Tensor canvas;
+  public final Layer filter;
   private final Layer[] selectors;
   private final PipelineNetwork[] networks;
+  private final Singleton<PipelineNetwork> networkSingleton = new Singleton<>();
   @Nonnull
-  private Precision precision;
-  private boolean mutableCanvas = true;
+  public Precision precision;
+  public boolean mutableCanvas = true;
 
   public TiledTrainable(Tensor canvas, int tileSize, int padding) {
     this(canvas, tileSize, padding, Precision.Float);
@@ -73,7 +74,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     this.setPrecision(precision);
     this.canvas = canvas;
     this.filter = filter.addRef();
-    Tensor filteredCanvas = this.getFilter().eval(canvas).getDataAndFree().getAndFree(0);
+    Tensor filteredCanvas = this.filter.eval(canvas).getDataAndFree().getAndFree(0);
     assert 3 == filteredCanvas.getDimensions().length;
     int width = filteredCanvas.getDimensions()[0];
     int height = filteredCanvas.getDimensions()[1];
@@ -82,14 +83,14 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     if (cols != 1 || rows != 1) {
       this.selectors = selectors(padding, width, height, tileSize, fade);
       networks = Arrays.stream(this.getSelectors())
-          .map(selector -> PipelineNetwork.build(1, filter, selector))
+          .map(selector -> PipelineNetwork.build(1, filter.addRef(), selector))
           .map(this::getNetwork)
           .toArray(i -> new PipelineNetwork[i]);
     } else {
       selectors = null;
       networks = null;
     }
-    logger.info("Trainable canvas ID: " + this.getCanvas().getId());
+    logger.info("Trainable canvas ID: " + this.canvas.getId());
   }
 
   public static Layer[] selectors(int padding, int width, int height, int tileSize, boolean fade) {
@@ -148,7 +149,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
             });
             PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
             InnerNode selectNode = pipelineNetwork.wrap(tileSelectLayer);
-            pipelineNetwork.wrap(new ImgPixelGateLayer(), selectNode, pipelineNetwork.constValueWrap(mask));
+            pipelineNetwork.wrap(new ImgPixelGateLayer(), selectNode, pipelineNetwork.constValueWrap(mask)).freeRef();
             selectors[index++] = pipelineNetwork;
           }
         }
@@ -160,28 +161,31 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
     assertAlive();
+    final Layer filter = this.filter.addRef();
     if (null == getSelectors() || 0 == getSelectors().length) {
-      Trainable trainable = new BasicTrainable(PipelineNetwork.wrap(1,
-          getFilter().addRef(),
-          getNetwork(getFilter().addRef())
+      Trainable trainable = BasicTrainable.wrap(PipelineNetwork.wrap(1,
+          filter.addRef(),
+          networkSingleton.getOrInit(() -> getNetwork(filter.addRef())).addRef()
       ))
           .setMask(isMutableCanvas())
-          .setData(Arrays.asList(new Tensor[][]{{getCanvas()}}));
+          .setData(Arrays.asList(new Tensor[][]{{canvas}}));
       PointSample measure = trainable.measure(monitor);
       trainable.freeRef();
+      filter.freeRef();
       return measure;
     } else {
       Result canvasBuffer;
       if (isMutableCanvas()) {
-        canvasBuffer = getFilter().evalAndFree(new MutableResult(getCanvas()));
+        canvasBuffer = filter.evalAndFree(new MutableResult(canvas));
       } else {
-        canvasBuffer = getFilter().evalAndFree(new ConstantResult(getCanvas()));
+        canvasBuffer = filter.evalAndFree(new ConstantResult(canvas));
       }
+      filter.freeRef();
       AtomicDouble resultSum = new AtomicDouble(0);
       final DeltaSet<UUID> delta = IntStream.range(0, getSelectors().length).mapToObj(i -> {
         final DeltaSet<UUID> deltaSet = new DeltaSet<>();
         Result tileInput = getSelectors()[i].eval(canvasBuffer);
-        Result tileOutput = getNetworks()[i].eval(tileInput);
+        Result tileOutput = networks[i].eval(tileInput);
         tileInput.freeRef();
         tileInput.getData().freeRef();
         Tensor tensor = tileOutput.getData().getAndFree(0);
@@ -199,8 +203,8 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       canvasBuffer.getData().freeRef();
       canvasBuffer.freeRef();
       final StateSet<UUID> weights = new StateSet<>(delta);
-      if (delta.getMap().containsKey(getCanvas().getId())) {
-        weights.get(getCanvas().getId(), getCanvas().getData()).freeRef();
+      if (delta.getMap().containsKey(canvas.getId())) {
+        weights.get(canvas.getId(), canvas.getData()).freeRef();
       }
       assert delta.getMap().keySet().stream().allMatch(x -> weights.getMap().containsKey(x));
       PointSample pointSample = new PointSample(delta, weights, resultSum.get(), 0, 1);
@@ -220,9 +224,9 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   @Override
   protected void _free() {
     if (null != getSelectors()) Arrays.stream(getSelectors()).forEach(ReferenceCounting::freeRef);
-    if (null != getNetworks()) Arrays.stream(getNetworks()).forEach(ReferenceCounting::freeRef);
-
-    getFilter().freeRef();
+    if (null != networks) Arrays.stream(networks).forEach(ReferenceCounting::freeRef);
+    if (networkSingleton.isDefined()) networkSingleton.get().freeRef();
+    filter.freeRef();
     super._free();
   }
 
@@ -249,15 +253,4 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     return selectors;
   }
 
-  public PipelineNetwork[] getNetworks() {
-    return networks;
-  }
-
-  public Tensor getCanvas() {
-    return canvas;
-  }
-
-  public Layer getFilter() {
-    return filter;
-  }
 }

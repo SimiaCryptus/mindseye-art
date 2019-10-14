@@ -57,7 +57,7 @@ public class GramMatrixMatcher implements VisualModifier {
   }
 
   public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, int padding, Tensor... image) {
-    return Arrays.stream(image).flatMap(img -> {
+    final Tensor tensor = Arrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
       return Arrays.stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
           .map(selector -> {
@@ -73,7 +73,9 @@ public class GramMatrixMatcher implements VisualModifier {
       a.addInPlace(b);
       b.freeRef();
       return a;
-    }).get().scaleInPlace(1.0 / pixels).mapAndFree(x -> {
+    }).orElse(null);
+    if (null == tensor) return tensor;
+    return tensor.scaleInPlace(1.0 / pixels).mapAndFree(x -> {
       if (Double.isFinite(x)) {
         return x;
       } else {
@@ -83,32 +85,50 @@ public class GramMatrixMatcher implements VisualModifier {
   }
 
   @NotNull
-  public static UUID getAppendUUID(PipelineNetwork network, Class<GramianLayer> layerClass) {
+  public static UUID getAppendUUID(PipelineNetwork network, Class<?> layerClass) {
     DAGNode head = network.getHead();
     Layer layer = head.getLayer();
+    head.freeRef();
     if (null == layer) return UUID.randomUUID();
     return UUID.nameUUIDFromBytes((layer.getId().toString() + layerClass.getName()).getBytes());
   }
 
   @Override
   public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
-    return buildWithModel(network, null, style);
+    return buildWithModel(network, content, null, style);
   }
 
   @NotNull
-  public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor model, Tensor... image) {
+  public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor mask, Tensor model, Tensor... image) {
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
-    network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
     int pixels = Arrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
-    if (null == model) model = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), 8, image);
+    if (null != mask) {
+      if (null == model) {
+        final PipelineNetwork build = PipelineNetwork.wrap(1, network.addRef(),
+            new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision));
+        model = eval(pixels == 0 ? 1 : pixels, build, getTileSize(), 8, image);
+        build.freeRef();
+      }
+      final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, mask, Precision.Float));
+      final DAGNode head = network.getHead();
+      network.wrap(new ProductLayer(getAppendUUID(network, ProductLayer.class)),
+          head, network.constValue(boolMask)
+      ).freeRef();
+      network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class))
+          .setPrecision(precision)
+          .setAlpha(1.0 / Arrays.stream(boolMask.getData()).average().getAsDouble())).freeRef();
+      boolMask.freeRef();
+    } else {
+      network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
+      if (null == model) model = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), 8, image);
+    }
     double mag = balanced ? model.rms() : 1;
     network.wrap(loss(model, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
   }
-
 
   public boolean isAveraging() {
     return averaging;

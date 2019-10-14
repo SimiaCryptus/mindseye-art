@@ -48,6 +48,11 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
   }
 
   @Override
+  public VisionPipeline<T> addRef() {
+    return (VisionPipeline<T>) super.addRef();
+  }
+
+  @Override
   protected void _free() {
     layers.values().stream().forEach(ReferenceCountingBase::freeRef);
     super._free();

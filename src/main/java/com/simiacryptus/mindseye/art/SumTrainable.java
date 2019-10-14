@@ -63,7 +63,10 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
     double rate = results.stream().mapToDouble(x -> x.getRate()).average().getAsDouble();
     int sum = results.stream().mapToInt(x -> x.count).sum();
     results.forEach(ReferenceCountingBase::freeRef);
-    return new PointSample(delta, weights, mean, rate, sum);
+    final PointSample pointSample = new PointSample(delta, weights, mean, rate, sum);
+    delta.freeRef();
+    weights.freeRef();
+    return pointSample;
   }
 
   @Override

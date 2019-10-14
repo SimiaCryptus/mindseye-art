@@ -124,6 +124,27 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
   }
 
   public @NotNull
+  static RegionAssembler simpleEntropy(SparseMatrixFloat graph, int[] pixelMap, Tensor content, RasterTopology topology) {
+    return wrap(graph, pixelMap, new Function<Connection, Double>() {
+      @Override
+      public Double apply(Connection entry) {
+        if (null == entry) return Double.POSITIVE_INFINITY;
+        if (0 == entry.to.getConnectionWeight()) return -Double.POSITIVE_INFINITY;
+        if (0 == entry.from.getConnectionWeight()) return -Double.POSITIVE_INFINITY;
+        final double entropy = reduce(
+            -log(entry.value / entry.to.getConnectionWeight()),
+            -log(entry.value / entry.from.getConnectionWeight())
+        );
+        return entropy;
+      }
+
+      double reduce(double a, double b) {
+        return Math.min(a, b);
+      }
+    }, content, topology, new HashMap<Integer, Integer>());
+  }
+
+  public @NotNull
   static RegionAssembler epidemic(SparseMatrixFloat graph, int[] pixelMap, Tensor content, RasterTopology topology, Map<Integer, Integer> assignments) {
     return wrap(graph, pixelMap, new Function<Connection, Double>() {
       @Override

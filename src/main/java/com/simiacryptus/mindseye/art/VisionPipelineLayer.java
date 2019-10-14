@@ -41,7 +41,10 @@ public interface VisionPipelineLayer {
 
   @Nonnull
   default PipelineNetwork getNetwork() {
-    return getPipeline().getLayers().get(this).copyPipeline();
+    final VisionPipeline<?> pipeline = getPipeline();
+    final PipelineNetwork pipelineNetwork = pipeline.getLayers().get(this).copyPipeline();
+    pipeline.freeRef();
+    return pipelineNetwork;
   }
 
   @Nonnull
