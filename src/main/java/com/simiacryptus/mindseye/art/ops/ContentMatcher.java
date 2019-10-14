@@ -22,10 +22,8 @@ package com.simiacryptus.mindseye.art.ops;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
-import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
-import com.simiacryptus.mindseye.layers.cudnn.SumInputsLayer;
-import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
+import com.simiacryptus.mindseye.lang.cudnn.Precision;
+import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
@@ -36,11 +34,17 @@ public class ContentMatcher implements VisualModifier {
   private boolean balanced = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+  public PipelineNetwork build(PipelineNetwork network, Tensor mask, Tensor... style) {
     if (1 != style.length) throw new IllegalArgumentException();
     network = network.copyPipeline();
     Layer layer = network.getHead().getLayer();
     String name = (layer != null ? layer.getName() : "Original") + " Content";
+
+    if (null != mask) {
+      final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, mask, Precision.Float));
+      network.wrap(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
+    }
+
     Tensor baseContent = network.eval(style).getDataAndFree().getAndFree(0);
     double mag = balanced ? baseContent.rms() : 1;
     if (!Double.isFinite(mag) || mag < 0) throw new RuntimeException("RMS = " + mag);

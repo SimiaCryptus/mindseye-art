@@ -73,15 +73,17 @@ public abstract class ContextAffinity implements RasterAffinity {
   @NotNull
   public static SimpleMatrix covariance(SimpleMatrix means, SimpleMatrix rms, Supplier<Stream<double[]>> stream, int size) {
     final SimpleMatrix cov = new SimpleMatrix(size, size);
-    IntStream.range(0, size).forEach(c1 ->
-        IntStream.range(0, size).forEach(c2 -> {
+    IntStream.range(0, size).parallel().forEach(c1 ->
+        {
           final double mean1 = means.get(c1);
-          final double mean2 = means.get(c2);
           final double rms1 = rms.get(c1);
-          final double rms2 = rms.get(c2);
-          final double covariance = stream.get().mapToDouble(p -> ((p[c1] - mean1) / rms1) * ((p[c2] - mean2) / rms2)).average().getAsDouble();
-          cov.set(c1, c2, covariance);
-        })
+          IntStream.range(0, size).forEach(c2 -> {
+            final double mean2 = means.get(c2);
+            final double rms2 = rms.get(c2);
+            final double covariance = stream.get().mapToDouble(p -> ((p[c1] - mean1) / rms1) * ((p[c2] - mean2) / rms2)).average().getAsDouble();
+            cov.set(c1, c2, covariance);
+          });
+        }
     );
     return cov;
   }

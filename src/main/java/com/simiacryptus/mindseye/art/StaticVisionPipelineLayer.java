@@ -42,7 +42,7 @@ public class StaticVisionPipelineLayer implements VisionPipelineLayer {
 
   @Override
   public VisionPipeline<?> getPipeline() {
-    return reference.get();
+    return reference.get().addRef();
   }
 
   @Override

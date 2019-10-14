@@ -28,13 +28,21 @@ import com.simiacryptus.mindseye.util.ImageUtil;
 import org.jetbrains.annotations.NotNull;
 
 public interface VisualModifier {
-  @NotNull
   public static Tensor resize(Tensor content, Tensor dims) {
+    if (null == content) return content;
     final int[] dimensions = content.getDimensions();
     return Tensor.fromRGB(ImageUtil.resize(dims.toRgbImage(), dimensions[0], dimensions[1]));
   }
 
-  PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style);
+  PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor[] style);
+
+  default PipelineNetwork build(VisionPipelineLayer layer, Tensor content, Tensor[] image) {
+    PipelineNetwork network = layer.getNetwork();
+    network.assertAlive();
+    PipelineNetwork pipelineNetwork = build(network, content, image);
+    network.freeRef();
+    return pipelineNetwork;
+  }
 
   default PipelineNetwork build(VisionPipelineLayer layer, Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
@@ -85,7 +93,7 @@ public interface VisualModifier {
       @Override
       public PipelineNetwork build(PipelineNetwork original, Tensor content, Tensor... style) {
         PipelineNetwork build = VisualModifier.this.build(original, content, style);
-        build.wrap(new LinearActivationLayer().setScale(scale).freeze());
+        build.wrap(new LinearActivationLayer().setScale(scale).freeze()).freeRef();
         return (PipelineNetwork) build.freeze();
       }
     };
@@ -106,7 +114,7 @@ public interface VisualModifier {
       @Override
       public PipelineNetwork build(PipelineNetwork original, Tensor content, Tensor... style) {
         PipelineNetwork build = VisualModifier.this.build(original, content, style);
-        build.wrap(new NthPowerActivationLayer().setPower(power).freeze());
+        build.wrap(new NthPowerActivationLayer().setPower(power).freeze()).freeRef();
         return (PipelineNetwork) build.freeze();
       }
     };
@@ -127,7 +135,9 @@ public interface VisualModifier {
       @Override
       public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
         final Tensor resizedMaskedInput = resize(content, maskedInput);
-        return inner.build(network, resizedMaskedInput, style);
+        final PipelineNetwork build = inner.build(network, resizedMaskedInput, style);
+        resizedMaskedInput.freeRef();
+        return build;
         //return inner.build(gateNetwork(network, finalMask), finalMask, style);
       }
     };

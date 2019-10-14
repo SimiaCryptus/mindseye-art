@@ -78,7 +78,7 @@ public class SegmentTest extends NotebookReportBase {
           new RelativeAffinity(content, topology)
               .setContrast(50)
               .setGraphPower1(2)
-              .setMixing(0.1), 4);
+              .setMixing(0.1), 4, new SmoothSolver_Cuda());
       final Tensor flattenedTensor = Tensor.fromRGB(flattenedColors);
       final int[] dimensions = topology.getDimensions();
       final int pixels = dimensions[0] * dimensions[1];

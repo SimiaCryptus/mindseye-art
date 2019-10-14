@@ -21,7 +21,6 @@ package com.simiacryptus.mindseye.art.photo;
 
 import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
-import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
 import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
@@ -115,14 +114,24 @@ public class SegmentUtil {
   }
 
   public static int[] removeTinyInclusions(int[] pixelMap, SparseMatrixFloat graph, int sizeThreshold) {
-    return removeTinyInclusions(valueCountMap(pixelMap), graph, sizeThreshold);
+    return removeTinyInclusions(pixelMap, graph, sizeThreshold, sizeThreshold);
+  }
+
+  public static int[] removeTinyInclusions(int[] pixelMap, SparseMatrixFloat graph, int smallSize, int largeSize) {
+    return removeTinyInclusions(valueCountMap(pixelMap), graph, smallSize, largeSize);
   }
 
   public static int[] removeTinyInclusions(Map<Integer, Long> islandSizes, SparseMatrixFloat graph, int sizeThreshold) {
+    return removeTinyInclusions(islandSizes, graph, sizeThreshold, sizeThreshold);
+  }
+
+  public static int[] removeTinyInclusions(Map<Integer, Long> islandSizes, SparseMatrixFloat graph, int smallSize, int largeSize) {
     return IntStream.range(0, graph.rows).map(row -> {
       final int[] cols = graph.getCols(row);
-      if (islandSizes.getOrDefault(row, 0l) < sizeThreshold) {
-        final int[] largeNeighbors = Arrays.stream(cols).filter(j -> islandSizes.getOrDefault(j, 0l) >= sizeThreshold).toArray();
+      if (islandSizes.getOrDefault(row, 0l) < smallSize) {
+        final int[] largeNeighbors = Arrays.stream(cols).filter(j -> {
+          return islandSizes.getOrDefault(j, 0l) >= largeSize;
+        }).toArray();
         if (largeNeighbors.length == 1) {
           return largeNeighbors[0];
         }
@@ -132,16 +141,16 @@ public class SegmentUtil {
   }
 
   @NotNull
-  public static BufferedImage flattenColors(Tensor content, RasterTopology topology, RasterAffinity affinity, int n) {
-    final RefOperator<Tensor> solver = new SmoothSolver_Cuda().solve(
+  public static BufferedImage flattenColors(Tensor content, RasterTopology topology, RasterAffinity affinity, int n, SmoothSolver solver) {
+    final RefOperator<Tensor> refOperator = solver.solve(
         topology, affinity.wrap((graphEdges, innerResult) -> adjust(
             graphEdges,
             innerResult,
             degree(innerResult),
             0.5)),
         1e-4);
-    final Tensor tensor = solver.iterate(n, content.addRef());
-    solver.freeRef();
+    final Tensor tensor = refOperator.iterate(n, content.addRef());
+    refOperator.freeRef();
     final BufferedImage image = tensor.toRgbImage();
     tensor.freeRef();
     return image;
