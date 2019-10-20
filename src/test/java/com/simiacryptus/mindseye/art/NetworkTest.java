@@ -55,9 +55,9 @@ public class NetworkTest extends LayerTestBase {
   private static DAGNetwork build() {
     Tensor styleTensor = Tensor.fromRGB(styleImage);
     DAGNetwork dagNetwork = MultiPrecision.setPrecision(SumInputsLayer.combine(
-        new GramMatrixMatcher().build(Inception5H.Inc5H_2a, styleTensor),
-        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, styleTensor),
-        new ContentMatcher().build(Tensor.fromRGB(contentImage))
+        new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleTensor),
+        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleTensor),
+        new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, Tensor.fromRGB(contentImage))
             .andThenWrap(new LinearActivationLayer().setScale(1e-1).freeze())
     ), Precision.Float);
     styleTensor.freeRef();

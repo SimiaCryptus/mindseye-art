@@ -201,9 +201,9 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   public RefOperator<Tensor> photoSmooth(Tensor content) {
     if (isSmooth()) {
       RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), RadiusRasterTopology.getRadius(1, 1), -1);
-//      RasterAffinity affinity = new MattingAffinity(content, topology);
+//      RasterAffinity affinity = new MattingAffinity(mask, topology);
       RasterAffinity affinity = new RelativeAffinity(content, topology);
-      //RasterAffinity affinity = new GaussianAffinity(content, 20, topology);
+      //RasterAffinity affinity = new GaussianAffinity(mask, 20, topology);
       //affinity = new TruncatedAffinity(affinity).setMin(1e-2);
       return (isUseCuda() ? new SmoothSolver_Cuda() : new SmoothSolver_EJML()).solve(topology, affinity, getLambda());
     } else return new NullOperator();

@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art.ops;
 import com.simiacryptus.lang.ref.ReferenceCountingBase;
 import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
+import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
@@ -151,29 +152,30 @@ public class MomentMatcher implements VisualModifier {
   }
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor mask, Tensor... images) {
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    PipelineNetwork network = visualModifierParameters.network;
     network = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
 
-    Tensor evalRoot = avg(network, getPixels(images), images);
+    Tensor evalRoot = avg(network, getPixels(visualModifierParameters.style), visualModifierParameters.style);
     double sumSq = evalRoot.sumSq();
     evalRoot.freeRef();
     log.info(String.format("Adjust for %s : %s", network.getName(), sumSq));
     network.wrap(new ScaleLayer(0 == sumSq ? 1 : 1.0 / sumSq)).freeRef();
 
-    if (null != mask) {
-      final Tensor boolMask = toMask(transform(network, mask, getPrecision()));
+    if (null != visualModifierParameters.mask) {
+      final Tensor boolMask = toMask(transform(network, visualModifierParameters.mask, getPrecision()));
       log.info("Mask: " + Arrays.toString(boolMask.getDimensions()));
       final double maskFactor = Arrays.stream(boolMask.getData()).average().getAsDouble();
       PipelineNetwork maskedNetwork = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
-      assert test(maskedNetwork, mask);
-      final MomentParams params = getMomentParams(network, maskFactor, images);
+      assert test(maskedNetwork, visualModifierParameters.mask);
+      final MomentParams params = getMomentParams(network, maskFactor, visualModifierParameters.style);
       network.freeRef();
-      assert test(maskedNetwork, mask);
+      assert test(maskedNetwork, visualModifierParameters.mask);
       final DAGNode head = maskedNetwork.getHead();
       maskedNetwork.wrap(new ProductLayer(), head, maskedNetwork.constValue(boolMask)).freeRef();
-      assert test(maskedNetwork, mask);
+      assert test(maskedNetwork, visualModifierParameters.mask);
       final MomentParams nodes = getMomentNodes(maskedNetwork, maskFactor);
-      assert test(maskedNetwork, mask);
+      assert test(maskedNetwork, visualModifierParameters.mask);
       final MomentParams momentParams = new MomentParams(
           nodes.avgNode.addRef(), params.avgValue.addRef(),
           nodes.rmsNode.addRef(), params.rmsValue.addRef(),
@@ -182,11 +184,13 @@ public class MomentMatcher implements VisualModifier {
       params.freeRef();
       nodes.freeRef();
       momentParams.addLoss(maskedNetwork).freeRef();
-      assert test(maskedNetwork, mask);
+      assert test(maskedNetwork, visualModifierParameters.mask);
+      visualModifierParameters.freeRef();
       MultiPrecision.setPrecision(maskedNetwork, getPrecision());
       return (PipelineNetwork) maskedNetwork.freeze();
     } else {
-      getMomentParams(network, 1.0, images).addLoss(network).freeRef();
+      getMomentParams(network, 1.0, visualModifierParameters.style).addLoss(network).freeRef();
+      visualModifierParameters.freeRef();
       MultiPrecision.setPrecision(network, getPrecision());
       return (PipelineNetwork) network.freeze();
     }

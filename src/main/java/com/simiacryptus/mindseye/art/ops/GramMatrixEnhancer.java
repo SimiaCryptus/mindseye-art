@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
+import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
@@ -62,23 +63,25 @@ public class GramMatrixEnhancer implements VisualModifier {
   }
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor mask, Tensor... style) {
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    PipelineNetwork network = visualModifierParameters.network;
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
     final UUID uuid = GramMatrixMatcher.getAppendUUID(network, GramianLayer.class);
-    int pixels = Arrays.stream(style).mapToInt(x -> {
+    int pixels = Arrays.stream(visualModifierParameters.style).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
 
     final PipelineNetwork copy = network.copyPipeline();
     copy.wrap(new GramianLayer(uuid).setPrecision(precision)).freeRef();
-    Tensor result = GramMatrixMatcher.eval(pixels, copy, getTileSize(), padding, style);
+    Tensor result = GramMatrixMatcher.eval(pixels, copy, getTileSize(), padding, visualModifierParameters.style);
     copy.freeRef();
 
-    if (null != mask) {
-      final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, mask, Precision.Float));
+    if (null != visualModifierParameters.mask) {
+      final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, visualModifierParameters.mask, Precision.Float));
       network.wrap(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
     }
+    visualModifierParameters.freeRef();
     network.wrap(new GramianLayer(uuid).setPrecision(precision)).freeRef();
 
     double mag = balanced ? result.rms() : 1;

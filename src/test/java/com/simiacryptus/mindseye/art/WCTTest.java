@@ -433,7 +433,7 @@ public class WCTTest extends NotebookReportBase {
 //        log.h3("RadiusRasterTopology - MattingAffinity");
 //        test(log, log.eval(() -> {
 //          RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-//          RasterAffinity affinity = new MattingAffinity(content, topology).setGraphPower1(2).setMixing(0.5);
+//          RasterAffinity affinity = new MattingAffinity(mask, topology).setGraphPower1(2).setMixing(0.5);
 //          if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
 //          return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
 //        }), tensors);
@@ -452,7 +452,7 @@ public class WCTTest extends NotebookReportBase {
 //          log.h3("RadiusRasterTopology");
 //          test(log, log.eval(() -> {
 //            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-//            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
+//            RasterAffinity affinity = new RelativeAffinity(mask, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
 //            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
 //            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
 //          }), tensors);
@@ -460,7 +460,7 @@ public class WCTTest extends NotebookReportBase {
 //          log.h3("RadiusRasterTopology - GaussianAffinity");
 //          test(log, log.eval(() -> {
 //            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-//            RasterAffinity affinity = new GaussianAffinity(content, contrast, topology);
+//            RasterAffinity affinity = new GaussianAffinity(mask, contrast, topology);
 //            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
 //            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
 //          }), tensors);

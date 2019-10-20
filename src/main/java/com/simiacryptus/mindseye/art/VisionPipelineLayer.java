@@ -29,6 +29,34 @@ import javax.annotation.Nonnull;
 import static com.simiacryptus.mindseye.layers.cudnn.PoolingLayer.getPoolingLayer;
 
 public interface VisionPipelineLayer {
+  final VisionPipelineLayer.Noop NOOP = new VisionPipelineLayer.Noop();
+
+  public static class Noop implements VisionPipelineLayer {
+
+    @Nonnull
+    @Override
+    public String name() {
+      return "NOOP";
+    }
+
+    @Nonnull
+    @Override
+    public VisionPipeline<Noop> getPipeline() {
+      return new VisionPipeline<Noop>(name(), this){};
+    }
+
+    @Nonnull
+    @Override
+    public String getPipelineName() {
+      return name();
+    }
+
+    @Nonnull
+    @Override
+    public Layer getLayer() {
+      return new PipelineNetwork(1);
+    }
+  }
 
   @Nonnull
   String name();

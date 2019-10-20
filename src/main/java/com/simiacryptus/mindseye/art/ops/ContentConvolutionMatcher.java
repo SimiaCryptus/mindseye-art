@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
+import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
@@ -39,9 +40,11 @@ public class ContentConvolutionMatcher implements VisualModifier {
   private PoolingLayer.PoolingMode poolingMode = PoolingLayer.PoolingMode.Max;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    PipelineNetwork network = visualModifierParameters.network;
     network = network.copyPipeline();
-    Tensor baseContent = network.eval(style).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(visualModifierParameters.style).getDataAndFree().getAndFree(0);
+    visualModifierParameters.freeRef();
     double mag = balanced ? baseContent.rms() : 1;
     int[] baseContentDimensions = baseContent.getDimensions();
     int patternSize = (int) Math.ceil(Math.sqrt(getPatternSize() / baseContentDimensions[2]));
