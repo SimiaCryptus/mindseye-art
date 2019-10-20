@@ -34,14 +34,15 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
 
 import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.adjust;
 import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.degree;
+import static java.util.stream.IntStream.range;
 
 public class SegmentUtil {
 
@@ -59,7 +60,7 @@ public class SegmentUtil {
 
   public static int[] valueCountArray(int[] ints) {
     final Map<Integer, Long> countMap = valueCountMap(ints);
-    return IntStream.range(0, Arrays.stream(ints).max().getAsInt() + 1).map((int i) -> (int) (long) countMap.getOrDefault(i, 0l)).toArray();
+    return range(0, Arrays.stream(ints).max().getAsInt() + 1).map((int i) -> (int) (long) countMap.getOrDefault(i, 0l)).toArray();
   }
 
   public static Map<Integer, Long> valueCountMap(int[] ints) {
@@ -79,38 +80,41 @@ public class SegmentUtil {
 
   public static <T> int[] markIslands(RasterTopology topology, Function<int[], T> extract, BiPredicate<T, T> test, int maxRecursion, int rows) {
     int[] marks = new int[rows];
-    int islandNumber = 0;
+    AtomicInteger islandNumber = new AtomicInteger(0);
     int[] dimensions = topology.getDimensions();
-    for (int x = 0; x < dimensions[0]; x++) {
-      for (int y = 0; y < dimensions[1]; y++) {
-        islandNumber = _markIslands(topology, extract, test, marks, islandNumber, maxRecursion, x, y);
-      }
-    }
+    range(0, dimensions[0]).parallel()
+        .mapToObj(x -> x).sorted(Comparator.comparing(x -> x.hashCode())).mapToInt(x -> x)
+        .forEach(x -> range(0, dimensions[1])
+        .mapToObj(y -> y).sorted(Comparator.comparing(y -> y.hashCode())).mapToInt(y -> y)
+        .forEach(y -> {
+          int row = topology.getIndexFromCoords(x, y);
+          if (marks[row] == 0) {
+            final int thisIsland = islandNumber.incrementAndGet();
+            marks[row] = thisIsland;
+            _markIslands(topology, extract, test, marks, maxRecursion, thisIsland, x, y);
+          }
+        }));
     return marks;
   }
 
-  protected static <T> int _markIslands(RasterTopology topology, Function<int[], T> extract, BiPredicate<T, T> test, int[] marks, int islandNumber, int maxRecursion, int... coords) {
+  protected static <T> void _markIslands(RasterTopology topology, Function<int[], T> extract, BiPredicate<T, T> test, int[] marks, int maxRecursion, int indexNumber, int... coords) {
     final int row = topology.getIndexFromCoords(coords[0], coords[1]);
-    final int thisIsland;
-    if (marks[row] == 0) {
-      thisIsland = ++islandNumber;
-      marks[row] = thisIsland;
-    } else {
-      thisIsland = marks[row];
-    }
-    assert 0 < thisIsland;
+    assert 0 < indexNumber;
     final T rowColor = extract.apply(coords);
     final List<int[]> connectivity = topology.connectivity();
-    if (maxRecursion > 0) for (int col : connectivity.get(row)) {
-      if (0 == marks[col]) {
-        final int[] toCoords = topology.getCoordsFromIndex(col);
-        if (test.test(rowColor, extract.apply(toCoords))) {
-          marks[col] = thisIsland;
-          islandNumber = _markIslands(topology, extract, test, marks, islandNumber, maxRecursion - 1, toCoords);
+    if (maxRecursion > 0) {
+      Arrays.stream(connectivity.get(row)).forEach(col -> {
+        if (0 == marks[col]) {
+          final int[] toCoords = topology.getCoordsFromIndex(col);
+          if (test.test(rowColor, extract.apply(toCoords))) {
+            if (0 == marks[col]) {
+              marks[col] = indexNumber;
+              _markIslands(topology, extract, test, marks, maxRecursion - 1, indexNumber, toCoords);
+            }
+          }
         }
-      }
+      });
     }
-    return islandNumber;
   }
 
   public static int[] removeTinyInclusions(int[] pixelMap, SparseMatrixFloat graph, int sizeThreshold) {
@@ -126,7 +130,7 @@ public class SegmentUtil {
   }
 
   public static int[] removeTinyInclusions(Map<Integer, Long> islandSizes, SparseMatrixFloat graph, int smallSize, int largeSize) {
-    return IntStream.range(0, graph.rows).map(row -> {
+    return range(0, graph.rows).map(row -> {
       final int[] cols = graph.getCols(row);
       if (islandSizes.getOrDefault(row, 0l) < smallSize) {
         final int[] largeNeighbors = Arrays.stream(cols).filter(j -> {
@@ -156,8 +160,8 @@ public class SegmentUtil {
     return image;
   }
 
-  public static BufferedImage paintWithRandomColors(RasterTopology topology, Tensor content, int[] pixelMap, SparseMatrixFloat graph) {
-    return paint(topology, content, pixelMap, randomColors(graph, 0));
+  public static BufferedImage paintWithRandomColors(RasterTopology topology, int[] pixelMap, SparseMatrixFloat graph) {
+    return paint(topology, pixelMap, randomColors(graph, 0));
   }
 
   private static Map<Integer, double[]> randomColors(SparseMatrixFloat graph, int iterations) {
@@ -185,21 +189,20 @@ public class SegmentUtil {
         key -> key, key -> {
           final int[] cols = graph.getCols(key);
           final float[] vals = graph.getVals(key);
-          final List<double[]> neighborColors = IntStream.range(0, cols.length)
+          final List<double[]> neighborColors = range(0, cols.length)
               .mapToObj(ni -> Arrays.stream(colors.computeIfAbsent(cols[ni], seedColor))
                   .map(x -> x / vals[ni]).toArray())
               .collect(Collectors.toList());
           if (neighborColors.isEmpty()) return colors.computeIfAbsent(key, seedColor);
-          final double[] average = IntStream.range(0, 3).mapToDouble(i -> -neighborColors.stream().mapToDouble(j -> j[i] - 127).average().orElse(0.0)).toArray();
+          final double[] average = range(0, 3).mapToDouble(i -> -neighborColors.stream().mapToDouble(j -> j[i] - 127).average().orElse(0.0)).toArray();
           final double rms = Math.sqrt(Arrays.stream(average).map(x -> x * x).average().getAsDouble());
           return Arrays.stream(average).map(x -> Math.min(Math.max((x / rms) * 64 + 127, 0), 255)).toArray();
         }
     ));
   }
 
-  @NotNull
-  public static BufferedImage paint(RasterTopology topology, Tensor content, int[] pixelMap, Map<Integer, double[]> colors) {
-    final Tensor tensor = content.mapCoords(c -> {
+  public static BufferedImage paint(RasterTopology topology, int[] pixelMap, Map<Integer, double[]> colors) {
+    final Tensor tensor = new Tensor(topology.getDimensions()).mapCoords(c -> {
       final int[] coords = c.getCoords();
       final int regionId = pixelMap[topology.getIndexFromCoords(coords[0], coords[1])];
       final double[] color = colors.get(regionId);

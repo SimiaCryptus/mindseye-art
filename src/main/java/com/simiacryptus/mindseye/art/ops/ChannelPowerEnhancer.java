@@ -20,7 +20,7 @@
 package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
-import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
@@ -33,16 +33,19 @@ public class ChannelPowerEnhancer implements VisualModifier {
   private boolean balanced = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    PipelineNetwork network = visualModifierParameters.network;
     network = network.copyPipeline();
-    double mag = balanced ? network.eval(style).getDataAndFree().getAndFree(0).rmsAndFree() : 1;
+    double mag = balanced ? network.eval(visualModifierParameters.style).getDataAndFree().getAndFree(0).rmsAndFree() : 1;
     network.wrap(PipelineNetwork.wrap(1,
         new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
         new LinearActivationLayer().setScale(-Math.pow(mag, -2))
 //        ,new NthPowerActivationLayer().setPower(0.5)
     ).setName(String.format("-RMS / %.0E", mag))).freeRef();
-    return (PipelineNetwork) network.freeze();
+    final PipelineNetwork freeze = (PipelineNetwork) network.freeze();
+    visualModifierParameters.freeRef();
+    return freeze;
   }
 
   public boolean isAveraging() {

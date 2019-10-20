@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
+import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
@@ -94,8 +95,10 @@ public class GramMatrixMatcher implements VisualModifier {
   }
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
-    return buildWithModel(network, content, null, style);
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, visualModifierParameters.mask, null, visualModifierParameters.style);
+    visualModifierParameters.freeRef();
+    return pipelineNetwork;
   }
 
   @NotNull

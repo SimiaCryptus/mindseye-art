@@ -24,36 +24,20 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.mindseye.util.ImageUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.UnaryOperator;
+
 public interface VisualModifier {
-  public static Tensor resize(Tensor content, Tensor dims) {
-    if (null == content) return content;
-    final int[] dimensions = content.getDimensions();
-    return Tensor.fromRGB(ImageUtil.resize(dims.toRgbImage(), dimensions[0], dimensions[1]));
-  }
 
-  PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor[] style);
+  PipelineNetwork build(VisualModifierParameters visualModifierParameters);
 
-  default PipelineNetwork build(VisionPipelineLayer layer, Tensor content, Tensor[] image) {
+  default PipelineNetwork build(VisionPipelineLayer layer, int[] contentDims, UnaryOperator<Tensor> viewLayer, Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
     network.assertAlive();
-    PipelineNetwork pipelineNetwork = build(network, content, image);
+    PipelineNetwork pipelineNetwork = build(new VisualModifierParameters(network, contentDims, viewLayer, null, image));
     network.freeRef();
     return pipelineNetwork;
-  }
-
-  default PipelineNetwork build(VisionPipelineLayer layer, Tensor... image) {
-    PipelineNetwork network = layer.getNetwork();
-    network.assertAlive();
-    PipelineNetwork pipelineNetwork = build(network, null, image);
-    network.freeRef();
-    return pipelineNetwork;
-  }
-
-  default PipelineNetwork build(Tensor... image) {
-    return build((PipelineNetwork) new PipelineNetwork().setName("Input"), null, image);
   }
 
   default VisualModifier combine(VisualModifier right) {
@@ -64,15 +48,15 @@ public interface VisualModifier {
         return String.format("(%s+%s)", left.toString(), right);
       }
 
-      public boolean withMask() {
-        return left.withMask() || right.withMask();
+      public boolean isLocalized() {
+        return left.isLocalized() || right.isLocalized();
       }
 
       @Override
-      public PipelineNetwork build(PipelineNetwork original, Tensor content, Tensor... style) {
+      public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
         return (PipelineNetwork) SumInputsLayer.combine(
-            VisualModifier.this.build(original, content, style),
-            right.build(original, content, style)
+            VisualModifier.this.build(visualModifierParameters.addRef()),
+            right.build(visualModifierParameters)
         ).freeze();
       }
     };
@@ -86,13 +70,13 @@ public interface VisualModifier {
         return String.format("(%s*%s)", left.toString(), scale);
       }
 
-      public boolean withMask() {
-        return left.withMask();
+      public boolean isLocalized() {
+        return left.isLocalized();
       }
 
       @Override
-      public PipelineNetwork build(PipelineNetwork original, Tensor content, Tensor... style) {
-        PipelineNetwork build = VisualModifier.this.build(original, content, style);
+      public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+        PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
         build.wrap(new LinearActivationLayer().setScale(scale).freeze()).freeRef();
         return (PipelineNetwork) build.freeze();
       }
@@ -107,20 +91,20 @@ public interface VisualModifier {
         return String.format("(%s^%s)", left.toString(), power);
       }
 
-      public boolean withMask() {
-        return left.withMask();
+      public boolean isLocalized() {
+        return left.isLocalized();
       }
 
       @Override
-      public PipelineNetwork build(PipelineNetwork original, Tensor content, Tensor... style) {
-        PipelineNetwork build = VisualModifier.this.build(original, content, style);
+      public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+        PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
         build.wrap(new NthPowerActivationLayer().setPower(power).freeze()).freeRef();
         return (PipelineNetwork) build.freeze();
       }
     };
   }
 
-  default boolean withMask() {
+  default boolean isLocalized() {
     return false;
   }
 
@@ -128,19 +112,16 @@ public interface VisualModifier {
   default VisualModifier withMask(Tensor maskedInput) {
     final VisualModifier inner = this;
     return new VisualModifier() {
-      public boolean withMask() {
+      public boolean isLocalized() {
         return true;
       }
 
       @Override
-      public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
-        final Tensor resizedMaskedInput = resize(content, maskedInput);
-        final PipelineNetwork build = inner.build(network, resizedMaskedInput, style);
-        resizedMaskedInput.freeRef();
-        return build;
-        //return inner.build(gateNetwork(network, finalMask), finalMask, style);
+      public PipelineNetwork build(VisualModifierParameters parameters) {
+        return inner.build(parameters.withMask(maskedInput));
       }
     };
 
   }
+
 }

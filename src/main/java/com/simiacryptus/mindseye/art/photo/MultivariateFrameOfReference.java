@@ -75,4 +75,21 @@ public class MultivariateFrameOfReference {
     final SimpleMatrix v = ContextAffinity.toMatrix(vector);
     return null == invCov ? v.dot(v) : v.dot(invCov.mult(v));
   }
+
+  public SimpleMatrix rawCov() {
+    return rms.transpose().mult(cov.mult(rms));
+  }
+
+  public double dist(MultivariateFrameOfReference right) {
+    final SimpleMatrix mu0 = this.means;
+    final SimpleMatrix sigma0 = this.rawCov();
+    final SimpleMatrix mu1 = right.means;
+    final SimpleMatrix sigma1 = right.rawCov();
+    final SimpleMatrix sigma_ = new MultivariateFrameOfReference(this, right, 0.5).rawCov();
+    final SimpleMatrix mu_diff = mu0.minus(mu1);
+    final SimpleMatrix invert = safeInvert(sigma_, 1e-4);
+    final double offset = (null == invert) ? mu_diff.dot(mu_diff) : mu_diff.dot(invert.mult(mu_diff.transpose()));
+    final double volume = sigma_.determinant() / Math.sqrt(sigma0.determinant() * sigma1.determinant());
+    return (offset / 8) + (Math.log(volume) / 2);
+  }
 }

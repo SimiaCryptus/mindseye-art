@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
+import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
@@ -34,9 +35,11 @@ public class ChannelMeanMatcher implements VisualModifier {
   private boolean averaging = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
     Tensor meanSignal = null;
-    return buildWithModel(network, meanSignal, style);
+    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, meanSignal, visualModifierParameters.style);
+    visualModifierParameters.freeRef();
+    return pipelineNetwork;
   }
 
   @NotNull

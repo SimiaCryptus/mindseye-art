@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
+import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.*;
@@ -36,9 +37,11 @@ public class ContentInceptionMatcher implements VisualModifier {
   private boolean balanced = true;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    PipelineNetwork network = visualModifierParameters.network;
     network = network.copyPipeline();
-    Tensor baseContent = network.eval(style).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(visualModifierParameters.style).getDataAndFree().getAndFree(0);
+    visualModifierParameters.freeRef();
     BandAvgReducerLayer bandAvgReducerLayer = new BandAvgReducerLayer();
     Tensor bandAvg = bandAvgReducerLayer.eval(baseContent).getDataAndFree().getAndFree(0);
     ImgBandBiasLayer offsetLayer = new ImgBandBiasLayer(bandAvg.scale(-1));

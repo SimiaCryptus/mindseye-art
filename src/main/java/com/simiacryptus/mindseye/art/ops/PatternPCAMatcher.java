@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
+import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.art.util.PCA;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.ValueLayer;
@@ -47,9 +48,11 @@ public class PatternPCAMatcher implements VisualModifier {
   private int bands = 16;
 
   @Override
-  public PipelineNetwork build(PipelineNetwork network, Tensor content, Tensor... style) {
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    PipelineNetwork network = visualModifierParameters.network;
     network = network.copyPipeline();
-    Tensor baseContent = network.eval(style).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(visualModifierParameters.style).getDataAndFree().getAndFree(0);
+    visualModifierParameters.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
     List<Tensor> components;
     PipelineNetwork signalProjection;
