@@ -161,12 +161,13 @@ public class SegmentTest extends NotebookReportBase {
       update(graph.getDenseProjection());
       display(log);
 
-      final double scale = 5e-1;
-      this.graph = this.graph.recalculateConnectionWeights(topology, content, pixelMap, scale);
+      final double scale = 5e-3;
+      this.graph = this.graph.recalculateConnectionWeights(topology, content, pixelMap, scale, 0.5, 1e-9);
       update(volumeEntropy(graph, pixelMap, content, topology).reduceTo(1000).getProjection());
       update(graph.getDenseProjection());
       display(log);
-      this.graph = this.graph.recalculateConnectionWeights(topology, content, pixelMap, scale);
+      this.graph = this.graph.recalculateConnectionWeights(topology, content, pixelMap, scale, 0.5, 1e-9);
+      update(graph.getDenseProjection());
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).mapToObj(x->x).sorted(Comparator.comparing(x->-x)).mapToDouble(x->x).toArray()
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).sorted().toArray()
       final Map<float[], Float> eigensystem = log.eval(() ->
