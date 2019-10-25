@@ -45,72 +45,6 @@ public class SparseMatrixFloat {
   public final int rows;
   public final int cols;
 
-  public static double[] toDouble(float[] data) {
-    return IntStream.range(0, data.length).mapToDouble(x -> data[x]).toArray();
-  }
-
-  public SparseMatrixFloat recalculateConnectionWeights(RasterTopology topology, Tensor content, int[] pixelMap, double scale) {
-    final Map<Integer, MultivariateFrameOfReference> islandDistributions = IntStream.range(0, pixelMap.length)
-        .mapToObj(x -> x).collect(Collectors.groupingBy(x -> pixelMap[x], Collectors.toList()))
-        .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, (Map.Entry<Integer, List<Integer>> entry) ->
-            new MultivariateFrameOfReference(() -> entry.getValue().stream().map(pixelIndex ->
-                content.getPixel(topology.getCoordsFromIndex(pixelIndex))
-            ), 3)
-        ));
-    return new SparseMatrixFloat(
-        this.rowIndices,
-        this.colIndices,
-        toFloat(IntStream.range(0, this.rowIndices.length).mapToDouble(i -> {
-          double dist = islandDistributions.get(this.rowIndices[i]).dist(islandDistributions.get(this.colIndices[i]));
-          if(!Double.isFinite(dist) || dist < 1e-5) return 0;
-          final double exp = Math.exp(-dist / scale);
-          if(exp < 1e-9) return 0;
-          return exp;
-        }).toArray()),
-        this.rows,
-        this.cols
-    ).sortAndPrune();
-  }
-
-  @NotNull
-  public Array2DRowRealMatrix toApacheMatrix() {
-    Array2DRowRealMatrix matrix = new Array2DRowRealMatrix(rows, cols);
-    for (int i = 0; i < values.length; i++) {
-      matrix.setEntry(rowIndices[i], rowIndices[i], values[i]);
-    }
-    return matrix;
-  }
-
-
-  public Map<float[], Float> dense_graph_eigensys() {
-    final SparseMatrixFloat sparse_W = filterDiagonal();
-    final FloatMatrix matrix_W = sparse_W.toJBLAS();
-    final FloatMatrix matrix_D = sparse_W.degreeMatrix().toJBLAS();
-    final FloatMatrix matrix_A = matrix_D.sub(matrix_W);
-    final FloatMatrix[] eigensys = Eigen.symmetricGeneralizedEigenvectors(matrix_A, matrix_D);
-    final float[] realEigenvalues = eigensys[1].data;
-    return IntStream.range(0, realEigenvalues.length).mapToObj(i -> i).collect(Collectors.toMap(i -> eigensys[0].getColumn(i).data, i -> realEigenvalues[i]));
-  }
-
-  public FloatMatrix toJBLAS() {
-    FloatMatrix matrix = new FloatMatrix(rows, cols);
-    for (int i = 0; i < values.length; i++) {
-      matrix.put(rowIndices[i], colIndices[i], values[i]);
-    }
-    return matrix;
-  }
-
-
-  public SparseMatrixFloat degreeMatrix() {
-    assert null != assertSymmetric();
-    return new SparseMatrixFloat(
-        IntStream.range(0, rows).toArray(),
-        IntStream.range(0, rows).toArray(),
-        toFloat(degree()),
-        rows, cols
-    );
-  }
-
   public SparseMatrixFloat(int[] rowIndices, int[] colIndices, float[] values) {
     this(rowIndices, colIndices, values,
         Arrays.stream(rowIndices).max().getAsInt() + 1,
@@ -127,6 +61,10 @@ public class SparseMatrixFloat {
     this.values = values;
 //    assert rows == Arrays.stream(rowIndices).max().getAsInt() + 1;
 //    assert cols == Arrays.stream(colIndices).max().getAsInt() + 1;
+  }
+
+  public static double[] toDouble(float[] data) {
+    return IntStream.range(0, data.length).mapToDouble(x -> data[x]).toArray();
   }
 
   public static float[] toFloat(double[] doubles) {
@@ -207,6 +145,75 @@ public class SparseMatrixFloat {
     return IntStream.iterate(search - 1, x -> x - 1).limit(search).filter(r -> r >= 0 && ints[r] != row).findFirst().orElse(-1) + 1;
   }
 
+  public static int[] project(int[] assignments, int[] projection) {
+    return Arrays.stream(assignments).map(i -> projection[i]).toArray();
+  }
+
+  public SparseMatrixFloat recalculateConnectionWeights(RasterTopology topology, Tensor content, int[] pixelMap, double scale, double mixing, double minValue) {
+    final MultivariateFrameOfReference globalFOR = new MultivariateFrameOfReference(() -> content.getPixelStream(), 3);
+    final Map<Integer, MultivariateFrameOfReference> islandDistributions = IntStream.range(0, pixelMap.length)
+        .mapToObj(x -> x).collect(Collectors.groupingBy(x -> pixelMap[x], Collectors.toList()))
+        .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, (Map.Entry<Integer, List<Integer>> entry) ->
+            {
+              final MultivariateFrameOfReference localFOR = new MultivariateFrameOfReference(() -> entry.getValue().stream().map(pixelIndex ->
+                  content.getPixel(topology.getCoordsFromIndex(pixelIndex))
+              ), 3);
+              return new MultivariateFrameOfReference(globalFOR, localFOR, mixing);
+            }
+        ));
+    return new SparseMatrixFloat(
+        this.rowIndices,
+        this.colIndices,
+        toFloat(IntStream.range(0, this.rowIndices.length).mapToDouble(i -> {
+          final MultivariateFrameOfReference a = islandDistributions.get(this.rowIndices[i]);
+          final MultivariateFrameOfReference b = islandDistributions.get(this.colIndices[i]);
+          double dist = a.dist(b);
+          final double exp = Math.exp(-dist / scale);
+          if (!Double.isFinite(exp) || exp < minValue) return minValue;
+          return exp;
+        }).toArray()),
+        this.rows,
+        this.cols
+    ).sortAndPrune();
+  }
+
+  @NotNull
+  public Array2DRowRealMatrix toApacheMatrix() {
+    Array2DRowRealMatrix matrix = new Array2DRowRealMatrix(rows, cols);
+    for (int i = 0; i < values.length; i++) {
+      matrix.setEntry(rowIndices[i], rowIndices[i], values[i]);
+    }
+    return matrix;
+  }
+
+  public Map<float[], Float> dense_graph_eigensys() {
+    final SparseMatrixFloat sparse_W = filterDiagonal();
+    final FloatMatrix matrix_W = sparse_W.toJBLAS();
+    final FloatMatrix matrix_D = sparse_W.degreeMatrix().toJBLAS();
+    final FloatMatrix matrix_A = matrix_D.sub(matrix_W);
+    final FloatMatrix[] eigensys = Eigen.symmetricGeneralizedEigenvectors(matrix_A, matrix_D);
+    final float[] realEigenvalues = eigensys[1].data;
+    return IntStream.range(0, realEigenvalues.length).mapToObj(i -> i).collect(Collectors.toMap(i -> eigensys[0].getColumn(i).data, i -> realEigenvalues[i]));
+  }
+
+  public FloatMatrix toJBLAS() {
+    FloatMatrix matrix = new FloatMatrix(rows, cols);
+    for (int i = 0; i < values.length; i++) {
+      matrix.put(rowIndices[i], colIndices[i], values[i]);
+    }
+    return matrix;
+  }
+
+  public SparseMatrixFloat degreeMatrix() {
+    assert null != assertSymmetric();
+    return new SparseMatrixFloat(
+        IntStream.range(0, rows).toArray(),
+        IntStream.range(0, rows).toArray(),
+        toFloat(degree()),
+        rows, cols
+    );
+  }
+
   public SparseMatrixFloat project(int[] projection) {
     final int[] rowIndices = project(this.rowIndices, projection);
     final int[] colIndices = project(this.colIndices, projection);
@@ -217,10 +224,6 @@ public class SparseMatrixFloat {
         Arrays.stream(rowIndices).max().getAsInt() + 1,
         Arrays.stream(colIndices).max().getAsInt() + 1
     ).sortAndPrune().aggregate();
-  }
-
-  public static int[] project(int[] assignments, int[] projection) {
-    return Arrays.stream(assignments).map(i -> projection[i]).toArray();
   }
 
   public int[] activeRows() {

@@ -52,10 +52,10 @@ public class VisualModifierParameters extends ReferenceCountingBase {
 
   @Override
   protected void _free() {
-    if(null != network) network.freeRef();
-    if(null != mask) mask.freeRef();
+    if (null != network) network.freeRef();
+    if (null != mask) mask.freeRef();
     for (Tensor tensor : this.style) {
-      if(null != tensor) tensor.freeRef();
+      if (null != tensor) tensor.freeRef();
     }
     super._free();
   }
@@ -67,7 +67,7 @@ public class VisualModifierParameters extends ReferenceCountingBase {
       if (null != viewLayer) mask = viewLayer.apply(mask);
     }
     final VisualModifierParameters visualModifierParameters = new VisualModifierParameters(network, contentDims, viewLayer, mask, style);
-    if(null != mask) mask.freeRef();
+    if (null != mask) mask.freeRef();
     this.freeRef();
     return visualModifierParameters;
   }

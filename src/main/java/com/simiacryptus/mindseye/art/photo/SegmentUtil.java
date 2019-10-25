@@ -85,15 +85,15 @@ public class SegmentUtil {
     range(0, dimensions[0]).parallel()
         .mapToObj(x -> x).sorted(Comparator.comparing(x -> x.hashCode())).mapToInt(x -> x)
         .forEach(x -> range(0, dimensions[1])
-        .mapToObj(y -> y).sorted(Comparator.comparing(y -> y.hashCode())).mapToInt(y -> y)
-        .forEach(y -> {
-          int row = topology.getIndexFromCoords(x, y);
-          if (marks[row] == 0) {
-            final int thisIsland = islandNumber.incrementAndGet();
-            marks[row] = thisIsland;
-            _markIslands(topology, extract, test, marks, maxRecursion, thisIsland, x, y);
-          }
-        }));
+            .mapToObj(y -> y).sorted(Comparator.comparing(y -> y.hashCode())).mapToInt(y -> y)
+            .forEach(y -> {
+              int row = topology.getIndexFromCoords(x, y);
+              if (marks[row] == 0) {
+                final int thisIsland = islandNumber.incrementAndGet();
+                marks[row] = thisIsland;
+                _markIslands(topology, extract, test, marks, maxRecursion, thisIsland, x, y);
+              }
+            }));
     return marks;
   }
 
