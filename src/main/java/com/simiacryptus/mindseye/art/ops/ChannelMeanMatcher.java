@@ -33,6 +33,7 @@ public class ChannelMeanMatcher implements VisualModifier {
 
   private boolean balanced = true;
   private boolean averaging = true;
+  private int tileSize = 600;
 
   @Override
   public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
@@ -45,8 +46,21 @@ public class ChannelMeanMatcher implements VisualModifier {
   @NotNull
   public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor meanSignal, Tensor... image) {
     network = network.copyPipeline();
-    network.wrap(new BandAvgReducerLayer()).freeRef();
-    if (meanSignal == null) meanSignal = channelMeans(network, image);
+    network.wrap(new BandAvgReducerLayer());
+    if (meanSignal == null) {
+      final PipelineNetwork meanNetwork = PipelineNetwork.wrap(1,
+          ImgTileSubnetLayer.wrap(network, tileSize, tileSize),
+          new BandAvgReducerLayer()
+      );
+      meanSignal = Arrays.stream(image).map(tensor ->
+          meanNetwork.eval(tensor).getDataAndFree().getAndFree(0)
+      ).reduce((a, b) -> {
+        Tensor c = a.addAndFree(b);
+        b.freeRef();
+        return c;
+      }).get().scaleInPlace(1.0 / image.length);
+      meanNetwork.freeRef();
+    }
     double mag = isBalanced() ? meanSignal.rms() : 1;
     network.wrap(PipelineNetwork.wrap(1,
         new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)),
@@ -56,17 +70,6 @@ public class ChannelMeanMatcher implements VisualModifier {
 //        ,new NthPowerActivationLayer().setPower(0.5)
     ).setName(String.format("RMS[x-C] / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
-  }
-
-  @NotNull
-  private Tensor channelMeans(PipelineNetwork finalNetwork, Tensor... image) {
-    return Arrays.stream(image).map(tensor ->
-        finalNetwork.eval(tensor).getDataAndFree().getAndFree(0)
-    ).reduce((a, b) -> {
-      Tensor c = a.addAndFree(b);
-      b.freeRef();
-      return c;
-    }).get().scaleInPlace(1.0 / image.length);
   }
 
   public boolean isBalanced() {
