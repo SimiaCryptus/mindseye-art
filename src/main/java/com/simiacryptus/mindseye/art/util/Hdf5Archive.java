@@ -65,12 +65,16 @@ public class Hdf5Archive {
 
   public Hdf5Archive(@Nonnull File filename) {
     this.filename = filename;
+    final String canonicalPath;
     try {
-      this.file = new H5File(filename.getCanonicalPath(), H5F_ACC_RDONLY());
-    } catch (@Nonnull final RuntimeException e) {
-      throw e;
+      canonicalPath = filename.getCanonicalPath();
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException(String.format("Error with filename %s", filename),e);
+    }
+    try {
+      this.file = new H5File(canonicalPath, H5F_ACC_RDONLY());
+    } catch (Exception e) {
+      throw new RuntimeException(String.format("Error opening %s", canonicalPath),e);
     }
   }
 
