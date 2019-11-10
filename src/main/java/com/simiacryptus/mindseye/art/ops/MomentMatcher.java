@@ -63,9 +63,16 @@ public class MomentMatcher implements VisualModifier {
   }
 
   protected static Tensor eval(int pixels, PipelineNetwork network, int tileSize, double power, Tensor[] image) {
-    return sum(Arrays.stream(image).flatMap(img -> {
+    if (image.length <= 0) {
+      throw new IllegalArgumentException("image.length <= 0");
+    }
+    final Tensor sum = sum(Arrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
-      return Arrays.stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
+      final Layer[] selectors = TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true);
+      if (selectors.length <= 0) {
+        throw new IllegalArgumentException("selectors.length <= 0");
+      }
+      return Arrays.stream(selectors)
           .map(selector -> {
             //log.info(selector.toString());
             Tensor tile = selector.eval(img).getDataAndFree().getAndFree(0);
@@ -78,7 +85,8 @@ public class MomentMatcher implements VisualModifier {
             tile.freeRef();
             return component;
           });
-    })).scaleInPlace(1.0 / pixels)
+    }));
+    return sum.scaleInPlace(1.0 / pixels)
         .mapAndFree(x -> Math.pow(x, 0 == power ? 1 : (1.0 / power)))
         .mapAndFree(x -> {
           if (Double.isFinite(x)) {
@@ -96,7 +104,7 @@ public class MomentMatcher implements VisualModifier {
       a.addAndFree(b);
       b.freeRef();
       return a;
-    }).get();
+    }).orElse(null);
   }
 
   @NotNull
