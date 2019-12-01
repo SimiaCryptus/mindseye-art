@@ -19,7 +19,7 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
-import com.simiacryptus.lang.ref.ReferenceCountingBase;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
 import com.simiacryptus.mindseye.art.photo.affinity.RelativeAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;

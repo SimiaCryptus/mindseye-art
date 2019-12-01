@@ -19,7 +19,7 @@
 
 package com.simiacryptus.mindseye.art.util;
 
-import com.simiacryptus.lang.ref.RecycleBin;
+import com.simiacryptus.ref.lang.RecycleBin;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.BandReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.ImgBandBiasLayer;
