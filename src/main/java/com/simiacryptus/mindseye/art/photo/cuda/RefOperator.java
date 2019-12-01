@@ -19,8 +19,8 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
-import com.simiacryptus.lang.ref.ReferenceCounting;
-import com.simiacryptus.lang.ref.ReferenceCountingBase;
+import com.simiacryptus.ref.lang.ReferenceCounting;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import java.util.function.UnaryOperator;
 

@@ -49,7 +49,7 @@ public class ChannelMeanMatcher implements VisualModifier {
     network.wrap(new BandAvgReducerLayer());
     if (meanSignal == null) {
       final PipelineNetwork meanNetwork = PipelineNetwork.wrap(1,
-          ImgTileSubnetLayer.wrap(network, tileSize, tileSize),
+          ImgTileSubnetLayer.wrap(network.addRef(), tileSize, tileSize),
           new BandAvgReducerLayer()
       );
       meanSignal = Arrays.stream(image).map(tensor ->
