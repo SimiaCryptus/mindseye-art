@@ -13,6 +13,7 @@ hs_err_pid*
 *.jar
 *.log
 # Log file
+mindseye-art.iml
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 # Package Files #
