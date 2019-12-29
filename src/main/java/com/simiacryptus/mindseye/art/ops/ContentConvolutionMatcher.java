@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
+import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
@@ -43,7 +44,7 @@ public class ContentConvolutionMatcher implements VisualModifier {
   public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
     network = network.copyPipeline();
-    Tensor baseContent = network.eval(visualModifierParameters.style).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
     visualModifierParameters.freeRef();
     double mag = balanced ? baseContent.rms() : 1;
     int[] baseContentDimensions = baseContent.getDimensions();
@@ -51,22 +52,15 @@ public class ContentConvolutionMatcher implements VisualModifier {
     PoolingLayer poolingLayer = new PoolingLayer().setMode(getPoolingMode())
         .setStrideXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)))
         .setWindowXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)));
-    Tensor pooledContent = poolingLayer.eval(baseContent).getDataAndFree().getAndFree(0);
+    Tensor pooledContent = poolingLayer.eval(baseContent).getData().get(0);
     baseContent.freeRef();
-    network.wrap(poolingLayer).freeRef();
+    network.add(poolingLayer).freeRef();
     int[] pooledContentDimensions = pooledContent.getDimensions();
-    network.wrap(new ConvolutionLayer(pooledContentDimensions[0], pooledContentDimensions[1], pooledContentDimensions[2], 1)
-        .setPaddingXY(0, 0)
-        .setAndFree(pooledContent
-            .scaleInPlace(Math.pow(pooledContent.rms(), -2))
-            .permuteDimensionsAndFree(Integer.MAX_VALUE, -1, 2)
-        ).explodeAndFree()).freeRef();
-    network.wrap(PipelineNetwork.wrap(1,
-        new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()),
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()
-//        ,new NthPowerActivationLayer().setPower(0.5)
-    ).setName(String.format("-RMS / %.0E", mag))).freeRef();
+    network.add(new ConvolutionLayer(pooledContentDimensions[0], pooledContentDimensions[1], pooledContentDimensions[2], 1)
+        .setPaddingXY(0, 0).set(pooledContent
+            .scaleInPlace(Math.pow(pooledContent.rms(), -2)).permuteDimensions(Integer.MAX_VALUE, -1, 2)).explode()).freeRef();
+    final Layer[] layers = new Layer[]{new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
+    network.add(PipelineNetwork.build(1, layers).setName(String.format("-RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

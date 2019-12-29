@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
+import com.simiacryptus.mindseye.lang.*;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
 import com.simiacryptus.mindseye.art.photo.affinity.RelativeAffinity;
@@ -26,10 +27,6 @@ import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
 import com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
-import com.simiacryptus.mindseye.lang.Layer;
-import com.simiacryptus.mindseye.lang.SerialPrecision;
-import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.mindseye.lang.ZipSerializable;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import org.jetbrains.annotations.NotNull;
 
@@ -93,14 +90,14 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   }
 
   public static Tensor transfer(Tensor contentImage, Tensor styleImage, Layer encode, Layer decode, double contentDensity, double styleDensity) {
-    final Tensor encodedContent = encode.eval(contentImage).getDataAndFree().getAndFree(0);
-    final Tensor encodedStyle = encode.eval(styleImage).getDataAndFree().getAndFree(0);
+    final Tensor encodedContent = encode.eval(contentImage).getData().get(0);
+    final Tensor encodedStyle = encode.eval(styleImage).getData().get(0);
     final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, contentDensity, styleDensity);
     encodedStyle.freeRef();
-    final Tensor encodedTransformed = applicator.eval(encodedContent).getDataAndFree().getAndFree(0);
+    final Tensor encodedTransformed = applicator.eval(encodedContent).getData().get(0);
     encodedContent.freeRef();
     applicator.freeRef();
-    final Tensor tensor = decode.eval(encodedTransformed, contentImage).getDataAndFree().getAndFree(0);
+    final Tensor tensor = decode.eval(encodedTransformed, contentImage).getData().get(0);
     encodedTransformed.freeRef();
     return tensor;
   }
@@ -158,14 +155,14 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   }
 
   public @NotNull Tensor photoWCT_1(Tensor style, Tensor content, double contentDensity, double styleDensity) {
-    final Tensor encodedContent = encode_1.eval(content).getDataAndFree().getAndFree(0);
-    final Tensor encodedStyle = encode_1.eval(style).getDataAndFree().getAndFree(0);
+    final Tensor encodedContent = encode_1.eval(content).getData().get(0);
+    final Tensor encodedStyle = encode_1.eval(style).getData().get(0);
     final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, contentDensity, styleDensity);
-    final Tensor encodedTransformed = applicator.eval(encodedContent).getDataAndFree().getAndFree(0);
+    final Tensor encodedTransformed = applicator.eval(encodedContent).getData().get(0);
     encodedContent.freeRef();
     applicator.freeRef();
     encodedStyle.freeRef();
-    final Tensor tensor = decode_1.eval(encodedTransformed).getDataAndFree().getAndFree(0);
+    final Tensor tensor = decode_1.eval(encodedTransformed).getData().get(0);
     encodedTransformed.freeRef();
     return tensor;
   }

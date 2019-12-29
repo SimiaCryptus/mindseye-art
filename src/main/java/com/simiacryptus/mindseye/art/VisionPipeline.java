@@ -37,7 +37,7 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
     this.name = name;
     PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
     for (T value : values) {
-      pipelineNetwork.wrap(value.getLayer()).freeRef();
+      pipelineNetwork.add(value.getLayer()).freeRef();
       layers.put(value, (PipelineNetwork) pipelineNetwork.copyPipeline().freeze());
     }
     pipelineNetwork.freeRef();

@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
+import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
@@ -36,13 +37,9 @@ public class ChannelPowerEnhancer implements VisualModifier {
   public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
     network = network.copyPipeline();
-    double mag = balanced ? network.eval(visualModifierParameters.style).getDataAndFree().getAndFree(0).rmsAndFree() : 1;
-    network.wrap(PipelineNetwork.wrap(1,
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(-Math.pow(mag, -2))
-//        ,new NthPowerActivationLayer().setPower(0.5)
-    ).setName(String.format("-RMS / %.0E", mag))).freeRef();
+    double mag = balanced ? network.eval(visualModifierParameters.style).getData().get(0).rms() : 1;
+    final Layer[] layers = new Layer[]{new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(), new LinearActivationLayer().setScale(-Math.pow(mag, -2))};
+    network.add(PipelineNetwork.build(1, layers).setName(String.format("-RMS / %.0E", mag))).freeRef();
     final PipelineNetwork freeze = (PipelineNetwork) network.freeze();
     visualModifierParameters.freeRef();
     return freeze;

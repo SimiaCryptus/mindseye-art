@@ -46,13 +46,8 @@ public class GramMatrixMatcher implements VisualModifier {
 
   @NotNull
   public static Layer loss(Tensor result, double mag, boolean averaging) {
-    Layer layer = PipelineNetwork.wrap(1,
-        new ImgBandBiasLayer(result.scaleInPlace(-1)),
-        new SquareActivationLayer(),
-        averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))
-        //new NthPowerActivationLayer().setPower(0.5),
-    ).setName(String.format("RMS[x-C] / %.0E", mag));
+    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(), averaging ? new AvgReducerLayer() : new SumReducerLayer(), new LinearActivationLayer().setScale(Math.pow(mag, -2))};
+    Layer layer = PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", mag));
     result.freeRef();
     return layer;
   }
@@ -63,10 +58,10 @@ public class GramMatrixMatcher implements VisualModifier {
       return Arrays.stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
           .map(selector -> {
             //log.info(selector.toString());
-            Tensor tile = selector.eval(img).getDataAndFree().getAndFree(0);
+            Tensor tile = selector.eval(img).getData().get(0);
             selector.freeRef();
             int[] tileDimensions = tile.getDimensions();
-            Tensor component = network.eval(tile).getDataAndFree().getAndFree(0).scaleInPlace(tileDimensions[0] * tileDimensions[1]);
+            Tensor component = network.eval(tile).getData().get(0).scaleInPlace(tileDimensions[0] * tileDimensions[1]);
             tile.freeRef();
             return component;
           });
@@ -76,7 +71,7 @@ public class GramMatrixMatcher implements VisualModifier {
       return a;
     }).orElse(null);
     if (null == tensor) return tensor;
-    return tensor.scaleInPlace(1.0 / pixels).mapAndFree(x -> {
+    return tensor.scaleInPlace(1.0 / pixels).map(x -> {
       if (Double.isFinite(x)) {
         return x;
       } else {
@@ -110,26 +105,23 @@ public class GramMatrixMatcher implements VisualModifier {
     }).sum();
     if (null != mask) {
       if (null == model) {
-        final PipelineNetwork build = PipelineNetwork.wrap(1, network.addRef(),
-            new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision));
+        final PipelineNetwork build = PipelineNetwork.build(1, network.addRef(), new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision));
         model = eval(pixels == 0 ? 1 : pixels, build, getTileSize(), 8, image);
         build.freeRef();
       }
       final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, mask, Precision.Float));
       final DAGNode head = network.getHead();
-      network.wrap(new ProductLayer(getAppendUUID(network, ProductLayer.class)),
-          head, network.constValue(boolMask)
-      ).freeRef();
-      network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class))
+      network.add(new ProductLayer(getAppendUUID(network, ProductLayer.class)), head, network.constValue(boolMask)).freeRef();
+      network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class))
           .setPrecision(precision)
           .setAlpha(1.0 / Arrays.stream(boolMask.getData()).average().getAsDouble())).freeRef();
       boolMask.freeRef();
     } else {
-      network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
+      network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
       if (null == model) model = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), 8, image);
     }
     double mag = balanced ? model.rms() : 1;
-    network.wrap(loss(model, mag, isAveraging())).freeRef();
+    network.add(loss(model, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

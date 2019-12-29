@@ -27,6 +27,7 @@ import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.PointSample;
 import com.simiacryptus.mindseye.lang.StateSet;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +70,7 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
     return pointSample;
   }
 
+  @NotNull
   @Override
   public Layer getLayer() {
     return null;

@@ -54,12 +54,9 @@ public class MomentMatcher implements VisualModifier {
   @NotNull
   public static Layer lossSq(Precision precision, Tensor target) {
     double rms = target.rms();
-    return PipelineNetwork.wrap(1,
-        new LinearActivationLayer().setScale(0 == rms ? 1 : Math.pow(rms, -1)),
-        ImgBandBiasLayer.wrap(target.scale(0 == rms ? 1 : -Math.pow(rms, -1))).setPrecision(precision),
-        new SquareActivationLayer().setPrecision(precision),
-        new AvgReducerLayer().setPrecision(precision)
-    ).setName(String.format("RMS[x-C] / %.0E", 0 == rms ? 1 : rms));
+    final Tensor bias = target.scale(0 == rms ? 1 : -Math.pow(rms, -1));
+    final Layer[] layers = new Layer[]{new LinearActivationLayer().setScale(0 == rms ? 1 : Math.pow(rms, -1)), new ImgBandBiasLayer(bias).setPrecision(precision), new SquareActivationLayer().setPrecision(precision), new AvgReducerLayer().setPrecision(precision)};
+    return PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", 0 == rms ? 1 : rms));
   }
 
   protected static Tensor eval(int pixels, PipelineNetwork network, int tileSize, double power, Tensor[] image) {
@@ -75,20 +72,20 @@ public class MomentMatcher implements VisualModifier {
       return Arrays.stream(selectors)
           .map(selector -> {
             //log.info(selector.toString());
-            Tensor tile = selector.eval(img).getDataAndFree().getAndFree(0);
+            Tensor tile = selector.eval(img).getData().get(0);
             selector.freeRef();
             int[] tileDimensions = tile.getDimensions();
             int tilePixels = tileDimensions[0] * tileDimensions[1];
-            Tensor component = network.eval(tile).getDataAndFree().getAndFree(0)
-                .mapAndFree(x -> Math.pow(x, power))
+            Tensor component = network.eval(tile).getData().get(0)
+                .map(x -> Math.pow(x, power))
                 .scaleInPlace(tilePixels);
             tile.freeRef();
             return component;
           });
     }));
     return sum.scaleInPlace(1.0 / pixels)
-        .mapAndFree(x -> Math.pow(x, 0 == power ? 1 : (1.0 / power)))
-        .mapAndFree(x -> {
+        .map(x -> Math.pow(x, 0 == power ? 1 : (1.0 / power)))
+        .map(x -> {
           if (Double.isFinite(x)) {
             return x;
           } else {
@@ -125,7 +122,7 @@ public class MomentMatcher implements VisualModifier {
         //log.info(String.format("Layer %s: %s", layer.getClass().getSimpleName(), layer.getName()));
       }
     });
-    final Tensor tensor = network.eval(in).getDataAndFree().getAndFree(0);
+    final Tensor tensor = network.eval(in).getData().get(0);
     network.freeRef();
     return tensor;
   }
@@ -134,12 +131,12 @@ public class MomentMatcher implements VisualModifier {
   public static PipelineNetwork gateNetwork(PipelineNetwork network, Tensor finalMask) {
     final PipelineNetwork copyPipeline = network.copyPipeline();
     final DAGNode head = copyPipeline.getHead();
-    copyPipeline.wrap(new ProductLayer(), head, copyPipeline.constValue(finalMask)).freeRef();
+    copyPipeline.add(new ProductLayer(), head, copyPipeline.constValue(finalMask)).freeRef();
     return copyPipeline;
   }
 
   public static Tensor toMask(Tensor tensor) {
-    return tensor.mapPixelsAndFree(pixel -> {
+    return tensor.mapPixels(pixel -> {
       if (Arrays.stream(pixel).filter(x -> x != 0).findFirst().isPresent()) {
         return Arrays.stream(pixel).map(x -> 1).toArray();
       } else {
@@ -151,7 +148,7 @@ public class MomentMatcher implements VisualModifier {
   public static boolean test(PipelineNetwork network, Tensor... images) {
     if (images.length > 1) return Arrays.stream(images).map(x -> test(network, x)).reduce((a, b) -> a && b).get();
     try {
-      network.eval(images[0]).getDataAndFree().freeRef();
+      network.eval(images[0]).getData().freeRef();
       return true;
     } catch (Throwable e) {
       throw new RuntimeException(e);
@@ -168,7 +165,8 @@ public class MomentMatcher implements VisualModifier {
     double sumSq = evalRoot.sumSq();
     evalRoot.freeRef();
     log.info(String.format("Adjust for %s : %s", network.getName(), sumSq));
-    network.wrap(new ScaleLayer(0 == sumSq ? 1 : 1.0 / sumSq)).freeRef();
+    final Layer nextHead = new ScaleLayer(0 == sumSq ? 1 : 1.0 / sumSq);
+    network.add(nextHead).freeRef();
 
     if (null != visualModifierParameters.mask) {
       final Tensor boolMask = toMask(transform(network, visualModifierParameters.mask, getPrecision()));
@@ -180,7 +178,7 @@ public class MomentMatcher implements VisualModifier {
       network.freeRef();
       assert test(maskedNetwork, visualModifierParameters.mask);
       final DAGNode head = maskedNetwork.getHead();
-      maskedNetwork.wrap(new ProductLayer(), head, maskedNetwork.constValue(boolMask)).freeRef();
+      maskedNetwork.add(new ProductLayer(), head, maskedNetwork.constValue(boolMask)).freeRef();
       assert test(maskedNetwork, visualModifierParameters.mask);
       final MomentParams nodes = getMomentNodes(maskedNetwork, maskFactor);
       assert test(maskedNetwork, visualModifierParameters.mask);
@@ -216,28 +214,17 @@ public class MomentMatcher implements VisualModifier {
   public MomentMatcher.MomentParams getMomentParams(PipelineNetwork network, double maskFactor, Tensor... images) {
     int pixels = getPixels(images);
     DAGNode mainIn = network.getHead();
-    InnerNode avgNode = network.wrap(new BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef()); // Scale the average metrics by 1/x
+    InnerNode avgNode = network.add(new BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef()); // Scale the average metrics by 1/x
     Tensor avgValue = eval(pixels, network, getTileSize(), 1.0, images);
 
-    InnerNode recentered = network.wrap(new ImgBandDynamicBiasLayer().setPrecision(getPrecision()), mainIn,
-        network.wrap(new ScaleLayer(-1 / maskFactor).setPrecision(getPrecision()), avgNode.addRef()));
-    InnerNode rmsNode = network.wrap(new NthPowerActivationLayer().setPower(0.5),
-        network.wrap(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()),
-            network.wrap(new BandAvgReducerLayer().setPrecision(getPrecision()), // Scale the avg sq metrics by 1/x
-                network.wrap(new SquareActivationLayer().setPrecision(getPrecision()), recentered.addRef())
-            )
-        )
-    );
+    InnerNode recentered = network.add(new ImgBandDynamicBiasLayer().setPrecision(getPrecision()), mainIn, network.add(new ScaleLayer(-1 / maskFactor).setPrecision(getPrecision()), avgNode.addRef()));
+    InnerNode rmsNode = network.add(new NthPowerActivationLayer().setPower(0.5), network.add(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()), network.add(new BandAvgReducerLayer().setPrecision(getPrecision()), network.add(new SquareActivationLayer().setPrecision(getPrecision()), recentered.addRef()))));
     Tensor rmsValue = eval(pixels, network, getTileSize(), 2.0, images);
 
-    InnerNode rescaled = network.wrap(new ProductLayer().setPrecision(getPrecision()), recentered,
-        network.wrap(new BoundedActivationLayer().setMinValue(0.0).setMaxValue(1e4),
-            network.wrap(new NthPowerActivationLayer().setPower(-1), rmsNode.addRef())));
+    InnerNode rescaled = network.add(new ProductLayer().setPrecision(getPrecision()), recentered, network.add(new BoundedActivationLayer().setMinValue(0.0).setMaxValue(1e4), network.add(new NthPowerActivationLayer().setPower(-1), rmsNode.addRef())));
 
 
-    InnerNode covNode = network.wrap(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()),
-        network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(getPrecision()), rescaled)
-    ); // Scale the gram matrix by 1/x (elements are averages)
+    InnerNode covNode = network.add(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()), network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(getPrecision()), rescaled)); // Scale the gram matrix by 1/x (elements are averages)
     Tensor covValue = eval(pixels, network, getTileSize(), 1.0, images);
 
     return new MomentParams(avgNode, avgValue, rmsNode, rmsValue, covNode, covValue);
@@ -246,36 +233,22 @@ public class MomentMatcher implements VisualModifier {
   @NotNull
   public MomentMatcher.MomentParams getMomentNodes(PipelineNetwork network, double maskFactor) {
     DAGNode mainIn = network.getHead();
-    InnerNode avgNode = network.wrap(new BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef()); // Scale the average metrics by 1/x
+    InnerNode avgNode = network.add(new BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef()); // Scale the average metrics by 1/x
 
-    InnerNode recentered = network.wrap(new ImgBandDynamicBiasLayer().setPrecision(getPrecision()), mainIn,
-        network.wrap(new ScaleLayer(-1 / maskFactor).setPrecision(getPrecision()), avgNode.addRef()));
-    InnerNode rmsNode = network.wrap(new NthPowerActivationLayer().setPower(0.5),
-        network.wrap(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()),
-            network.wrap(new BandAvgReducerLayer().setPrecision(getPrecision()), // Scale the avg sq metrics by 1/x
-                network.wrap(new SquareActivationLayer().setPrecision(getPrecision()), recentered.addRef())
-            )
-        )
-    );
+    InnerNode recentered = network.add(new ImgBandDynamicBiasLayer().setPrecision(getPrecision()), mainIn, network.add(new ScaleLayer(-1 / maskFactor).setPrecision(getPrecision()), avgNode.addRef()));
+    InnerNode rmsNode = network.add(new NthPowerActivationLayer().setPower(0.5), network.add(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()), network.add(new BandAvgReducerLayer().setPrecision(getPrecision()), network.add(new SquareActivationLayer().setPrecision(getPrecision()), recentered.addRef()))));
 
-    InnerNode rescaled = network.wrap(new ProductLayer().setPrecision(getPrecision()), recentered,
-        network.wrap(new BoundedActivationLayer().setMinValue(0.0).setMaxValue(1e4),
-            network.wrap(new NthPowerActivationLayer().setPower(-1), rmsNode.addRef())));
+    InnerNode rescaled = network.add(new ProductLayer().setPrecision(getPrecision()), recentered, network.add(new BoundedActivationLayer().setMinValue(0.0).setMaxValue(1e4), network.add(new NthPowerActivationLayer().setPower(-1), rmsNode.addRef())));
 
 
-    InnerNode covNode = network.wrap(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()),
-        network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(getPrecision()), rescaled)
-    ); // Scale the gram matrix by 1/x (elements are averages)
+    InnerNode covNode = network.add(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()), network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(getPrecision()), rescaled)); // Scale the gram matrix by 1/x (elements are averages)
 
     return new MomentParams(avgNode, null, rmsNode, null, covNode, null);
   }
 
   protected Tensor avg(PipelineNetwork network, int pixels, Tensor[] image) {
 //    return eval(pixels, network, getTileSize(), 1.0, image);
-    PipelineNetwork avgNet = PipelineNetwork.wrap(1,
-        network.addRef(),
-        new BandAvgReducerLayer()
-    );
+    PipelineNetwork avgNet = PipelineNetwork.build(1, network.addRef(), new BandAvgReducerLayer());
     Tensor evalRoot = eval(pixels, avgNet, getTileSize(), 1.0, image);
     avgNet.freeRef();
     return evalRoot;
@@ -356,17 +329,7 @@ public class MomentMatcher implements VisualModifier {
     }
 
     public InnerNode addLoss(PipelineNetwork network) {
-      final InnerNode wrap = network.wrap(new SumInputsLayer().setPrecision(getPrecision()),
-          network.wrap(new ScaleLayer(getPosCoeff()).setPrecision(getPrecision()),
-              network.wrap(lossSq(getPrecision(), avgValue), avgNode.addRef())
-          ),
-          network.wrap(new ScaleLayer(getScaleCoeff()).setPrecision(getPrecision()),
-              network.wrap(lossSq(getPrecision(), rmsValue), rmsNode.addRef())
-          ),
-          network.wrap(new ScaleLayer(getCovCoeff()).setPrecision(getPrecision()),
-              network.wrap(lossSq(getPrecision(), covValue), covNode.addRef())
-          )
-      );
+      final InnerNode wrap = network.add(new SumInputsLayer().setPrecision(getPrecision()), network.add(new ScaleLayer(getPosCoeff()).setPrecision(getPrecision()), network.add(lossSq(getPrecision(), avgValue), avgNode.addRef())), network.add(new ScaleLayer(getScaleCoeff()).setPrecision(getPrecision()), network.add(lossSq(getPrecision(), rmsValue), rmsNode.addRef())), network.add(new ScaleLayer(getCovCoeff()).setPrecision(getPrecision()), network.add(lossSq(getPrecision(), covValue), covNode.addRef())));
       freeRef();
       return wrap;
     }

@@ -77,7 +77,7 @@ public interface VisualModifier {
       @Override
       public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
         PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
-        build.wrap(new LinearActivationLayer().setScale(scale).freeze()).freeRef();
+        build.add(new LinearActivationLayer().setScale(scale).freeze()).freeRef();
         return (PipelineNetwork) build.freeze();
       }
     };
@@ -98,7 +98,7 @@ public interface VisualModifier {
       @Override
       public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
         PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
-        build.wrap(new NthPowerActivationLayer().setPower(power).freeze()).freeRef();
+        build.add(new NthPowerActivationLayer().setPower(power).freeze()).freeRef();
         return (PipelineNetwork) build.freeze();
       }
     };

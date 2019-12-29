@@ -49,7 +49,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   private volatile PipelineNetwork layer;
 
   PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels) {
-    this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels, (PipelineNetwork pipeline) -> pipeline.wrap(new PoolingLayer()
+    this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels, (PipelineNetwork pipeline) -> pipeline.add(new PoolingLayer()
         .setStrideXY(2, 2).setWindowXY(2, 2).setMode(PoolingLayer.PoolingMode.Avg)));
   }
 

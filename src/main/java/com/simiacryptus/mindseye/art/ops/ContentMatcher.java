@@ -44,22 +44,19 @@ public class ContentMatcher implements VisualModifier {
 
     if (null != visualModifierParameters.mask) {
       final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, visualModifierParameters.mask, Precision.Float));
-      network.wrap(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
+      network.add(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
     }
 
-    Tensor baseContent = network.eval(visualModifierParameters.style).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
     visualModifierParameters.freeRef();
     double mag = balanced ? baseContent.rms() : 1;
     if (!Double.isFinite(mag) || mag < 0) throw new RuntimeException("RMS = " + mag);
     DAGNode head = network.getHead();
     DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
     constNode.getLayer().setName(name);
-    network.wrap(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
-    network.wrap(PipelineNetwork.wrap(1,
-        new LinearActivationLayer().setScale(0 == mag ? 1 : Math.pow(mag, -1)),
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()
-    ).setName(String.format("RMS / %.0E", mag))).freeRef();
+    network.add(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
+    final Layer[] layers = new Layer[]{new LinearActivationLayer().setScale(0 == mag ? 1 : Math.pow(mag, -1)), new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
+    network.add(PipelineNetwork.build(1, layers).setName(String.format("RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

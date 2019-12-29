@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art.ops;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.art.util.PCA;
+import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.ValueLayer;
 import com.simiacryptus.mindseye.layers.cudnn.*;
@@ -50,7 +51,7 @@ public class ContentPCAMatcher implements VisualModifier {
   public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
     network = network.copyPipeline();
-    Tensor baseContent = network.eval(visualModifierParameters.style).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
     visualModifierParameters.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
     List<Tensor> components;
@@ -60,40 +61,33 @@ public class ContentPCAMatcher implements VisualModifier {
       Tensor channelMeans = pca.getChannelMeans(baseContent);
       Tensor channelRms = pca.getChannelRms(baseContent, contentDimensions[2], channelMeans);
       double[] covariance = PCA.bandCovariance(baseContent.getPixelStream(), PCA.countPixels(baseContent), channelMeans.getData(), channelRms.getData());
-      signalProjection = PipelineNetwork.wrap(1,
-          new ImgBandBiasLayer(channelMeans.scaleInPlace(-1)),
-          new ImgBandScaleLayer(channelRms.mapAndFree(x -> 1 / x).getData())
-      );
+      signalProjection = PipelineNetwork.build(1, new ImgBandBiasLayer(channelMeans.scaleInPlace(-1)), new ImgBandScaleLayer(channelRms.map(x -> 1 / x).getData()));
       channelMeans.freeRef();
       components = PCA.pca(covariance, pca.getEigenvaluePower()).stream().collect(Collectors.toList());
     } catch (Throwable e) {
       log.info("Error processing PCA for dimensions " + Arrays.toString(contentDimensions), e);
       PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
-      pipelineNetwork.wrap(new ValueLayer(new Tensor(0.0)), new DAGNode[]{});
+      pipelineNetwork.add(new ValueLayer(new Tensor(0.0)), new DAGNode[]{});
       return pipelineNetwork;
     }
     int bands = Math.min(getBands(), contentDimensions[2]);
 
-    Tensor prefixPattern = signalProjection.eval(baseContent).getDataAndFree().getAndFree(0);
-    channelStats(getConvolutionLayer1(new ConvolutionLayer(1, 1, contentDimensions[2], bands).setPaddingXY(0, 0), components, bands).explodeAndFree().eval(prefixPattern).getDataAndFree().getAndFree(0), bands);
-    channelStats(getConvolutionLayer2(new ConvolutionLayer(1, 1, contentDimensions[2], bands).setPaddingXY(0, 0), components, bands).explodeAndFree().eval(prefixPattern).getDataAndFree().getAndFree(0), bands);
+    Tensor prefixPattern = signalProjection.eval(baseContent).getData().get(0);
+    channelStats(getConvolutionLayer1(new ConvolutionLayer(1, 1, contentDimensions[2], bands).setPaddingXY(0, 0), components, bands).explode().eval(prefixPattern).getData().get(0), bands);
+    channelStats(getConvolutionLayer2(new ConvolutionLayer(1, 1, contentDimensions[2], bands).setPaddingXY(0, 0), components, bands).explode().eval(prefixPattern).getData().get(0), bands);
 
-    signalProjection.wrap(getConvolutionLayer1(new ConvolutionLayer(1, 1, contentDimensions[2], bands).setPaddingXY(0, 0), components, bands).explodeAndFree());
-    Tensor spacialPattern = signalProjection.eval(baseContent).getDataAndFree().getAndFree(0);
+    signalProjection.add(getConvolutionLayer1(new ConvolutionLayer(1, 1, contentDimensions[2], bands).setPaddingXY(0, 0), components, bands).explode());
+    Tensor spacialPattern = signalProjection.eval(baseContent).getData().get(0);
     channelStats(spacialPattern, bands);
 
     double mag = spacialPattern.rms();
     DAGNode head = signalProjection.getHead();
     DAGNode constNode = signalProjection.constValueWrap(spacialPattern.scaleInPlace(-1));
-    signalProjection.wrap(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
-    signalProjection.wrap(PipelineNetwork.wrap(1,
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))
-//        ,new NthPowerActivationLayer().setPower(0.5)
-    ).setName(String.format("RMS / %.0E", mag)));
+    signalProjection.add(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
+    final Layer[] layers = new Layer[]{new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(), new LinearActivationLayer().setScale(Math.pow(mag, -2))};
+    signalProjection.add(PipelineNetwork.build(1, layers).setName(String.format("RMS / %.0E", mag)));
 
-    network.wrap(signalProjection.setName(String.format("PCA Content Match"))).freeRef();
+    network.add(signalProjection.setName(String.format("PCA Content Match"))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

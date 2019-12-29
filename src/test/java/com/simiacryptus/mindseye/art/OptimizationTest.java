@@ -63,8 +63,7 @@ public class OptimizationTest {
         .setMonitor(getTrainingMonitor())
         .setMaxIterations(maxIterations)
         .setLineSearchFactory(name -> lineSearch)
-        .setTerminateThreshold(Double.NEGATIVE_INFINITY)
-        .runAndFree();
+        .setTerminateThreshold(Double.NEGATIVE_INFINITY).run();
   }
 
   @NotNull

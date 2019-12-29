@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
+import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
@@ -46,14 +47,10 @@ public class ChannelMeanMatcher implements VisualModifier {
   @NotNull
   public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor meanSignal, Tensor... image) {
     network = network.copyPipeline();
-    network.wrap(new BandAvgReducerLayer());
+    network.add(new BandAvgReducerLayer());
     if (meanSignal == null) {
-      final PipelineNetwork meanNetwork = PipelineNetwork.wrap(1,
-          ImgTileSubnetLayer.wrap(network.addRef(), tileSize, tileSize),
-          new BandAvgReducerLayer()
-      );
-      meanSignal = Arrays.stream(image).map(tensor ->
-          meanNetwork.eval(tensor).getDataAndFree().getAndFree(0)
+      final PipelineNetwork meanNetwork = PipelineNetwork.build(1, new ImgTileSubnetLayer(network.addRef(), tileSize, tileSize), new BandAvgReducerLayer());
+      meanSignal = Arrays.stream(image).map(tensor -> meanNetwork.eval(tensor).getData().get(0)
       ).reduce((a, b) -> {
         Tensor c = a.addAndFree(b);
         b.freeRef();
@@ -62,13 +59,8 @@ public class ChannelMeanMatcher implements VisualModifier {
       meanNetwork.freeRef();
     }
     double mag = isBalanced() ? meanSignal.rms() : 1;
-    network.wrap(PipelineNetwork.wrap(1,
-        new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)),
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))
-//        ,new NthPowerActivationLayer().setPower(0.5)
-    ).setName(String.format("RMS[x-C] / %.0E", mag))).freeRef();
+    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)), new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(), new LinearActivationLayer().setScale(Math.pow(mag, -2))};
+    network.add(PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

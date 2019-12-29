@@ -40,33 +40,21 @@ public class ContentInceptionMatcher implements VisualModifier {
   public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
     network = network.copyPipeline();
-    Tensor baseContent = network.eval(visualModifierParameters.style).getDataAndFree().getAndFree(0);
+    Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
     visualModifierParameters.freeRef();
     BandAvgReducerLayer bandAvgReducerLayer = new BandAvgReducerLayer();
-    Tensor bandAvg = bandAvgReducerLayer.eval(baseContent).getDataAndFree().getAndFree(0);
+    Tensor bandAvg = bandAvgReducerLayer.eval(baseContent).getData().get(0);
     ImgBandBiasLayer offsetLayer = new ImgBandBiasLayer(bandAvg.scale(-1));
-    Tensor bandPowers = PipelineNetwork.wrap(1,
-        offsetLayer,
-        new SquareActivationLayer(),
-        bandAvgReducerLayer,
-        new NthPowerActivationLayer().setPower(0.5)
-    ).eval(baseContent).getDataAndFree().getAndFree(0);
+    Tensor bandPowers = PipelineNetwork.build(1, offsetLayer, new SquareActivationLayer(), bandAvgReducerLayer, new NthPowerActivationLayer().setPower(0.5)).eval(baseContent).getData().get(0);
     int[] contentDimensions = baseContent.getDimensions();
     Layer colorProjection = new ConvolutionLayer(1, 1, contentDimensions[2], 1)
-        .setPaddingXY(0, 0)
-        .setAndFree(bandPowers.unit())
-        .explodeAndFree();
-    Tensor spacialPattern = colorProjection.eval(baseContent).getDataAndFree().getAndFree(0);
+        .setPaddingXY(0, 0).set(bandPowers.unit()).explode();
+    Tensor spacialPattern = colorProjection.eval(baseContent).getData().get(0);
     double mag = balanced ? spacialPattern.rms() : 1;
-    network.wrap(colorProjection);
-    network.wrap(new ConvolutionLayer(contentDimensions[0], contentDimensions[1], 1, 1)
-        .setAndFree(spacialPattern.scaleInPlace(Math.pow(spacialPattern.rms(), -2))).explodeAndFree()).freeRef();
-    network.wrap(PipelineNetwork.wrap(1,
-        new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()),
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()
-//        ,new NthPowerActivationLayer().setPower(0.5)
-    ).setName(String.format("-RMS / %.0E", mag))).freeRef();
+    network.add(colorProjection);
+    network.add(new ConvolutionLayer(contentDimensions[0], contentDimensions[1], 1, 1).set(spacialPattern.scaleInPlace(Math.pow(spacialPattern.rms(), -2))).explode()).freeRef();
+    final Layer[] layers = new Layer[]{new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
+    network.add(PipelineNetwork.build(1, layers).setName(String.format("-RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

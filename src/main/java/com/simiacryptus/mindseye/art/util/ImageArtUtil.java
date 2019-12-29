@@ -171,24 +171,24 @@ public class ImageArtUtil {
       if (fileStr.contains(" + ")) {
         Tensor sampleImage = Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
         return Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
-          Tensor r = a.mapCoordsAndFree(c -> a.get(c) + b.get(c));
+          Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
           b.freeRef();
           return r;
         }).get();
       } else if (fileStr.contains(" * ")) {
         Tensor sampleImage = Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
         return Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
-          Tensor r = a.mapCoordsAndFree(c -> a.get(c) * b.get(c));
+          Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
           b.freeRef();
           return r;
         }).get();
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
         return new Plasma().paint(width, width);
       } else if (fileStr.trim().toLowerCase().equals("noise")) {
-        return new Tensor(width, width, 3).mapAndFree(x -> FastRandom.INSTANCE.random() * 100);
+        return new Tensor(width, width, 3).map(x -> FastRandom.INSTANCE.random() * 100);
       } else if (fileStr.matches("\\-?\\d+(?:\\.\\d*)?(?:[eE]\\-?\\d+)?")) {
         double v = Double.parseDouble(fileStr);
-        return new Tensor(width, width, 3).mapAndFree(x -> v);
+        return new Tensor(width, width, 3).map(x -> v);
       }
     }
     return Tensor.fromRGB(ImageUtil.resize(getTensor(log, file).toImage(), width, true));
@@ -202,24 +202,24 @@ public class ImageArtUtil {
       if (fileStr.contains(" + ")) {
         Tensor sampleImage = Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
         return Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
-          Tensor r = a.mapCoordsAndFree(c -> a.get(c) + b.get(c));
+          Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
           b.freeRef();
           return r;
         }).get();
       } else if (fileStr.contains(" * ")) {
         Tensor sampleImage = Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
         return Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
-          Tensor r = a.mapCoordsAndFree(c -> a.get(c) * b.get(c));
+          Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
           b.freeRef();
           return r;
         }).get();
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
         return new Plasma().paint(width, height);
       } else if (fileStr.trim().toLowerCase().equals("noise")) {
-        return new Tensor(width, height, 3).mapAndFree(x -> FastRandom.INSTANCE.random() * 100);
+        return new Tensor(width, height, 3).map(x -> FastRandom.INSTANCE.random() * 100);
       } else if (fileStr.matches("\\-?\\d+(?:\\.\\d*)?(?:[eE]\\-?\\d+)?")) {
         double v = Double.parseDouble(fileStr);
-        return new Tensor(width, height, 3).mapAndFree(x -> v);
+        return new Tensor(width, height, 3).map(x -> v);
       }
     }
     return Tensor.fromRGB(ImageUtil.resize(getTensor(log, file).toImage(), width, height));

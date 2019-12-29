@@ -32,9 +32,7 @@ import com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SearchRadiusTopology;
 import com.simiacryptus.mindseye.art.util.Plasma;
-import com.simiacryptus.mindseye.lang.Layer;
-import com.simiacryptus.mindseye.lang.SerialPrecision;
-import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.mindseye.lang.*;
 import com.simiacryptus.mindseye.layers.WrapperLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.NotebookReportBase;
@@ -267,10 +265,10 @@ public class WCTTest extends NotebookReportBase {
 
     final Layer encode_1 = VGG_WCT_Import.encode_1();
     final Layer decode_1 = VGG_WCT_Import.decode_1();
-    final Tensor encodedContent = encode_1.eval(content_2).getDataAndFree().getAndFree(0);
-    final Tensor encodedStyle = encode_1.eval(styleImage).getDataAndFree().getAndFree(0);
-    final Tensor encodedTransformed = WCTUtil.applicator(encodedStyle, 1.0, 1.0).eval(encodedContent).getDataAndFree().getAndFree(0);
-    final Tensor content_1 = decode_1.eval(encodedTransformed).getDataAndFree().getAndFree(0);
+    final Tensor encodedContent = encode_1.eval(content_2).getData().get(0);
+    final Tensor encodedStyle = encode_1.eval(styleImage).getData().get(0);
+    final Tensor encodedTransformed = WCTUtil.applicator(encodedStyle, 1.0, 1.0).eval(encodedContent).getData().get(0);
+    final Tensor content_1 = decode_1.eval(encodedTransformed).getData().get(0);
     log.eval(() -> {
       return content_1.toImage();
     });
@@ -516,7 +514,7 @@ public class WCTTest extends NotebookReportBase {
       return styleImage.toImage();
     });
     final Tensor originalFeatures = log.eval(() -> {
-      return encoder.eval(contentImage).getDataAndFree().getAndFree(0);
+      return encoder.eval(contentImage).getData().get(0);
     });
 
     log.h2("Encoding");
@@ -524,7 +522,7 @@ public class WCTTest extends NotebookReportBase {
       return Arrays.stream(originalFeatures.getDimensions()).mapToObj(Integer::toString).reduce((a, b) -> a + ", " + b).get();
     });
     final Tensor encodedStyle = log.eval(() -> {
-      return encoder.eval(styleImage).getDataAndFree().getAndFree(0);
+      return encoder.eval(styleImage).getData().get(0);
     });
 
     final Tensor restyledFeatures;
@@ -536,7 +534,7 @@ public class WCTTest extends NotebookReportBase {
       log.h3("Normalized");
       stats(log, log.eval(() -> {
         final Layer normalizer = WCTUtil.normalizer();
-        final Tensor tensor = normalizer.eval(originalFeatures).getDataAndFree().getAndFree(0);
+        final Tensor tensor = normalizer.eval(originalFeatures).getData().get(0);
         normalizer.freeRef();
         return tensor;
       }));
@@ -545,12 +543,12 @@ public class WCTTest extends NotebookReportBase {
         return WCTUtil.applicator(encodedStyle);
       });
       restyledFeatures = log.eval(() -> {
-        return styleNetwork.eval(originalFeatures).getDataAndFree().getAndFree(0);
+        return styleNetwork.eval(originalFeatures).getData().get(0);
       });
       stats(log, restyledFeatures);
     } else {
       restyledFeatures = WCTUtil.applicator(encodedStyle)
-          .eval(originalFeatures).getDataAndFree().getAndFree(0);
+          .eval(originalFeatures).getData().get(0);
     }
 
     log.h2("Result Images");
@@ -558,7 +556,7 @@ public class WCTTest extends NotebookReportBase {
     System.setProperty("spark.app.name", getClass().getSimpleName());
     if (getNetwork(decoder).inputHandles.size() == 2) {
       final Tensor restyled = log.eval(() -> {
-        return decoder.eval(restyledFeatures, contentImage).getDataAndFree().getAndFree(0);
+        return decoder.eval(restyledFeatures, contentImage).getData().get(0);
       });
       log.eval(() -> {
         return restyled.toImage();
@@ -569,11 +567,11 @@ public class WCTTest extends NotebookReportBase {
       });
       restyled.freeRef();
       if (verbose) log.eval(() -> {
-        return toImage(decoder.eval(originalFeatures, contentImage).getDataAndFree().getAndFree(0));
+        return toImage(decoder.eval(originalFeatures, contentImage).getData().get(0));
       });
     } else {
       final Tensor restyled = log.eval(() -> {
-        return decoder.eval(restyledFeatures).getDataAndFree().getAndFree(0);
+        return decoder.eval(restyledFeatures).getData().get(0);
       });
       log.eval(() -> {
         return restyled.toImage();
@@ -583,7 +581,7 @@ public class WCTTest extends NotebookReportBase {
         return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(restyled));
       });
       if (verbose) log.eval(() -> {
-        return toImage(decoder.eval(originalFeatures).getDataAndFree().getAndFree(0));
+        return toImage(decoder.eval(originalFeatures).getData().get(0));
       });
     }
   }

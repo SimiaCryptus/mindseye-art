@@ -33,6 +33,7 @@ import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +75,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     this.setPrecision(precision);
     this.canvas = canvas;
     this.filter = filter.addRef();
-    Tensor filteredCanvas = this.filter.eval(canvas).getDataAndFree().getAndFree(0);
+    Tensor filteredCanvas = this.filter.eval(canvas).getData().get(0);
     assert 3 == filteredCanvas.getDimensions().length;
     int width = filteredCanvas.getDimensions()[0];
     int height = filteredCanvas.getDimensions()[1];
@@ -132,7 +133,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
           } else {
             int finalCol = col;
             int finalRow = row;
-            Tensor mask = new Tensor(tileSizeX, tileSizeY, 1).mapCoordsAndFree(c -> {
+            Tensor mask = new Tensor(tileSizeX, tileSizeY, 1).mapCoords(c -> {
               int[] coords = c.getCoords();
               double v = 1.0;
               if (coords[0] < padding && finalCol > 0) {
@@ -148,8 +149,8 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
               return v;
             });
             PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
-            InnerNode selectNode = pipelineNetwork.wrap(tileSelectLayer);
-            pipelineNetwork.wrap(new ImgPixelGateLayer(), selectNode, pipelineNetwork.constValueWrap(mask)).freeRef();
+            InnerNode selectNode = pipelineNetwork.add(tileSelectLayer);
+            pipelineNetwork.add(new ImgPixelGateLayer(), selectNode, pipelineNetwork.constValueWrap(mask)).freeRef();
             selectors[index++] = pipelineNetwork;
           }
         }
@@ -163,10 +164,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     assertAlive();
     final Layer filter = this.filter.addRef();
     if (null == getSelectors() || 0 == getSelectors().length) {
-      Trainable trainable = BasicTrainable.wrap(PipelineNetwork.wrap(1,
-          filter.addRef(),
-          networkSingleton.getOrInit(() -> getNetwork(filter.addRef())).addRef()
-      ))
+      Trainable trainable = new BasicTrainable(PipelineNetwork.build(1, filter.addRef(), networkSingleton.getOrInit(() -> getNetwork(filter.addRef())).addRef()))
           .setMask(isMutableCanvas())
           .setData(Arrays.asList(new Tensor[][]{{canvas}}));
       PointSample measure = trainable.measure(monitor);
@@ -176,9 +174,9 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     } else {
       Result canvasBuffer;
       if (isMutableCanvas()) {
-        canvasBuffer = filter.evalAndFree(new MutableResult(canvas));
+        canvasBuffer = filter.eval(new MutableResult(canvas));
       } else {
-        canvasBuffer = filter.evalAndFree(new ConstantResult(canvas));
+        canvasBuffer = filter.eval(new ConstantResult(canvas));
       }
       filter.freeRef();
       AtomicDouble resultSum = new AtomicDouble(0);
@@ -188,7 +186,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
         Result tileOutput = networks[i].eval(tileInput);
         tileInput.freeRef();
         tileInput.getData().freeRef();
-        Tensor tensor = tileOutput.getData().getAndFree(0);
+        Tensor tensor = tileOutput.getData().get(0);
         assert 1 == tensor.length();
         resultSum.addAndGet(tensor.get(0));
         tileOutput.accumulate(deltaSet);
@@ -216,6 +214,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
 
   protected abstract PipelineNetwork getNetwork(Layer regionSelector);
 
+  @NotNull
   @Override
   public Layer getLayer() {
     return null;

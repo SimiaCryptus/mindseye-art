@@ -114,14 +114,9 @@ public class PCA {
     if (!isRescale()) {
       return meanTensor.map(x -> 1);
     } else {
-      PipelineNetwork network = PipelineNetwork.wrap(1,
-          new ImgBandBiasLayer(bands).set(meanTensor.scale(-1)),
-          new SquareActivationLayer(),
-          new BandReducerLayer().setMode(PoolingLayer.PoolingMode.Avg),
-          new NthPowerActivationLayer().setPower(0.5)
-      );
+      PipelineNetwork network = PipelineNetwork.build(1, new ImgBandBiasLayer(bands).set(meanTensor.scale(-1)), new SquareActivationLayer(), new BandReducerLayer().setMode(PoolingLayer.PoolingMode.Avg), new NthPowerActivationLayer().setPower(0.5));
       try {
-        return network.eval(image).getDataAndFree().getAndFree(0).mapAndFree(x -> x == 0.0 ? 1.0 : x);
+        return network.eval(image).getData().get(0).map(x -> x == 0.0 ? 1.0 : x);
       } finally {
         network.freeRef();
       }
@@ -131,7 +126,7 @@ public class PCA {
   @NotNull
   public Tensor getChannelMeans(Tensor image) {
     BandReducerLayer bandReducerLayer = new BandReducerLayer();
-    Tensor meanTensor = bandReducerLayer.setMode(PoolingLayer.PoolingMode.Avg).eval(image).getDataAndFree().getAndFree(0);
+    Tensor meanTensor = bandReducerLayer.setMode(PoolingLayer.PoolingMode.Avg).eval(image).getData().get(0);
     bandReducerLayer.freeRef();
     if (!isRecenter()) Arrays.fill(meanTensor.getData(), 0);
     return meanTensor;

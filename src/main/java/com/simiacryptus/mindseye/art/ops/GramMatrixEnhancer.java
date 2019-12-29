@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art.ops;
 
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
+import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
@@ -53,12 +54,9 @@ public class GramMatrixEnhancer implements VisualModifier {
   public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
     PipelineNetwork rmsNetwork = new PipelineNetwork(1);
     rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
-    rmsNetwork.wrap(averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-        rmsNetwork.wrap(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()),
-            rmsNetwork.wrap(new LinearActivationLayer().setScale(-Math.pow(mag, -2)),
-                rmsNetwork.wrap(new ProductLayer(), rmsNetwork.getInput(0), rmsNetwork.constValueWrap(result))
-            )
-        )).freeRef();
+    final Layer nextHead = new LinearActivationLayer().setScale(-Math.pow(mag, -2));
+    final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
+    rmsNetwork.add(nextHead1, rmsNetwork.add(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()), rmsNetwork.add(nextHead, rmsNetwork.add(new ProductLayer(), rmsNetwork.getInput(0), rmsNetwork.constValueWrap(result))))).freeRef();
     return rmsNetwork;
   }
 
@@ -73,19 +71,19 @@ public class GramMatrixEnhancer implements VisualModifier {
     }).sum();
 
     final PipelineNetwork copy = network.copyPipeline();
-    copy.wrap(new GramianLayer(uuid).setPrecision(precision)).freeRef();
+    copy.add(new GramianLayer(uuid).setPrecision(precision)).freeRef();
     Tensor result = GramMatrixMatcher.eval(pixels, copy, getTileSize(), padding, visualModifierParameters.style);
     copy.freeRef();
 
     if (null != visualModifierParameters.mask) {
       final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, visualModifierParameters.mask, Precision.Float));
-      network.wrap(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
+      network.add(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
     }
     visualModifierParameters.freeRef();
-    network.wrap(new GramianLayer(uuid).setPrecision(precision)).freeRef();
+    network.add(new GramianLayer(uuid).setPrecision(precision)).freeRef();
 
     double mag = balanced ? result.rms() : 1;
-    network.wrap(loss(result, mag, isAveraging())).freeRef();
+    network.add(loss(result, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 
@@ -145,12 +143,9 @@ public class GramMatrixEnhancer implements VisualModifier {
     public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
       PipelineNetwork rmsNetwork = new PipelineNetwork(1);
       rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
-      rmsNetwork.wrap(averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-          rmsNetwork.wrap(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()),
-              rmsNetwork.wrap(new LinearActivationLayer().setScale(-Math.pow(mag, -2)),
-                  rmsNetwork.wrap(new AbsActivationLayer())
-              )
-          )).freeRef();
+      final Layer nextHead = new LinearActivationLayer().setScale(-Math.pow(mag, -2));
+      final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
+      rmsNetwork.add(nextHead1, rmsNetwork.add(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()), rmsNetwork.add(nextHead, rmsNetwork.add(new AbsActivationLayer())))).freeRef();
       return rmsNetwork;
     }
   }

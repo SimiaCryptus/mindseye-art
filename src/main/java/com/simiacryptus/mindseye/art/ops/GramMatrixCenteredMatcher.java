@@ -46,13 +46,8 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
 
   @NotNull
   public static Layer loss(Tensor result, double mag, boolean averaging) {
-    Layer layer = PipelineNetwork.wrap(1,
-        new ImgBandBiasLayer(result.scaleInPlace(-1)),
-        new SquareActivationLayer(),
-        averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))
-        //new NthPowerActivationLayer().setPower(0.5),
-    ).setName(String.format("RMS[x-C] / %.0E", mag));
+    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(), averaging ? new AvgReducerLayer() : new SumReducerLayer(), new LinearActivationLayer().setScale(Math.pow(mag, -2))};
+    Layer layer = PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", mag));
     result.freeRef();
     return layer;
   }
@@ -63,10 +58,10 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
       return Arrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, false))
           .map(selector -> {
             //log.info(selector.toString());
-            Tensor tile = selector.eval(img).getDataAndFree().getAndFree(0);
+            Tensor tile = selector.eval(img).getData().get(0);
             selector.freeRef();
             int[] tileDimensions = tile.getDimensions();
-            Tensor component = network.eval(tile).getDataAndFree().getAndFree(0).scaleInPlace(tileDimensions[0] * tileDimensions[1]);
+            Tensor component = network.eval(tile).getData().get(0).scaleInPlace(tileDimensions[0] * tileDimensions[1]);
             tile.freeRef();
             return component;
           });
@@ -74,7 +69,7 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
       a.addInPlace(b);
       b.freeRef();
       return a;
-    }).get().scaleInPlace(1.0 / pixels).mapAndFree(x -> {
+    }).get().scaleInPlace(1.0 / pixels).map(x -> {
       if (Double.isFinite(x)) {
         return x;
       } else {
@@ -101,14 +96,14 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
   @NotNull
   public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor cov, Tensor... image) {
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
-    network.wrap(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
+    network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
     int pixels = Arrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
     if (null == cov) cov = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), image);
     double mag = balanced ? cov.rms() : 1;
-    network.wrap(loss(cov, mag, isAveraging())).freeRef();
+    network.add(loss(cov, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 
