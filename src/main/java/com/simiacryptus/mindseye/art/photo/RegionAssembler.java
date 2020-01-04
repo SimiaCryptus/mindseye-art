@@ -57,7 +57,6 @@ class RegionAssembler
             .groupingBy(x -> pixelMap[x], Collectors.toList()));
     final List<Region> collect = Arrays
         .stream(graph.activeRows()).parallel().mapToObj(row -> {
-
           assert this.regionCount > row;
           final int[] cols = graph.getCols(row);
           final float[] vals = graph.getVals(row);
