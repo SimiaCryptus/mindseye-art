@@ -29,28 +29,36 @@ import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.mindseye.test.unit.StandardLayerTests;
 import com.simiacryptus.notebook.NotebookOutput;
-import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Random;
 
 import static com.simiacryptus.mindseye.art.models.Inception5H.*;
 import static com.simiacryptus.mindseye.art.models.VGG16.*;
 import static com.simiacryptus.mindseye.art.models.VGG19.*;
 
-public abstract class VisionPipelineTest extends NotebookReportBase {
+public abstract @com.simiacryptus.ref.lang.RefAware
+class VisionPipelineTest extends NotebookReportBase {
   private static final Logger log = LoggerFactory.getLogger(VisionPipelineTest.class);
+
+  @Nonnull
+  @Override
+  public ReportType getReportType() {
+    return ReportType.Components;
+  }
+
+  public abstract VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline();
 
   public static void testDims(VisionPipelineLayer inceptionVision, int[] inputDims, int[] expectedOutputDims) {
     Layer layer = inceptionVision.getLayer();
     int[] dimensions = layer.evalDims(inputDims);
     layer.freeRef();
     int[] actuals = dimensions;
-    Assert.assertArrayEquals(Arrays.toString(actuals), expectedOutputDims, actuals);
+    com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(com.simiacryptus.ref.wrappers.RefArrays.toString(actuals),
+        expectedOutputDims, actuals);
   }
 
   public static int[] testDims(VisionPipelineLayer inceptionVision, int... inputDims) {
@@ -61,24 +69,40 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   }
 
   public static int[] testDims(VisionPipeline<? extends VisionPipelineLayer> pipeline, int... dims) {
-    for (VisionPipelineLayer layer : pipeline.getLayers().keySet()) dims = testDims(layer, dims);
+    for (VisionPipelineLayer layer : pipeline.getLayers().keySet())
+      dims = testDims(layer, dims);
     return dims;
+  }
+
+  public static @SuppressWarnings("unused")
+  VisionPipelineTest[] addRefs(VisionPipelineTest[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRef)
+        .toArray((x) -> new VisionPipelineTest[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  VisionPipelineTest[][] addRefs(VisionPipelineTest[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRefs)
+        .toArray((x) -> new VisionPipelineTest[x][]);
   }
 
   public int[] testDims(int... dims) {
     return testDims(getVisionPipeline(), dims);
   }
 
-  @Nonnull
-  @Override
-  public ReportType getReportType() {
-    return ReportType.Components;
-  }
-
   @Test
   public void inoutDims() {
     run(this::inoutDims);
   }
+
+  //  @Test
+  //  public void layerPins() {
+  //    run(this::layerPins);
+  //  }
 
   @Test
   public void pipelineTest() {
@@ -95,16 +119,9 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     run(this::layers);
   }
 
-//  @Test
-//  public void layerPins() {
-//    run(this::layerPins);
-//  }
-
   public abstract void inoutDims(NotebookOutput log);
 
   public abstract void pipelineTest(NotebookOutput log);
-
-  public abstract VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline();
 
   public void graphs(NotebookOutput log) {
     getVisionPipeline().getLayers().keySet().forEach((e) -> {
@@ -130,6 +147,11 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
           }
 
           @Override
+          public Class<?> getTestClass() {
+            return e.getClass();
+          }
+
+          @Override
           public int[][] getSmallDims(Random random) {
             return dims;
           }
@@ -139,14 +161,13 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
             return layer.copy();
           }
 
-          @Override
-          protected Layer lossLayer() {
-            return new MeanSqLossLayer();
+          public @SuppressWarnings("unused")
+          void _free() {
           }
 
           @Override
-          public Class<?> getTestClass() {
-            return e.getClass();
+          protected Layer lossLayer() {
+            return new MeanSqLossLayer();
           }
         }.run(sublog);
         return null;
@@ -159,7 +180,36 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     });
   }
 
-  public static class VGG16Test extends VisionPipelineTest {
+  public @SuppressWarnings("unused")
+  void _free() {
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  VisionPipelineTest addRef() {
+    return (VisionPipelineTest) super.addRef();
+  }
+
+  public static @com.simiacryptus.ref.lang.RefAware
+  class VGG16Test extends VisionPipelineTest {
+    @Override
+    protected Class<?> getTargetClass() {
+      return VGG16.class;
+    }
+
+    @Override
+    public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
+      return VGG16.getVisionPipeline();
+    }
+
+    public static @SuppressWarnings("unused")
+    VGG16Test[] addRefs(VGG16Test[] array) {
+      if (array == null)
+        return null;
+      return java.util.Arrays.stream(array).filter((x) -> x != null).map(VGG16Test::addRef)
+          .toArray((x) -> new VGG16Test[x]);
+    }
+
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
         testDims(VGG16_0b, new int[]{226, 226, 3}, new int[]{226, 226, 3});
@@ -178,23 +228,42 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     public void pipelineTest(NotebookOutput log) {
       log.run(() -> {
         int[] outputSize = testDims(226, 226, 3);
-        Assert.assertArrayEquals(Arrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
+        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(
+            com.simiacryptus.ref.wrappers.RefArrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
       });
     }
 
-
-    @Override
-    public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
-      return VGG16.getVisionPipeline();
+    public @SuppressWarnings("unused")
+    void _free() {
     }
 
-    @Override
-    protected Class<?> getTargetClass() {
-      return VGG16.class;
+    public @Override
+    @SuppressWarnings("unused")
+    VGG16Test addRef() {
+      return (VGG16Test) super.addRef();
     }
   }
 
-  public static class VGG19Test extends VisionPipelineTest {
+  public static @com.simiacryptus.ref.lang.RefAware
+  class VGG19Test extends VisionPipelineTest {
+    @Override
+    protected Class<?> getTargetClass() {
+      return VGG19.class;
+    }
+
+    @Override
+    public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
+      return VGG19.getVisionPipeline();
+    }
+
+    public static @SuppressWarnings("unused")
+    VGG19Test[] addRefs(VGG19Test[] array) {
+      if (array == null)
+        return null;
+      return java.util.Arrays.stream(array).filter((x) -> x != null).map(VGG19Test::addRef)
+          .toArray((x) -> new VGG19Test[x]);
+    }
+
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
         testDims(VGG19_0b, new int[]{226, 226, 3}, new int[]{226, 226, 3});
@@ -204,8 +273,8 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
         testDims(VGG19_1d1, new int[]{57, 57, 256}, new int[]{29, 29, 512});
         testDims(VGG19_1e1, new int[]{29, 29, 512}, new int[]{15, 15, 512});
         testDims(VGG19_2, new int[]{8, 8, 512}, new int[]{14, 14, 4096});
-//        testDims(VGG19_3a, new int[]{14, 14, 4096}, new int[]{14, 14, 1000});
-//        testDims(VGG19_3b, new int[]{14, 14, 1000}, new int[]{7, 7, 1000});
+        //        testDims(VGG19_3a, new int[]{14, 14, 4096}, new int[]{14, 14, 1000});
+        //        testDims(VGG19_3b, new int[]{14, 14, 1000}, new int[]{7, 7, 1000});
       });
     }
 
@@ -213,23 +282,42 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     public void pipelineTest(NotebookOutput log) {
       log.run(() -> {
         int[] outputSize = testDims(226, 226, 3);
-        Assert.assertArrayEquals(Arrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
+        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(
+            com.simiacryptus.ref.wrappers.RefArrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
       });
     }
 
-
-    @Override
-    public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
-      return VGG19.getVisionPipeline();
+    public @SuppressWarnings("unused")
+    void _free() {
     }
 
-    @Override
-    protected Class<?> getTargetClass() {
-      return VGG19.class;
+    public @Override
+    @SuppressWarnings("unused")
+    VGG19Test addRef() {
+      return (VGG19Test) super.addRef();
     }
   }
 
-  public static class Inception5HTest extends VisionPipelineTest {
+  public static @com.simiacryptus.ref.lang.RefAware
+  class Inception5HTest extends VisionPipelineTest {
+    @Override
+    protected Class<?> getTargetClass() {
+      return Inception5H.class;
+    }
+
+    @Override
+    public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
+      return Inception5H.getVisionPipeline();
+    }
+
+    public static @SuppressWarnings("unused")
+    Inception5HTest[] addRefs(Inception5HTest[] array) {
+      if (array == null)
+        return null;
+      return java.util.Arrays.stream(array).filter((x) -> x != null).map(Inception5HTest::addRef)
+          .toArray((x) -> new Inception5HTest[x]);
+    }
+
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
         testDims(Inc5H_1a, new int[]{320, 240, 3}, new int[]{160, 120, 64});
@@ -248,29 +336,28 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
     public void pipelineTest(NotebookOutput log) {
       log.run(() -> {
-        Assert.assertArrayEquals(testDims(320, 320, 3), new int[]{10, 10, 1024});
+        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(testDims(320, 320, 3), new int[]{10, 10, 1024});
       });
       log.run(() -> {
-        Assert.assertArrayEquals(testDims(32, 32, 3), new int[]{1, 1, 1024});
+        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(testDims(32, 32, 3), new int[]{1, 1, 1024});
       });
       log.run(() -> {
-        Assert.assertArrayEquals(testDims(400, 400, 3), new int[]{13, 13, 1024});
+        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(testDims(400, 400, 3), new int[]{13, 13, 1024});
       });
       log.run(() -> {
-        Assert.assertArrayEquals(testDims(40, 40, 3), new int[]{2, 2, 1024});
+        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(testDims(40, 40, 3), new int[]{2, 2, 1024});
       });
     }
 
-    @Override
-    public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
-      return Inception5H.getVisionPipeline();
+    public @SuppressWarnings("unused")
+    void _free() {
     }
 
-    @Override
-    protected Class<?> getTargetClass() {
-      return Inception5H.class;
+    public @Override
+    @SuppressWarnings("unused")
+    Inception5HTest addRef() {
+      return (Inception5HTest) super.addRef();
     }
   }
-
 
 }

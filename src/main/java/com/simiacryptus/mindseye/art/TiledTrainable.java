@@ -20,8 +20,6 @@
 package com.simiacryptus.mindseye.art;
 
 import com.google.common.util.concurrent.AtomicDouble;
-import com.simiacryptus.ref.lang.ReferenceCounting;
-import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.mindseye.eval.BasicTrainable;
 import com.simiacryptus.mindseye.eval.Trainable;
 import com.simiacryptus.mindseye.lang.*;
@@ -33,16 +31,18 @@ import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
+import com.simiacryptus.ref.lang.ReferenceCounting;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.UUID;
-import java.util.stream.IntStream;
 
-public abstract class TiledTrainable extends ReferenceCountingBase implements Trainable {
+public abstract @com.simiacryptus.ref.lang.RefAware
+class TiledTrainable extends ReferenceCountingBase
+    implements Trainable {
 
   private static final Logger logger = LoggerFactory.getLogger(TiledTrainable.class);
 
@@ -71,7 +71,8 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     this(canvas, filter, tileSize, padding, precision, true);
   }
 
-  public TiledTrainable(Tensor canvas, Layer filter, int tileSize, int padding, @Nonnull Precision precision, boolean fade) {
+  public TiledTrainable(Tensor canvas, Layer filter, int tileSize, int padding, @Nonnull Precision precision,
+                        boolean fade) {
     this.setPrecision(precision);
     this.canvas = canvas;
     this.filter = filter.addRef();
@@ -83,9 +84,8 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
     if (cols != 1 || rows != 1) {
       this.selectors = selectors(padding, width, height, tileSize, fade);
-      networks = Arrays.stream(this.getSelectors())
-          .map(selector -> PipelineNetwork.build(1, filter.addRef(), selector))
-          .map(this::getNetwork)
+      networks = com.simiacryptus.ref.wrappers.RefArrays.stream(this.getSelectors())
+          .map(selector -> PipelineNetwork.build(1, filter.addRef(), selector)).map(this::getNetwork)
           .toArray(i -> new PipelineNetwork[i]);
     } else {
       selectors = null;
@@ -94,40 +94,57 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     logger.info("Trainable canvas ID: " + this.canvas.getId());
   }
 
+  @NotNull
+  @Override
+  public Layer getLayer() {
+    return null;
+  }
+
+  public Precision getPrecision() {
+    return precision;
+  }
+
+  public void setPrecision(@Nonnull Precision precision) {
+    this.precision = precision;
+    MultiPrecision.setPrecision((DAGNetwork) filter, precision);
+  }
+
+  public Layer[] getSelectors() {
+    return selectors;
+  }
+
+  public boolean isMutableCanvas() {
+    return mutableCanvas;
+  }
+
+  public TiledTrainable setMutableCanvas(boolean mutableCanvas) {
+    this.mutableCanvas = mutableCanvas;
+    return this;
+  }
+
   public static Layer[] selectors(int padding, int width, int height, int tileSize, boolean fade) {
     int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int tileSizeX = (cols <= 1) ? width : (int) Math.ceil(((double) (width - padding) / cols) + padding);
     int tileSizeY = (rows <= 1) ? height : (int) Math.ceil(((double) (height - padding) / rows) + padding);
-//    logger.info(String.format(
-//        "Using Tile Size %s x %s to partition %s x %s png into %s x %s tiles",
-//        tileSizeX,
-//        tileSizeY,
-//        width,
-//        height,
-//        cols,
-//        rows
-//    ));
+    //    logger.info(String.format(
+    //        "Using Tile Size %s x %s to partition %s x %s png into %s x %s tiles",
+    //        tileSizeX,
+    //        tileSizeY,
+    //        width,
+    //        height,
+    //        cols,
+    //        rows
+    //    ));
     if (1 == cols && 1 == rows) {
-      return new ImgTileSelectLayer[]{
-          new ImgTileSelectLayer(
-              width,
-              height,
-              0,
-              0
-          )
-      };
+      return new ImgTileSelectLayer[]{new ImgTileSelectLayer(width, height, 0, 0)};
     } else {
       Layer[] selectors = new Layer[rows * cols];
       int index = 0;
       for (int row = 0; row < rows; row++) {
         for (int col = 0; col < cols; col++) {
-          ImgTileSelectLayer tileSelectLayer = new ImgTileSelectLayer(
-              tileSizeX,
-              tileSizeY,
-              col * (tileSizeX - padding),
-              row * (tileSizeY - padding)
-          );
+          ImgTileSelectLayer tileSelectLayer = new ImgTileSelectLayer(tileSizeX, tileSizeY, col * (tileSizeX - padding),
+              row * (tileSizeY - padding));
           if (!fade) {
             selectors[index++] = tileSelectLayer;
           } else {
@@ -159,14 +176,30 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     }
   }
 
+  public static @SuppressWarnings("unused")
+  TiledTrainable[] addRefs(TiledTrainable[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRef)
+        .toArray((x) -> new TiledTrainable[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  TiledTrainable[][] addRefs(TiledTrainable[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRefs)
+        .toArray((x) -> new TiledTrainable[x][]);
+  }
+
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
     assertAlive();
     final Layer filter = this.filter.addRef();
     if (null == getSelectors() || 0 == getSelectors().length) {
-      Trainable trainable = new BasicTrainable(PipelineNetwork.build(1, filter.addRef(), networkSingleton.getOrInit(() -> getNetwork(filter.addRef())).addRef()))
-          .setMask(isMutableCanvas())
-          .setData(Arrays.asList(new Tensor[][]{{canvas}}));
+      Trainable trainable = new BasicTrainable(PipelineNetwork.build(1, filter.addRef(),
+          networkSingleton.getOrInit(() -> getNetwork(filter.addRef())).addRef())).setMask(isMutableCanvas())
+          .setData(com.simiacryptus.ref.wrappers.RefArrays.asList(new Tensor[][]{{canvas}}));
       PointSample measure = trainable.measure(monitor);
       trainable.freeRef();
       filter.freeRef();
@@ -180,24 +213,25 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       }
       filter.freeRef();
       AtomicDouble resultSum = new AtomicDouble(0);
-      final DeltaSet<UUID> delta = IntStream.range(0, getSelectors().length).mapToObj(i -> {
-        final DeltaSet<UUID> deltaSet = new DeltaSet<>();
-        Result tileInput = getSelectors()[i].eval(canvasBuffer);
-        Result tileOutput = networks[i].eval(tileInput);
-        tileInput.freeRef();
-        tileInput.getData().freeRef();
-        Tensor tensor = tileOutput.getData().get(0);
-        assert 1 == tensor.length();
-        resultSum.addAndGet(tensor.get(0));
-        tileOutput.accumulate(deltaSet);
-        tensor.freeRef();
-        tileOutput.freeRef();
-        return deltaSet;
-      }).reduce((a, b) -> {
-        a.addInPlace(b);
-        b.freeRef();
-        return a;
-      }).get();
+      final DeltaSet<UUID> delta = com.simiacryptus.ref.wrappers.RefIntStream.range(0, getSelectors().length)
+          .mapToObj(i -> {
+            final DeltaSet<UUID> deltaSet = new DeltaSet<>();
+            Result tileInput = getSelectors()[i].eval(canvasBuffer);
+            Result tileOutput = networks[i].eval(tileInput);
+            tileInput.freeRef();
+            tileInput.getData().freeRef();
+            Tensor tensor = tileOutput.getData().get(0);
+            assert 1 == tensor.length();
+            resultSum.addAndGet(tensor.get(0));
+            tileOutput.accumulate(deltaSet);
+            tensor.freeRef();
+            tileOutput.freeRef();
+            return deltaSet;
+          }).reduce((a, b) -> {
+            a.addInPlace(b);
+            b.freeRef();
+            return a;
+          }).get();
       canvasBuffer.getData().freeRef();
       canvasBuffer.freeRef();
       final StateSet<UUID> weights = new StateSet<>(delta);
@@ -212,44 +246,23 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     }
   }
 
-  protected abstract PipelineNetwork getNetwork(Layer regionSelector);
-
-  @NotNull
-  @Override
-  public Layer getLayer() {
-    return null;
-  }
-
-  @Override
-  protected void _free() {
-    if (null != getSelectors()) Arrays.stream(getSelectors()).forEach(ReferenceCounting::freeRef);
-    if (null != networks) Arrays.stream(networks).forEach(ReferenceCounting::freeRef);
-    if (networkSingleton.isDefined()) networkSingleton.get().freeRef();
+  public void _free() {
+    if (null != getSelectors())
+      com.simiacryptus.ref.wrappers.RefArrays.stream(getSelectors()).forEach(ReferenceCounting::freeRef);
+    if (null != networks)
+      com.simiacryptus.ref.wrappers.RefArrays.stream(networks).forEach(ReferenceCounting::freeRef);
+    if (networkSingleton.isDefined())
+      networkSingleton.get().freeRef();
     filter.freeRef();
     super._free();
   }
 
-
-  public boolean isMutableCanvas() {
-    return mutableCanvas;
+  public @Override
+  @SuppressWarnings("unused")
+  TiledTrainable addRef() {
+    return (TiledTrainable) super.addRef();
   }
 
-  public TiledTrainable setMutableCanvas(boolean mutableCanvas) {
-    this.mutableCanvas = mutableCanvas;
-    return this;
-  }
-
-  public Precision getPrecision() {
-    return precision;
-  }
-
-  public void setPrecision(@Nonnull Precision precision) {
-    this.precision = precision;
-    MultiPrecision.setPrecision((DAGNetwork) filter, precision);
-  }
-
-  public Layer[] getSelectors() {
-    return selectors;
-  }
+  protected abstract PipelineNetwork getNetwork(Layer regionSelector);
 
 }

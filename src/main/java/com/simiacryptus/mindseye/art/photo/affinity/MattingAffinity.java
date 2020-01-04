@@ -31,7 +31,8 @@ import org.ejml.simple.SimpleMatrix;
  * http://cs.brown.edu/courses/cs129/results/final/valayshah/Matting-Levin-Lischinski-Weiss-CVPR06.pdf
  * <p>
  */
-public class MattingAffinity extends ContextAffinity {
+public @com.simiacryptus.ref.lang.RefAware
+class MattingAffinity extends ContextAffinity {
   private double epsilon = 1e-4;
 
   public MattingAffinity(Tensor content) {
@@ -43,16 +44,6 @@ public class MattingAffinity extends ContextAffinity {
     this.setTopology(topology);
   }
 
-  @Override
-  protected double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize, int globalSize) {
-    int bands = dimensions[2];
-    assert neighborhoodSize > 0;
-    final SimpleMatrix invert = cov.plus(SimpleMatrix.identity(bands).scale(getEpsilon() / neighborhoodSize)).invert();
-    double v = (1.0 + vector_i.dot(invert.mult(vector_j))) / 1;
-    v = Math.max(0, v);
-    return v;
-  }
-
   public double getEpsilon() {
     return epsilon;
   }
@@ -61,5 +52,41 @@ public class MattingAffinity extends ContextAffinity {
     this.epsilon = epsilon;
     return this;
   }
-}
 
+  public static @SuppressWarnings("unused")
+  MattingAffinity[] addRefs(MattingAffinity[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRef)
+        .toArray((x) -> new MattingAffinity[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  MattingAffinity[][] addRefs(MattingAffinity[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRefs)
+        .toArray((x) -> new MattingAffinity[x][]);
+  }
+
+  public @SuppressWarnings("unused")
+  void _free() {
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  MattingAffinity addRef() {
+    return (MattingAffinity) super.addRef();
+  }
+
+  @Override
+  protected double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize,
+                        int globalSize) {
+    int bands = dimensions[2];
+    assert neighborhoodSize > 0;
+    final SimpleMatrix invert = cov.plus(SimpleMatrix.identity(bands).scale(getEpsilon() / neighborhoodSize)).invert();
+    double v = (1.0 + vector_i.dot(invert.mult(vector_j))) / 1;
+    v = Math.max(0, v);
+    return v;
+  }
+}

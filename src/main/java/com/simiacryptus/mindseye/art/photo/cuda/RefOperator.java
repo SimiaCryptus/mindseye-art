@@ -24,15 +24,37 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import java.util.function.UnaryOperator;
 
-public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
+public @com.simiacryptus.ref.lang.RefAware
+interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
   static <T> RefOperator<T> wrap(UnaryOperator<T> inner) {
     return new RefOperatorWrapper<T>(inner);
+  }
+
+  public static @SuppressWarnings("unused")
+  RefOperator[] addRefs(RefOperator[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRef)
+        .toArray((x) -> new RefOperator[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  RefOperator[][] addRefs(RefOperator[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRefs)
+        .toArray((x) -> new RefOperator[x][]);
   }
 
   default T iterate(int n, T obj) {
     return n <= 1 ? apply(obj) : this.iterate(n - 1, apply(obj));
   }
 
+  public void _free();
+
+  public RefOperator<T> addRef();
+
+  @com.simiacryptus.ref.lang.RefAware
   class RefOperatorWrapper<T> extends ReferenceCountingBase implements RefOperator<T> {
 
     private UnaryOperator<T> inner;
@@ -41,9 +63,27 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
       this.inner = inner;
     }
 
+    public static @SuppressWarnings("unused")
+    RefOperatorWrapper[] addRefs(RefOperatorWrapper[] array) {
+      if (array == null)
+        return null;
+      return java.util.Arrays.stream(array).filter((x) -> x != null).map(RefOperatorWrapper::addRef)
+          .toArray((x) -> new RefOperatorWrapper[x]);
+    }
+
     @Override
     public T apply(T t) {
       return inner.apply(t);
+    }
+
+    public @SuppressWarnings("unused")
+    void _free() {
+    }
+
+    public @Override
+    @SuppressWarnings("unused")
+    RefOperatorWrapper<T> addRef() {
+      return (RefOperatorWrapper<T>) super.addRef();
     }
   }
 }

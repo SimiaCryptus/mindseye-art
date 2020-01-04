@@ -20,11 +20,14 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class StaticVisionPipelineLayer implements VisionPipelineLayer {
+public @com.simiacryptus.ref.lang.RefAware
+class StaticVisionPipelineLayer extends ReferenceCountingBase
+    implements VisionPipelineLayer {
   public final AtomicReference<VisionPipeline<?>> reference = new AtomicReference<>();
 
   private final Layer layer;
@@ -36,8 +39,8 @@ public class StaticVisionPipelineLayer implements VisionPipelineLayer {
   }
 
   @Override
-  public String name() {
-    return layer.getName();
+  public Layer getLayer() {
+    return layer.addRef();
   }
 
   @Override
@@ -50,24 +53,54 @@ public class StaticVisionPipelineLayer implements VisionPipelineLayer {
     return pipelineName;
   }
 
+  public static @SuppressWarnings("unused")
+  StaticVisionPipelineLayer[] addRefs(StaticVisionPipelineLayer[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(StaticVisionPipelineLayer::addRef)
+        .toArray((x) -> new StaticVisionPipelineLayer[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  StaticVisionPipelineLayer[][] addRefs(StaticVisionPipelineLayer[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(StaticVisionPipelineLayer::addRefs)
+        .toArray((x) -> new StaticVisionPipelineLayer[x][]);
+  }
+
   @Override
-  public Layer getLayer() {
-    return layer.addRef();
+  public String name() {
+    return layer.getName();
   }
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
     com.simiacryptus.mindseye.art.StaticVisionPipelineLayer that = (com.simiacryptus.mindseye.art.StaticVisionPipelineLayer) o;
-    if (!Objects.equals(getPipelineName(), that.getPipelineName())) return false;
-    if (!Objects.equals(name(), that.name())) return false;
+    if (!Objects.equals(getPipelineName(), that.getPipelineName()))
+      return false;
+    if (!Objects.equals(name(), that.name()))
+      return false;
     return true;
   }
 
   @Override
   public int hashCode() {
     return getPipelineName().hashCode() ^ name().hashCode();
+  }
+
+  public @SuppressWarnings("unused")
+  void _free() {
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  StaticVisionPipelineLayer addRef() {
+    return (StaticVisionPipelineLayer) super.addRef();
   }
 
 }

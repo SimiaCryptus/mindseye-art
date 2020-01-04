@@ -34,28 +34,58 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.UUID;
 
-public class GramMatrixCenteredMatcher implements VisualModifier {
+public @com.simiacryptus.ref.lang.RefAware
+class GramMatrixCenteredMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixCenteredMatcher.class);
   private final Precision precision = Precision.Float;
   private boolean averaging = true;
   private boolean balanced = true;
   private int tileSize = 600;
 
+  public int getTileSize() {
+    return tileSize;
+  }
+
+  public GramMatrixCenteredMatcher setTileSize(int tileSize) {
+    this.tileSize = tileSize;
+    return this;
+  }
+
+  public boolean isAveraging() {
+    return averaging;
+  }
+
+  public GramMatrixCenteredMatcher setAveraging(boolean averaging) {
+    this.averaging = averaging;
+    return this;
+  }
+
+  public boolean isBalanced() {
+    return balanced;
+  }
+
+  public GramMatrixCenteredMatcher setBalanced(boolean balanced) {
+    this.balanced = balanced;
+    return this;
+  }
+
   @NotNull
   public static Layer loss(Tensor result, double mag, boolean averaging) {
-    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(), averaging ? new AvgReducerLayer() : new SumReducerLayer(), new LinearActivationLayer().setScale(Math.pow(mag, -2))};
+    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(),
+        averaging ? new AvgReducerLayer() : new SumReducerLayer(),
+        new LinearActivationLayer().setScale(Math.pow(mag, -2))};
     Layer layer = PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", mag));
     result.freeRef();
     return layer;
   }
 
   public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, Tensor... image) {
-    return Arrays.stream(image).flatMap(img -> {
+    return com.simiacryptus.ref.wrappers.RefArrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
-      return Arrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, false))
+      return com.simiacryptus.ref.wrappers.RefArrays
+          .stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, false))
           .map(selector -> {
             //log.info(selector.toString());
             Tensor tile = selector.eval(img).getData().get(0);
@@ -82,13 +112,15 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
   public static UUID getAppendUUID(PipelineNetwork network, Class<GramianLayer> layerClass) {
     DAGNode head = network.getHead();
     Layer layer = head.getLayer();
-    if (null == layer) return UUID.randomUUID();
+    if (null == layer)
+      return UUID.randomUUID();
     return UUID.nameUUIDFromBytes((layer.getId().toString() + layerClass.getName()).getBytes());
   }
 
   @Override
   public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
-    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, null, visualModifierParameters.style);
+    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, null,
+        visualModifierParameters.style);
     visualModifierParameters.freeRef();
     return pipelineNetwork;
   }
@@ -97,40 +129,14 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
   public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor cov, Tensor... image) {
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
     network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
-    int pixels = Arrays.stream(image).mapToInt(x -> {
+    int pixels = com.simiacryptus.ref.wrappers.RefArrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
-    if (null == cov) cov = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), image);
+    if (null == cov)
+      cov = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), image);
     double mag = balanced ? cov.rms() : 1;
     network.add(loss(cov, mag, isAveraging())).freeRef();
     return (PipelineNetwork) network.freeze();
-  }
-
-  public boolean isAveraging() {
-    return averaging;
-  }
-
-  public GramMatrixCenteredMatcher setAveraging(boolean averaging) {
-    this.averaging = averaging;
-    return this;
-  }
-
-  public boolean isBalanced() {
-    return balanced;
-  }
-
-  public GramMatrixCenteredMatcher setBalanced(boolean balanced) {
-    this.balanced = balanced;
-    return this;
-  }
-
-  public int getTileSize() {
-    return tileSize;
-  }
-
-  public GramMatrixCenteredMatcher setTileSize(int tileSize) {
-    this.tileSize = tileSize;
-    return this;
   }
 }

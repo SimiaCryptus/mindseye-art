@@ -23,10 +23,9 @@ import com.simiacryptus.mindseye.art.photo.affinity.ContextAffinity;
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-public class MultivariateFrameOfReference {
+public @com.simiacryptus.ref.lang.RefAware
+class MultivariateFrameOfReference {
   public final SimpleMatrix invCov;
   public final SimpleMatrix means;
   public final SimpleMatrix rms;
@@ -37,7 +36,8 @@ public class MultivariateFrameOfReference {
     this(a, b, mixing, 1e-4);
   }
 
-  public MultivariateFrameOfReference(MultivariateFrameOfReference a, MultivariateFrameOfReference b, double mixing, double epsilon) {
+  public MultivariateFrameOfReference(MultivariateFrameOfReference a, MultivariateFrameOfReference b, double mixing,
+                                      double epsilon) {
     means = ContextAffinity.mix(b.means, a.means, mixing);
     rms = ContextAffinity.mix(b.rms, a.rms, mixing);
     cov = ContextAffinity.mix(b.cov, a.cov, mixing);
@@ -45,11 +45,12 @@ public class MultivariateFrameOfReference {
     this.invCov = safeInvert(cov, epsilon);
   }
 
-  public MultivariateFrameOfReference(Supplier<Stream<double[]>> fn, int channels) {
+  public MultivariateFrameOfReference(Supplier<com.simiacryptus.ref.wrappers.RefStream<double[]>> fn, int channels) {
     this(fn, channels, 1e-4);
   }
 
-  public MultivariateFrameOfReference(Supplier<Stream<double[]>> fn, int channels, double epsilon) {
+  public MultivariateFrameOfReference(Supplier<com.simiacryptus.ref.wrappers.RefStream<double[]>> fn, int channels,
+                                      double epsilon) {
     this.dimension = channels;
     means = ContextAffinity.means(fn, this.dimension);
     rms = ContextAffinity.magnitude(means, fn, channels);
@@ -68,7 +69,8 @@ public class MultivariateFrameOfReference {
   }
 
   public double[] adjust(double[] pixel) {
-    return IntStream.range(0, pixel.length).mapToDouble(c -> ((pixel[c]) - this.means.get(c)) / this.rms.get(c)).toArray();
+    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, pixel.length)
+        .mapToDouble(c -> ((pixel[c]) - this.means.get(c)) / this.rms.get(c)).toArray();
   }
 
   public double dist(double[] vector) {

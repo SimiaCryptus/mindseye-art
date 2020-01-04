@@ -21,10 +21,13 @@ package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import java.util.Objects;
 
-public class AppendVisionPipelineLayer implements VisionPipelineLayer {
+public @com.simiacryptus.ref.lang.RefAware
+class AppendVisionPipelineLayer extends ReferenceCountingBase
+    implements VisionPipelineLayer {
 
   private final VisionPipelineLayer inner;
   private final Layer layer;
@@ -32,27 +35,6 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
   public AppendVisionPipelineLayer(VisionPipelineLayer inner, Layer layer) {
     this.inner = inner;
     this.layer = layer;
-  }
-
-  @Override
-  public String name() {
-    return inner.name() + "/append=" + layer.getName();
-  }
-
-  @Override
-  public VisionPipeline<VisionPipelineLayer> getPipeline() {
-    final VisionPipeline<?> innerPipeline = inner.getPipeline();
-    final VisionPipeline<VisionPipelineLayer> pipeline = new VisionPipeline<>(
-        getPipelineName(),
-        innerPipeline.getLayers().keySet().stream().map(x -> new AppendVisionPipelineLayer(x, layer)).toArray(i -> new VisionPipelineLayer[i])
-    );
-    innerPipeline.freeRef();
-    return pipeline;
-  }
-
-  @Override
-  public String getPipelineName() {
-    return inner.getPipelineName();
   }
 
   @Override
@@ -68,17 +50,67 @@ public class AppendVisionPipelineLayer implements VisionPipelineLayer {
   }
 
   @Override
+  public VisionPipeline<VisionPipelineLayer> getPipeline() {
+    final VisionPipeline<?> innerPipeline = inner.getPipeline();
+    final VisionPipeline<VisionPipelineLayer> pipeline = new VisionPipeline<>(getPipelineName(),
+        innerPipeline.getLayers().keySet().stream().map(x -> new AppendVisionPipelineLayer(x, layer))
+            .toArray(i -> new VisionPipelineLayer[i]));
+    innerPipeline.freeRef();
+    return pipeline;
+  }
+
+  @Override
+  public String getPipelineName() {
+    return inner.getPipelineName();
+  }
+
+  public static @SuppressWarnings("unused")
+  AppendVisionPipelineLayer[] addRefs(AppendVisionPipelineLayer[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRef)
+        .toArray((x) -> new AppendVisionPipelineLayer[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  AppendVisionPipelineLayer[][] addRefs(AppendVisionPipelineLayer[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRefs)
+        .toArray((x) -> new AppendVisionPipelineLayer[x][]);
+  }
+
+  @Override
+  public String name() {
+    return inner.name() + "/append=" + layer.getName();
+  }
+
+  @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
     com.simiacryptus.mindseye.art.VisionPipelineLayer that = (com.simiacryptus.mindseye.art.VisionPipelineLayer) o;
-    if (!Objects.equals(getPipelineName(), that.getPipelineName())) return false;
-    if (!Objects.equals(name(), that.name())) return false;
+    if (!Objects.equals(getPipelineName(), that.getPipelineName()))
+      return false;
+    if (!Objects.equals(name(), that.name()))
+      return false;
     return true;
   }
 
   @Override
   public int hashCode() {
     return getPipelineName().hashCode() ^ name().hashCode();
+  }
+
+  public @SuppressWarnings("unused")
+  void _free() {
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  AppendVisionPipelineLayer addRef() {
+    return (AppendVisionPipelineLayer) super.addRef();
   }
 }

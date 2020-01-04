@@ -38,10 +38,14 @@ import org.slf4j.LoggerFactory;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
-public class NetworkTest extends LayerTestBase {
+public @com.simiacryptus.ref.lang.RefAware
+class NetworkTest extends LayerTestBase {
   private static final Logger log = LoggerFactory.getLogger(NetworkTest.class);
-  private static final BufferedImage styleImage = ImageArtUtil.load(new NullNotebookOutput(), "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200);
-  private static final BufferedImage contentImage = ImageArtUtil.load(new NullNotebookOutput(), "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg", 500);
+  private static final BufferedImage styleImage = ImageArtUtil.load(new NullNotebookOutput(),
+      "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200);
+  private static final BufferedImage contentImage = ImageArtUtil.load(new NullNotebookOutput(),
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg",
+      500);
   private static final DAGNetwork layer = build();
 
   public NetworkTest() {
@@ -52,14 +56,30 @@ public class NetworkTest extends LayerTestBase {
     testingBatchSize = 1;
   }
 
+  public static @SuppressWarnings("unused")
+  NetworkTest[] addRefs(NetworkTest[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRef)
+        .toArray((x) -> new NetworkTest[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  NetworkTest[][] addRefs(NetworkTest[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRefs)
+        .toArray((x) -> new NetworkTest[x][]);
+  }
+
   private static DAGNetwork build() {
     Tensor styleTensor = Tensor.fromRGB(styleImage);
-    DAGNetwork dagNetwork = MultiPrecision.setPrecision(SumInputsLayer.combine(
-        new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleTensor),
-        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleTensor),
-        new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, Tensor.fromRGB(contentImage))
-            .andThenWrap(new LinearActivationLayer().setScale(1e-1).freeze())
-    ), Precision.Float);
+    DAGNetwork dagNetwork = MultiPrecision.setPrecision(
+        SumInputsLayer.combine(new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleTensor),
+            new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleTensor),
+            new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, Tensor.fromRGB(contentImage))
+                .andThenWrap(new LinearActivationLayer().setScale(1e-1).freeze())),
+        Precision.Float);
     styleTensor.freeRef();
     return dagNetwork;
   }
@@ -72,5 +92,15 @@ public class NetworkTest extends LayerTestBase {
   @Override
   public Layer getLayer(int[][] inputSize, Random random) {
     return layer.copy();
+  }
+
+  public @SuppressWarnings("unused")
+  void _free() {
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  NetworkTest addRef() {
+    return (NetworkTest) super.addRef();
   }
 }

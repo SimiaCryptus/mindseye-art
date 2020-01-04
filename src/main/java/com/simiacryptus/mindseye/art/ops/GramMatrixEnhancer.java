@@ -37,10 +37,10 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.UUID;
 
-public class GramMatrixEnhancer implements VisualModifier {
+public @com.simiacryptus.ref.lang.RefAware
+class GramMatrixEnhancer implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixEnhancer.class);
   private final Precision precision = Precision.Float;
   private double min = -1;
@@ -50,41 +50,31 @@ public class GramMatrixEnhancer implements VisualModifier {
   private int tileSize = 600;
   private int padding = 8;
 
-  @NotNull
-  public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
-    PipelineNetwork rmsNetwork = new PipelineNetwork(1);
-    rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
-    final Layer nextHead = new LinearActivationLayer().setScale(-Math.pow(mag, -2));
-    final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
-    rmsNetwork.add(nextHead1, rmsNetwork.add(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()), rmsNetwork.add(nextHead, rmsNetwork.add(new ProductLayer(), rmsNetwork.getInput(0), rmsNetwork.constValueWrap(result))))).freeRef();
-    return rmsNetwork;
+  public double getMax() {
+    return max;
   }
 
-  @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
-    PipelineNetwork network = visualModifierParameters.network;
-    network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
-    final UUID uuid = GramMatrixMatcher.getAppendUUID(network, GramianLayer.class);
-    int pixels = Arrays.stream(visualModifierParameters.style).mapToInt(x -> {
-      int[] dimensions = x.getDimensions();
-      return dimensions[0] * dimensions[1];
-    }).sum();
+  public GramMatrixEnhancer setMax(double max) {
+    this.max = max;
+    return this;
+  }
 
-    final PipelineNetwork copy = network.copyPipeline();
-    copy.add(new GramianLayer(uuid).setPrecision(precision)).freeRef();
-    Tensor result = GramMatrixMatcher.eval(pixels, copy, getTileSize(), padding, visualModifierParameters.style);
-    copy.freeRef();
+  public double getMin() {
+    return min;
+  }
 
-    if (null != visualModifierParameters.mask) {
-      final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network, visualModifierParameters.mask, Precision.Float));
-      network.add(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
-    }
-    visualModifierParameters.freeRef();
-    network.add(new GramianLayer(uuid).setPrecision(precision)).freeRef();
+  public GramMatrixEnhancer setMin(double min) {
+    this.min = min;
+    return this;
+  }
 
-    double mag = balanced ? result.rms() : 1;
-    network.add(loss(result, mag, isAveraging())).freeRef();
-    return (PipelineNetwork) network.freeze();
+  public int getTileSize() {
+    return tileSize;
+  }
+
+  public GramMatrixEnhancer setTileSize(int tileSize) {
+    this.tileSize = tileSize;
+    return this;
   }
 
   public boolean isAveraging() {
@@ -105,31 +95,47 @@ public class GramMatrixEnhancer implements VisualModifier {
     return this;
   }
 
-  public int getTileSize() {
-    return tileSize;
+  @NotNull
+  public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
+    PipelineNetwork rmsNetwork = new PipelineNetwork(1);
+    rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
+    final Layer nextHead = new LinearActivationLayer().setScale(-Math.pow(mag, -2));
+    final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
+    rmsNetwork
+        .add(nextHead1,
+            rmsNetwork.add(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()),
+                rmsNetwork.add(nextHead,
+                    rmsNetwork.add(new ProductLayer(), rmsNetwork.getInput(0), rmsNetwork.constValueWrap(result)))))
+        .freeRef();
+    return rmsNetwork;
   }
 
-  public GramMatrixEnhancer setTileSize(int tileSize) {
-    this.tileSize = tileSize;
-    return this;
-  }
+  @Override
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    PipelineNetwork network = visualModifierParameters.network;
+    network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
+    final UUID uuid = GramMatrixMatcher.getAppendUUID(network, GramianLayer.class);
+    int pixels = com.simiacryptus.ref.wrappers.RefArrays.stream(visualModifierParameters.style).mapToInt(x -> {
+      int[] dimensions = x.getDimensions();
+      return dimensions[0] * dimensions[1];
+    }).sum();
 
-  public double getMax() {
-    return max;
-  }
+    final PipelineNetwork copy = network.copyPipeline();
+    copy.add(new GramianLayer(uuid).setPrecision(precision)).freeRef();
+    Tensor result = GramMatrixMatcher.eval(pixels, copy, getTileSize(), padding, visualModifierParameters.style);
+    copy.freeRef();
 
-  public GramMatrixEnhancer setMax(double max) {
-    this.max = max;
-    return this;
-  }
+    if (null != visualModifierParameters.mask) {
+      final Tensor boolMask = MomentMatcher
+          .toMask(MomentMatcher.transform(network, visualModifierParameters.mask, Precision.Float));
+      network.add(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
+    }
+    visualModifierParameters.freeRef();
+    network.add(new GramianLayer(uuid).setPrecision(precision)).freeRef();
 
-  public double getMin() {
-    return min;
-  }
-
-  public GramMatrixEnhancer setMin(double min) {
-    this.min = min;
-    return this;
+    double mag = balanced ? result.rms() : 1;
+    network.add(loss(result, mag, isAveraging())).freeRef();
+    return (PipelineNetwork) network.freeze();
   }
 
   public GramMatrixEnhancer setMinMax(double minValue, double maxValue) {
@@ -138,14 +144,16 @@ public class GramMatrixEnhancer implements VisualModifier {
     return this;
   }
 
-  public static class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
+  public static @com.simiacryptus.ref.lang.RefAware
+  class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
     @NotNull
     public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
       PipelineNetwork rmsNetwork = new PipelineNetwork(1);
       rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
       final Layer nextHead = new LinearActivationLayer().setScale(-Math.pow(mag, -2));
       final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
-      rmsNetwork.add(nextHead1, rmsNetwork.add(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()), rmsNetwork.add(nextHead, rmsNetwork.add(new AbsActivationLayer())))).freeRef();
+      rmsNetwork.add(nextHead1, rmsNetwork.add(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()),
+          rmsNetwork.add(nextHead, rmsNetwork.add(new AbsActivationLayer())))).freeRef();
       return rmsNetwork;
     }
   }

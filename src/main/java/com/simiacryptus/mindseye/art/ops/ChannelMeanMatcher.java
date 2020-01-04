@@ -28,40 +28,20 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-
-public class ChannelMeanMatcher implements VisualModifier {
+public @com.simiacryptus.ref.lang.RefAware
+class ChannelMeanMatcher implements VisualModifier {
 
   private boolean balanced = true;
   private boolean averaging = true;
   private int tileSize = 600;
 
-  @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
-    Tensor meanSignal = null;
-    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, meanSignal, visualModifierParameters.style);
-    visualModifierParameters.freeRef();
-    return pipelineNetwork;
+  public boolean isAveraging() {
+    return averaging;
   }
 
-  @NotNull
-  public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor meanSignal, Tensor... image) {
-    network = network.copyPipeline();
-    network.add(new BandAvgReducerLayer());
-    if (meanSignal == null) {
-      final PipelineNetwork meanNetwork = PipelineNetwork.build(1, new ImgTileSubnetLayer(network.addRef(), tileSize, tileSize), new BandAvgReducerLayer());
-      meanSignal = Arrays.stream(image).map(tensor -> meanNetwork.eval(tensor).getData().get(0)
-      ).reduce((a, b) -> {
-        Tensor c = a.addAndFree(b);
-        b.freeRef();
-        return c;
-      }).get().scaleInPlace(1.0 / image.length);
-      meanNetwork.freeRef();
-    }
-    double mag = isBalanced() ? meanSignal.rms() : 1;
-    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)), new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(), new LinearActivationLayer().setScale(Math.pow(mag, -2))};
-    network.add(PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", mag))).freeRef();
-    return (PipelineNetwork) network.freeze();
+  public ChannelMeanMatcher setAveraging(boolean averaging) {
+    this.averaging = averaging;
+    return this;
   }
 
   public boolean isBalanced() {
@@ -73,12 +53,35 @@ public class ChannelMeanMatcher implements VisualModifier {
     return this;
   }
 
-  public boolean isAveraging() {
-    return averaging;
+  @Override
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    Tensor meanSignal = null;
+    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, meanSignal,
+        visualModifierParameters.style);
+    visualModifierParameters.freeRef();
+    return pipelineNetwork;
   }
 
-  public ChannelMeanMatcher setAveraging(boolean averaging) {
-    this.averaging = averaging;
-    return this;
+  @NotNull
+  public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor meanSignal, Tensor... image) {
+    network = network.copyPipeline();
+    network.add(new BandAvgReducerLayer());
+    if (meanSignal == null) {
+      final PipelineNetwork meanNetwork = PipelineNetwork.build(1,
+          new ImgTileSubnetLayer(network.addRef(), tileSize, tileSize), new BandAvgReducerLayer());
+      meanSignal = com.simiacryptus.ref.wrappers.RefArrays.stream(image)
+          .map(tensor -> meanNetwork.eval(tensor).getData().get(0)).reduce((a, b) -> {
+            Tensor c = a.addAndFree(b);
+            b.freeRef();
+            return c;
+          }).get().scaleInPlace(1.0 / image.length);
+      meanNetwork.freeRef();
+    }
+    double mag = isBalanced() ? meanSignal.rms() : 1;
+    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)), new SquareActivationLayer(),
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
+        new LinearActivationLayer().setScale(Math.pow(mag, -2))};
+    network.add(PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", mag))).freeRef();
+    return (PipelineNetwork) network.freeze();
   }
 }

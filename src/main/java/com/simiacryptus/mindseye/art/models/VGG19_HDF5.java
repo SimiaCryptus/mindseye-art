@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
+@com.simiacryptus.ref.lang.RefAware
 class VGG19_HDF5 {
 
   public static final Logger log = LoggerFactory.getLogger(VGG19_HDF5.class);
@@ -48,31 +49,6 @@ class VGG19_HDF5 {
 
   public VGG19_HDF5(Hdf5Archive hdf5) {
     this.hdf5 = hdf5;
-  }
-
-  @Nonnull
-  protected static Layer add(@Nonnull Layer layer, @Nonnull PipelineNetwork model) {
-    if (layer instanceof Explodable) {
-      Layer explode = ((Explodable) layer).explode();
-      try {
-        if (explode instanceof DAGNetwork) {
-          log.info(String.format(
-              "Exploded %s to %s (%s nodes)",
-              layer.getName(),
-              explode.getClass().getSimpleName(),
-              ((DAGNetwork) explode).getNodes().size()
-          ));
-        } else {
-          log.info(String.format("Exploded %s to %s (%s nodes)", layer.getName(), explode.getClass().getSimpleName(), explode.getName()));
-        }
-        return add(explode, model);
-      } finally {
-        layer.freeRef();
-      }
-    } else {
-      model.add(layer).freeRef();
-      return layer;
-    }
   }
 
   public static VGG19_HDF5 fromHDF5() {
@@ -90,6 +66,28 @@ class VGG19_HDF5 {
       throw e;
     } catch (Throwable e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  @Nonnull
+  protected static Layer add(@Nonnull Layer layer, @Nonnull PipelineNetwork model) {
+    if (layer instanceof Explodable) {
+      Layer explode = ((Explodable) layer).explode();
+      try {
+        if (explode instanceof DAGNetwork) {
+          log.info(String.format("Exploded %s to %s (%s nodes)", layer.getName(), explode.getClass().getSimpleName(),
+              ((DAGNetwork) explode).getNodes().size()));
+        } else {
+          log.info(String.format("Exploded %s to %s (%s nodes)", layer.getName(), explode.getClass().getSimpleName(),
+              explode.getName()));
+        }
+        return add(explode, model);
+      } finally {
+        layer.freeRef();
+      }
+    } else {
+      model.add(layer).freeRef();
+      return layer;
     }
   }
 
@@ -171,17 +169,16 @@ class VGG19_HDF5 {
       add(new ImgModulusPaddingLayer(-7, -7), pipeline);
     }
 
-    add(new ConvolutionLayer(7, 7, 512, 4096)
-        .setStrideXY(1, 1)
-        .setPaddingXY(0, 0).set(hdf5.readDataSet("param_0", "layer_38").reshapeCast(7, 7, 512, 4096).permuteDimensions(0, 1, 3, 2)), pipeline);
+    add(new ConvolutionLayer(7, 7, 512, 4096).setStrideXY(1, 1).setPaddingXY(0, 0).set(
+        hdf5.readDataSet("param_0", "layer_38").reshapeCast(7, 7, 512, 4096).permuteDimensions(0, 1, 3, 2)), pipeline);
 
     add(new ImgBandBiasLayer(4096).set((hdf5.readDataSet("param_1", "layer_38"))), pipeline);
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
 
   public void phase3a(PipelineNetwork pipeline) {
-    add(new ConvolutionLayer(1, 1, 4096, 4096)
-        .setPaddingXY(0, 0).set(hdf5.readDataSet("param_0", "layer_40").permuteDimensions(fullyconnectedOrder)), pipeline);
+    add(new ConvolutionLayer(1, 1, 4096, 4096).setPaddingXY(0, 0)
+        .set(hdf5.readDataSet("param_0", "layer_40").permuteDimensions(fullyconnectedOrder)), pipeline);
     add(new ImgBandBiasLayer(4096).set((hdf5.readDataSet("param_1", "layer_40"))), pipeline);
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
@@ -193,29 +190,25 @@ class VGG19_HDF5 {
       Layer layer = new ImgModulusPaddingLayer(-size, -size);
       add(layer, pipeline);
     }
-    add(new PoolingLayer()
-        .setMode(PoolingLayer.PoolingMode.Max)
-        .setWindowXY(size, size)
-        .setStrideXY(size, size), pipeline);
+    add(new PoolingLayer().setMode(PoolingLayer.PoolingMode.Max).setWindowXY(size, size).setStrideXY(size, size),
+        pipeline);
   }
 
-  public void addConvolutionLayer(final int radius, final int inputBands, final int outputBands, final ActivationLayer.Mode activationMode, final String hdf_group, PipelineNetwork pipeline) {
-    add(new ConvolutionLayer(radius, radius, inputBands, outputBands)
-        .setPaddingXY(0, 0).set(hdf5.readDataSet("param_0", hdf_group).permuteDimensions(convolutionOrder)), pipeline);
+  public void addConvolutionLayer(final int radius, final int inputBands, final int outputBands,
+                                  final ActivationLayer.Mode activationMode, final String hdf_group, PipelineNetwork pipeline) {
+    add(new ConvolutionLayer(radius, radius, inputBands, outputBands).setPaddingXY(0, 0)
+        .set(hdf5.readDataSet("param_0", hdf_group).permuteDimensions(convolutionOrder)), pipeline);
     add(new ImgBandBiasLayer(outputBands).set((hdf5.readDataSet("param_1", hdf_group))), pipeline);
     add(new ActivationLayer(activationMode), pipeline);
   }
 
   public void phase3b(PipelineNetwork pipeline) {
-    add(new ConvolutionLayer(1, 1, 4096, 1000)
-        .setPaddingXY(0, 0).set(hdf5.readDataSet("param_0", "layer_42").permuteDimensions(fullyconnectedOrder)), pipeline);
+    add(new ConvolutionLayer(1, 1, 4096, 1000).setPaddingXY(0, 0)
+        .set(hdf5.readDataSet("param_0", "layer_42").permuteDimensions(fullyconnectedOrder)), pipeline);
     add(new ImgBandBiasLayer(1000).set((hdf5.readDataSet("param_1", "layer_42"))), pipeline);
-    add(new SoftmaxActivationLayer()
-        .setAlgorithm(SoftmaxActivationLayer.SoftmaxAlgorithm.ACCURATE)
+    add(new SoftmaxActivationLayer().setAlgorithm(SoftmaxActivationLayer.SoftmaxAlgorithm.ACCURATE)
         .setMode(SoftmaxActivationLayer.SoftmaxMode.CHANNEL), pipeline);
-    add(new BandReducerLayer()
-        .setMode(PoolingLayer.PoolingMode.Max), pipeline);
+    add(new BandReducerLayer().setMode(PoolingLayer.PoolingMode.Max), pipeline);
   }
-
 
 }

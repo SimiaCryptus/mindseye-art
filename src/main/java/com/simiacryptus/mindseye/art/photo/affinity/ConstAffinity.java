@@ -19,13 +19,13 @@
 
 package com.simiacryptus.mindseye.art.photo.affinity;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-public class ConstAffinity implements RasterAffinity {
+public @com.simiacryptus.ref.lang.RefAware
+class ConstAffinity implements RasterAffinity {
   @Override
-  public List<double[]> affinityList(List<int[]> graphEdges) {
-    return graphEdges.stream().map(x -> Arrays.stream(x).mapToDouble(i -> 1.0).toArray()).collect(Collectors.toList());
+  public com.simiacryptus.ref.wrappers.RefList<double[]> affinityList(
+      com.simiacryptus.ref.wrappers.RefList<int[]> graphEdges) {
+    return graphEdges.stream()
+        .map(x -> com.simiacryptus.ref.wrappers.RefArrays.stream(x).mapToDouble(i -> 1.0).toArray())
+        .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
   }
 }

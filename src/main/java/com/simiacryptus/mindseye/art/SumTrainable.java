@@ -19,24 +19,22 @@
 
 package com.simiacryptus.mindseye.art;
 
-import com.simiacryptus.ref.lang.ReferenceCounting;
-import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.mindseye.eval.Trainable;
 import com.simiacryptus.mindseye.lang.DeltaSet;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.PointSample;
 import com.simiacryptus.mindseye.lang.StateSet;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
+import com.simiacryptus.ref.lang.ReferenceCounting;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-public class SumTrainable extends ReferenceCountingBase implements Trainable {
+public @com.simiacryptus.ref.lang.RefAware
+class SumTrainable extends ReferenceCountingBase implements Trainable {
 
   private static final Logger logger = LoggerFactory.getLogger(SumTrainable.class);
 
@@ -46,9 +44,36 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
     this.inner = inner;
   }
 
+  public Trainable[] getInner() {
+    return inner;
+  }
+
+  @NotNull
+  @Override
+  public Layer getLayer() {
+    return null;
+  }
+
+  public static @SuppressWarnings("unused")
+  SumTrainable[] addRefs(SumTrainable[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(SumTrainable::addRef)
+        .toArray((x) -> new SumTrainable[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  SumTrainable[][] addRefs(SumTrainable[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(SumTrainable::addRefs)
+        .toArray((x) -> new SumTrainable[x][]);
+  }
+
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
-    List<PointSample> results = Arrays.stream(getInner()).map(x -> x.measure(monitor)).collect(Collectors.toList());
+    com.simiacryptus.ref.wrappers.RefList<PointSample> results = com.simiacryptus.ref.wrappers.RefArrays
+        .stream(getInner()).map(x -> x.measure(monitor)).collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
     DeltaSet<UUID> delta = results.stream().map(x -> x.delta.addRef()).reduce((a, b) -> {
       DeltaSet<UUID> c = a.addInPlace(b);
       b.freeRef();
@@ -70,19 +95,15 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
     return pointSample;
   }
 
-  @NotNull
-  @Override
-  public Layer getLayer() {
-    return null;
-  }
-
-  @Override
-  protected void _free() {
-    if (null != getInner()) Arrays.stream(getInner()).forEach(ReferenceCounting::freeRef);
+  public void _free() {
+    if (null != getInner())
+      com.simiacryptus.ref.wrappers.RefArrays.stream(getInner()).forEach(ReferenceCounting::freeRef);
     super._free();
   }
 
-  public Trainable[] getInner() {
-    return inner;
+  public @Override
+  @SuppressWarnings("unused")
+  SumTrainable addRef() {
+    return (SumTrainable) super.addRef();
   }
 }

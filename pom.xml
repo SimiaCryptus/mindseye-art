@@ -193,6 +193,11 @@
             <groupId>org.bytedeco.javacpp-presets</groupId>
             <artifactId>hdf5</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.simiacryptus</groupId>
+            <artifactId>refcount-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

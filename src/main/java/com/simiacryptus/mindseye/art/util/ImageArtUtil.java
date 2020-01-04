@@ -49,12 +49,24 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
-public class ImageArtUtil {
+public @com.simiacryptus.ref.lang.RefAware
+class ImageArtUtil {
+
+  @Nonnull
+  public static Configuration getHadoopConfig() {
+    Configuration configuration = new Configuration(false);
+    File tempDir = new File("temp");
+    tempDir.mkdirs();
+    configuration.set("hadoop.tmp.dir", tempDir.getAbsolutePath());
+    configuration.set("fs.git.impl", com.simiacryptus.hadoop_jgit.GitFileSystem.class.getCanonicalName());
+    configuration.set("fs.s3a.impl", S3AFileSystem.class.getCanonicalName());
+    configuration.set("fs.s3.impl", S3AFileSystem.class.getCanonicalName());
+    configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getCanonicalName());
+    return configuration;
+  }
 
   public static Closeable cudaReports(NotebookOutput log, boolean interceptLog) {
     Closeable handler_info = log.getHttpd().addGET("cuda/info.txt", "text/plain", outputStream -> {
@@ -83,41 +95,42 @@ public class ImageArtUtil {
         }
       }
     });
-    if (interceptLog) log.subreport(sublog -> {
-      CudaSystem.addLog(new Consumer<String>() {
-        PrintWriter out;
-        long remainingOut = 0;
-        long killAt = 0;
+    if (interceptLog)
+      log.subreport(sublog -> {
+        CudaSystem.addLog(new com.simiacryptus.ref.wrappers.RefConsumer<String>() {
+          PrintWriter out;
+          long remainingOut = 0;
+          long killAt = 0;
 
-        @Override
-        public void accept(String formattedMessage) {
-          if (null == out) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd_HH_mm_ss");
-            String date = dateFormat.format(new Date());
-            try {
-              String caption = String.format("Log at %s", date);
-              String filename = String.format("%s_cuda.log", date);
-              out = new PrintWriter(sublog.file(filename));
-              sublog.p("[%s](etc/%s)", caption, filename);
-              sublog.write();
-            } catch (Throwable e) {
-              throw new RuntimeException(e);
+          @Override
+          public void accept(String formattedMessage) {
+            if (null == out) {
+              SimpleDateFormat dateFormat = new SimpleDateFormat("dd_HH_mm_ss");
+              String date = dateFormat.format(new Date());
+              try {
+                String caption = String.format("Log at %s", date);
+                String filename = String.format("%s_cuda.log", date);
+                out = new PrintWriter(sublog.file(filename));
+                sublog.p("[%s](etc/%s)", caption, filename);
+                sublog.write();
+              } catch (Throwable e) {
+                throw new RuntimeException(e);
+              }
+              killAt = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
+              remainingOut = 10L * 1024 * 1024;
             }
-            killAt = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
-            remainingOut = 10L * 1024 * 1024;
+            out.println(formattedMessage);
+            out.flush();
+            int length = formattedMessage.length();
+            remainingOut -= length;
+            if (remainingOut < 0 || killAt < System.currentTimeMillis()) {
+              out.close();
+              out = null;
+            }
           }
-          out.println(formattedMessage);
-          out.flush();
-          int length = formattedMessage.length();
-          remainingOut -= length;
-          if (remainingOut < 0 || killAt < System.currentTimeMillis()) {
-            out.close();
-            out = null;
-          }
-        }
-      });
-      return null;
-    }, log.getName() + "_" + "cuda_log");
+        });
+        return null;
+      }, log.getName() + "_" + "cuda_log");
 
     return new Closeable() {
       @Override
@@ -130,25 +143,25 @@ public class ImageArtUtil {
   }
 
   @NotNull
-  public static Map<String, PipelineNetwork> convertPipeline(GraphDef graphDef, String... nodes) {
+  public static com.simiacryptus.ref.wrappers.RefMap<String, PipelineNetwork> convertPipeline(GraphDef graphDef,
+                                                                                              String... nodes) {
     GraphModel graphModel = new GraphModel(graphDef.toByteArray());
-    Map<String, PipelineNetwork> graphs = new HashMap<>();
+    com.simiacryptus.ref.wrappers.RefMap<String, PipelineNetwork> graphs = new com.simiacryptus.ref.wrappers.RefHashMap<>();
     TFConverter tfConverter = new TFConverter();
-    TFLayer tfLayer0 = new TFLayer(
-        graphModel.getChild(nodes[0]).subgraph(new HashSet<>(Arrays.asList())).toByteArray(),
-        new HashMap<>(),
-        nodes[0],
-        "input");
+    TFLayer tfLayer0 = new TFLayer(graphModel.getChild(nodes[0])
+        .subgraph(new com.simiacryptus.ref.wrappers.RefHashSet<>(com.simiacryptus.ref.wrappers.RefArrays.asList()))
+        .toByteArray(), new com.simiacryptus.ref.wrappers.RefHashMap<>(), nodes[0], "input");
     graphs.put(nodes[0], tfConverter.convert(tfLayer0));
     tfLayer0.freeRef();
     for (int i = 1; i < nodes.length; i++) {
       String currentNode = nodes[i];
       String priorNode = nodes[i - 1];
       TFLayer tfLayer1 = new TFLayer(
-          graphModel.getChild(currentNode).subgraph(new HashSet<>(Arrays.asList(priorNode))).toByteArray(),
-          new HashMap<>(),
-          currentNode,
-          priorNode);
+          graphModel.getChild(currentNode)
+              .subgraph(new com.simiacryptus.ref.wrappers.RefHashSet<>(
+                  com.simiacryptus.ref.wrappers.RefArrays.asList(priorNode)))
+              .toByteArray(),
+          new com.simiacryptus.ref.wrappers.RefHashMap<>(), currentNode, priorNode);
       graphs.put(currentNode, tfConverter.convert(tfLayer1));
       tfLayer1.freeRef();
     }
@@ -169,19 +182,25 @@ public class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
-        return Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
-          Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
-          b.freeRef();
-          return r;
-        }).get();
+        Tensor sampleImage = com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\+ +"))
+            .map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
+        return com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\+ +"))
+            .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
+            .reduce((a, b) -> {
+              Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
+              b.freeRef();
+              return r;
+            }).get();
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
-        return Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
-          Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
-          b.freeRef();
-          return r;
-        }).get();
+        Tensor sampleImage = com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\* +"))
+            .map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
+        return com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\* +"))
+            .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
+            .reduce((a, b) -> {
+              Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
+              b.freeRef();
+              return r;
+            }).get();
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
         return new Plasma().paint(width, width);
       } else if (fileStr.trim().toLowerCase().equals("noise")) {
@@ -200,19 +219,25 @@ public class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
-        return Arrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
-          Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
-          b.freeRef();
-          return r;
-        }).get();
+        Tensor sampleImage = com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\+ +"))
+            .map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
+        return com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\+ +"))
+            .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
+            .reduce((a, b) -> {
+              Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
+              b.freeRef();
+              return r;
+            }).get();
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
-        return Arrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1])).reduce((a, b) -> {
-          Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
-          b.freeRef();
-          return r;
-        }).get();
+        Tensor sampleImage = com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\* +"))
+            .map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
+        return com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\* +"))
+            .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
+            .reduce((a, b) -> {
+              Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
+              b.freeRef();
+              return r;
+            }).get();
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
         return new Plasma().paint(width, height);
       } else if (fileStr.trim().toLowerCase().equals("noise")) {
@@ -242,7 +267,8 @@ public class ImageArtUtil {
     } else if (fileStr.startsWith("http")) {
       try {
         BufferedImage read = ImageIO.read(new URL(fileStr));
-        if (null == read) throw new IllegalArgumentException("Error reading " + file);
+        if (null == read)
+          throw new IllegalArgumentException("Error reading " + file);
         return Tensor.fromRGB(read);
       } catch (Throwable e) {
         throw new RuntimeException("Error reading " + file, e);
@@ -251,7 +277,8 @@ public class ImageArtUtil {
     FileSystem fileSystem = getFileSystem(fileStr);
     Path path = new Path(fileStr);
     try {
-      if (!fileSystem.exists(path)) throw new IllegalArgumentException("Not Found: " + path);
+      if (!fileSystem.exists(path))
+        throw new IllegalArgumentException("Not Found: " + path);
       try (FSDataInputStream open = fileSystem.open(path)) {
         byte[] bytes = IOUtils.toByteArray(open);
         try (ByteArrayInputStream in = new ByteArrayInputStream(bytes)) {
@@ -274,27 +301,14 @@ public class ImageArtUtil {
     return fileSystem;
   }
 
-  @Nonnull
-  public static Configuration getHadoopConfig() {
-    Configuration configuration = new Configuration(false);
-    File tempDir = new File("temp");
-    tempDir.mkdirs();
-    configuration.set("hadoop.tmp.dir", tempDir.getAbsolutePath());
-    configuration.set("fs.git.impl", com.simiacryptus.hadoop_jgit.GitFileSystem.class.getCanonicalName());
-    configuration.set("fs.s3a.impl", S3AFileSystem.class.getCanonicalName());
-    configuration.set("fs.s3.impl", S3AFileSystem.class.getCanonicalName());
-    configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getCanonicalName());
-    return configuration;
-  }
-
   public static int[][] getIndexMap(final SimpleConvolutionLayer layer) {
     int[] kernelDimensions = layer.getKernelDimensions();
     double b = Math.sqrt(kernelDimensions[2]);
     int h = kernelDimensions[1];
     int w = kernelDimensions[0];
     int l = (int) (w * h * b);
-    return IntStream.range(0, (int) b).mapToObj(i -> {
-      return IntStream.range(0, l).map(j -> j + l * i).toArray();
+    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, (int) b).mapToObj(i -> {
+      return com.simiacryptus.ref.wrappers.RefIntStream.range(0, l).map(j -> j + l * i).toArray();
     }).toArray(i -> new int[i][]);
   }
 }

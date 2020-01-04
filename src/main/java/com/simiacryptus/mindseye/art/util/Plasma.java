@@ -23,12 +23,12 @@ import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.util.ImageUtil;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 
-public class Plasma {
+public @com.simiacryptus.ref.lang.RefAware
+class Plasma {
   private int bands;
   private double[] noiseAmplitude;
   private double noisePower;
@@ -37,95 +37,6 @@ public class Plasma {
     setNoisePower(2);
     setNoiseAmplitude(100);
     setBands(3);
-  }
-
-  @Nonnull
-  private static Tensor initSquare(final int bands) {
-    Tensor baseColor = new Tensor(1, 1, bands).setByCoord(c -> 100 + 200 * (Math.random() - 0.5));
-    Tensor tensor = new Tensor(2, 2, bands).setByCoord(c -> baseColor.get(0, 0, c.getCoords()[2]));
-    baseColor.freeRef();
-    return tensor;
-  }
-
-  public Tensor paint(final int width, final int height) {
-    Tensor initSquare = initSquare(bands);
-    Tensor expandPlasma = expandPlasma(initSquare, width, height);
-    initSquare.freeRef();
-    return expandPlasma;
-  }
-
-  @Nonnull
-  private Tensor expandPlasma(Tensor image, final int width, final int height) {
-    image.addRef();
-    while (image.getDimensions()[0] < Math.max(width, height)) {
-      final double factor = Math.pow(image.getDimensions()[0], noisePower);
-      Tensor newImage = expandPlasma(image, Arrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
-      image.freeRef();
-      image = newImage;
-    }
-    Tensor tensor = Tensor.fromRGB(ImageUtil.resize(image.toRgbImage(), width, height));
-    image.freeRef();
-    return tensor;
-  }
-
-  private Tensor expandPlasma(final Tensor seed, double... noise) {
-    int bands = seed.getDimensions()[2];
-    int width = seed.getDimensions()[0] * 2;
-    int height = seed.getDimensions()[1] * 2;
-    Tensor returnValue = new Tensor(width, height, bands);
-    IntFunction<DoubleUnaryOperator> fn1 = b -> x -> Math.max(Math.min(x + noise[b % noise.length] * (Math.random() - 0.5), 255), 0);
-    IntFunction<DoubleUnaryOperator> fn2 = b -> x -> Math.max(Math.min(x + Math.sqrt(2) * noise[b % noise.length] * (Math.random() - 0.5), 255), 0);
-    IntUnaryOperator addrX = x -> {
-      while (x >= width) x -= width;
-      while (x < 0) x += width;
-      return x;
-    };
-    IntUnaryOperator addrY = x -> {
-      while (x >= height) x -= height;
-      while (x < 0) x += height;
-      return x;
-    };
-    for (int band = 0; band < bands; band++) {
-      for (int x = 0; x < width; x += 2) {
-        for (int y = 0; y < height; y += 2) {
-          double value = seed.get(x / 2, y / 2, band);
-          returnValue.set(x, y, band, value);
-        }
-      }
-      final DoubleUnaryOperator f2_band = fn2.apply(band);
-      for (int x = 1; x < width; x += 2) {
-        for (int y = 1; y < height; y += 2) {
-          double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y - 1), band)) +
-              (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y + 1), band)) +
-              (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y - 1), band)) +
-              (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y + 1), band));
-          value = f2_band.applyAsDouble(value / 4);
-          returnValue.set(x, y, band, value);
-        }
-      }
-      final DoubleUnaryOperator f1_band = fn1.apply(band);
-      for (int x = 0; x < width; x += 2) {
-        for (int y = 1; y < height; y += 2) {
-          double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y), band)) +
-              (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band)) +
-              (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band)) +
-              (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band));
-          value = f1_band.applyAsDouble(value / 4);
-          returnValue.set(x, y, band, value);
-        }
-      }
-      for (int x = 1; x < width; x += 2) {
-        for (int y = 0; y < height; y += 2) {
-          double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y), band)) +
-              (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band)) +
-              (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band)) +
-              (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band));
-          value = f1_band.applyAsDouble(value / 4);
-          returnValue.set(x, y, band, value);
-        }
-      }
-    }
-    return returnValue;
   }
 
   public int getBands() {
@@ -153,5 +64,101 @@ public class Plasma {
   public Plasma setNoisePower(double noisePower) {
     this.noisePower = noisePower;
     return this;
+  }
+
+  @Nonnull
+  private static Tensor initSquare(final int bands) {
+    Tensor baseColor = new Tensor(1, 1, bands).setByCoord(c -> 100 + 200 * (Math.random() - 0.5));
+    Tensor tensor = new Tensor(2, 2, bands).setByCoord(c -> baseColor.get(0, 0, c.getCoords()[2]));
+    baseColor.freeRef();
+    return tensor;
+  }
+
+  public Tensor paint(final int width, final int height) {
+    Tensor initSquare = initSquare(bands);
+    Tensor expandPlasma = expandPlasma(initSquare, width, height);
+    initSquare.freeRef();
+    return expandPlasma;
+  }
+
+  @Nonnull
+  private Tensor expandPlasma(Tensor image, final int width, final int height) {
+    image.addRef();
+    while (image.getDimensions()[0] < Math.max(width, height)) {
+      final double factor = Math.pow(image.getDimensions()[0], noisePower);
+      Tensor newImage = expandPlasma(image,
+          com.simiacryptus.ref.wrappers.RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
+      image.freeRef();
+      image = newImage;
+    }
+    Tensor tensor = Tensor.fromRGB(ImageUtil.resize(image.toRgbImage(), width, height));
+    image.freeRef();
+    return tensor;
+  }
+
+  private Tensor expandPlasma(final Tensor seed, double... noise) {
+    int bands = seed.getDimensions()[2];
+    int width = seed.getDimensions()[0] * 2;
+    int height = seed.getDimensions()[1] * 2;
+    Tensor returnValue = new Tensor(width, height, bands);
+    IntFunction<DoubleUnaryOperator> fn1 = b -> x -> Math
+        .max(Math.min(x + noise[b % noise.length] * (Math.random() - 0.5), 255), 0);
+    IntFunction<DoubleUnaryOperator> fn2 = b -> x -> Math
+        .max(Math.min(x + Math.sqrt(2) * noise[b % noise.length] * (Math.random() - 0.5), 255), 0);
+    IntUnaryOperator addrX = x -> {
+      while (x >= width)
+        x -= width;
+      while (x < 0)
+        x += width;
+      return x;
+    };
+    IntUnaryOperator addrY = x -> {
+      while (x >= height)
+        x -= height;
+      while (x < 0)
+        x += height;
+      return x;
+    };
+    for (int band = 0; band < bands; band++) {
+      for (int x = 0; x < width; x += 2) {
+        for (int y = 0; y < height; y += 2) {
+          double value = seed.get(x / 2, y / 2, band);
+          returnValue.set(x, y, band, value);
+        }
+      }
+      final DoubleUnaryOperator f2_band = fn2.apply(band);
+      for (int x = 1; x < width; x += 2) {
+        for (int y = 1; y < height; y += 2) {
+          double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y - 1), band))
+              + (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y + 1), band))
+              + (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y - 1), band))
+              + (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y + 1), band));
+          value = f2_band.applyAsDouble(value / 4);
+          returnValue.set(x, y, band, value);
+        }
+      }
+      final DoubleUnaryOperator f1_band = fn1.apply(band);
+      for (int x = 0; x < width; x += 2) {
+        for (int y = 1; y < height; y += 2) {
+          double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y), band))
+              + (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band))
+              + (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band))
+              + (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band));
+          value = f1_band.applyAsDouble(value / 4);
+          returnValue.set(x, y, band, value);
+        }
+      }
+      for (int x = 1; x < width; x += 2) {
+        for (int y = 0; y < height; y += 2) {
+          double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y), band))
+              + (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band))
+              + (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band))
+              + (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band));
+          value = f1_band.applyAsDouble(value / 4);
+          returnValue.set(x, y, band, value);
+        }
+      }
+    }
+    return returnValue;
   }
 }

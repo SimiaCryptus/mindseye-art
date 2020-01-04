@@ -22,51 +22,44 @@ package com.simiacryptus.mindseye.art.models;
 import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.ReferenceCounting;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 
-public enum VGG19 implements VisionPipelineLayer {
+public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
   VGG19_0a(p -> {
-  }),
-  VGG19_0b(getVGG19_hdf5()::phase0),
-  VGG19_1a(getVGG19_hdf5()::phase1a),
-  VGG19_1b1(getVGG19_hdf5()::phase1b1),
-  VGG19_1b2(getVGG19_hdf5()::phase1b2),
-  VGG19_1c1(getVGG19_hdf5()::phase1c1),
-  VGG19_1c2(getVGG19_hdf5()::phase1c2),
-  VGG19_1c3(getVGG19_hdf5()::phase1c3),
-  VGG19_1c4(getVGG19_hdf5()::phase1c4),
-  VGG19_1d1(getVGG19_hdf5()::phase1d1),
-  VGG19_1d2(getVGG19_hdf5()::phase1d2),
-  VGG19_1d3(getVGG19_hdf5()::phase1d3),
-  VGG19_1d4(getVGG19_hdf5()::phase1d4),
-  VGG19_1e1(getVGG19_hdf5()::phase1e1),
-  VGG19_1e2(getVGG19_hdf5()::phase1e2),
-  VGG19_1e3(getVGG19_hdf5()::phase1e3),
-  VGG19_1e4(getVGG19_hdf5()::phase1e4),
-  VGG19_2(getVGG19_hdf5()::phase2);
-//  VGG19_3a(getVGG19_hdf5()::phase3a),
-//  VGG19_3b(getVGG19_hdf5()::phase3b);
+  }), VGG19_0b(getVGG19_hdf5()::phase0), VGG19_1a(getVGG19_hdf5()::phase1a), VGG19_1b1(getVGG19_hdf5()::phase1b1),
+  VGG19_1b2(getVGG19_hdf5()::phase1b2), VGG19_1c1(getVGG19_hdf5()::phase1c1), VGG19_1c2(getVGG19_hdf5()::phase1c2),
+  VGG19_1c3(getVGG19_hdf5()::phase1c3), VGG19_1c4(getVGG19_hdf5()::phase1c4), VGG19_1d1(getVGG19_hdf5()::phase1d1),
+  VGG19_1d2(getVGG19_hdf5()::phase1d2), VGG19_1d3(getVGG19_hdf5()::phase1d3), VGG19_1d4(getVGG19_hdf5()::phase1d4),
+  VGG19_1e1(getVGG19_hdf5()::phase1e1), VGG19_1e2(getVGG19_hdf5()::phase1e2), VGG19_1e3(getVGG19_hdf5()::phase1e3),
+  VGG19_1e4(getVGG19_hdf5()::phase1e4), VGG19_2(getVGG19_hdf5()::phase2);
+  //  VGG19_3a(getVGG19_hdf5()::phase3a),
+  //  VGG19_3b(getVGG19_hdf5()::phase3b);
 
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
   private static VGG19_HDF5 VGG19_hdf5 = null;
-  private final Consumer<PipelineNetwork> fn;
-  private volatile PipelineNetwork pipeline = null;
+  private final com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn;
 
-  VGG19(Consumer<PipelineNetwork> fn) {
+  VGG19(com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn) {
     this.fn = fn;
   }
 
-  public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
-    if (null == visionPipeline) {
-      synchronized (VGG19.class) {
-        if (null == visionPipeline) {
-          visionPipeline = new VisionPipeline<>(VGG19.class.getSimpleName(), VGG19.values());
-        }
-      }
-    }
-    return visionPipeline;
+  @Override
+  public PipelineNetwork getLayer() {
+    PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
+    fn.accept(pipeline);
+    return pipeline.copyPipeline();
+  }
+
+  @Override
+  public VisionPipeline<?> getPipeline() {
+    return getVisionPipeline().addRef();
+  }
+
+  @Override
+  public String getPipelineName() {
+    return getVisionPipeline().name;
   }
 
   public static VGG19_HDF5 getVGG19_hdf5() {
@@ -78,27 +71,15 @@ public enum VGG19 implements VisionPipelineLayer {
     return VGG19_hdf5;
   }
 
-  @Override
-  public PipelineNetwork getLayer() {
-    if (null == pipeline) {
-      synchronized (this) {
-        if (null == pipeline) {
-          pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
-          fn.accept(pipeline);
+  public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
+    if (null == visionPipeline) {
+      synchronized (VGG19.class) {
+        if (null == visionPipeline) {
+          visionPipeline = new VisionPipeline<>(VGG19.class.getSimpleName(), VGG19.values());
         }
       }
     }
-    return pipeline.copyPipeline();
-  }
-
-  @Override
-  public String getPipelineName() {
-    return getVisionPipeline().name;
-  }
-
-  @Override
-  public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline().addRef();
+    return visionPipeline;
   }
 
 }

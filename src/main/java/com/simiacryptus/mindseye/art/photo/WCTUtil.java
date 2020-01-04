@@ -27,7 +27,8 @@ import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import org.jetbrains.annotations.NotNull;
 
-public class WCTUtil {
+public @com.simiacryptus.ref.lang.RefAware
+class WCTUtil {
 
   public static PipelineNetwork applicator(Tensor encodedStyle, double contentDensity, double styleDensity) {
     return PipelineNetwork.build(1, normalizer(contentDensity), renormalizer(encodedStyle, styleDensity));
@@ -38,7 +39,10 @@ public class WCTUtil {
     final Tensor meanSignal = means(encodedStyle).scaleInPlace(1.0 / styleDensity);
     final Tensor signalPower = rms(encodedStyle, meanSignal).scaleInPlace(Math.sqrt(1.0 / styleDensity));
     final PipelineNetwork renormalizer = new PipelineNetwork(1);
-    renormalizer.add(new ImgBandBiasLayer(meanSignal), renormalizer.add(new ProductLayer(), renormalizer.getInput(0), renormalizer.constValue(signalPower))).freeRef();
+    renormalizer
+        .add(new ImgBandBiasLayer(meanSignal),
+            renormalizer.add(new ProductLayer(), renormalizer.getInput(0), renormalizer.constValue(signalPower)))
+        .freeRef();
     meanSignal.freeRef();
     signalPower.freeRef();
     return renormalizer;
@@ -47,8 +51,11 @@ public class WCTUtil {
   public static Layer normalizer(double maskFactor) {
     final PipelineNetwork normalizer = new PipelineNetwork(1);
     final InnerNode avgNode = normalizer.add(new BandAvgReducerLayer());
-    final InnerNode centered = normalizer.add(new ImgBandDynamicBiasLayer(), normalizer.getInput(0), normalizer.add(new ScaleLayer(-1 / maskFactor), avgNode));
-    final InnerNode scales = normalizer.add(PipelineNetwork.build(1, new SquareActivationLayer(), new BandAvgReducerLayer(), new ScaleLayer(1 / maskFactor), new NthPowerActivationLayer().setPower(-0.5)), centered.addRef());
+    final InnerNode centered = normalizer.add(new ImgBandDynamicBiasLayer(), normalizer.getInput(0),
+        normalizer.add(new ScaleLayer(-1 / maskFactor), avgNode));
+    final InnerNode scales = normalizer.add(PipelineNetwork.build(1, new SquareActivationLayer(),
+        new BandAvgReducerLayer(), new ScaleLayer(1 / maskFactor), new NthPowerActivationLayer().setPower(-0.5)),
+        centered.addRef());
     final InnerNode rescaled = normalizer.add(new ProductLayer(), centered, scales);
     rescaled.freeRef();
     return normalizer.freeze();
@@ -63,7 +70,8 @@ public class WCTUtil {
 
   public static Tensor rms(Tensor normalFeatures, Tensor normalMeanSignal) {
     final Tensor scale = normalMeanSignal.scale(-1);
-    final PipelineNetwork wrap = PipelineNetwork.build(1, new ImgBandBiasLayer(scale), new SquareActivationLayer(), new BandAvgReducerLayer(), new NthPowerActivationLayer().setPower(0.5));
+    final PipelineNetwork wrap = PipelineNetwork.build(1, new ImgBandBiasLayer(scale), new SquareActivationLayer(),
+        new BandAvgReducerLayer(), new NthPowerActivationLayer().setPower(0.5));
     scale.freeRef();
     final Tensor tensor = wrap.eval(normalFeatures).getData().get(0);
     wrap.freeRef();

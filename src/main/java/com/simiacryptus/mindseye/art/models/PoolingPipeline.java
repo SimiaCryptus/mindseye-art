@@ -25,11 +25,11 @@ import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 
 public enum PoolingPipeline implements VisionPipelineLayer {
-  Pooling0(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3, (PipelineNetwork pipeline) -> {
-  }),
+  Pooling0(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3,
+      (PipelineNetwork pipeline) -> {
+      }),
   Pooling2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
   Pooling4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
   Pooling8(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
@@ -39,21 +39,23 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   Pooling128(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3);
 
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
-  private final Consumer<PipelineNetwork> fn;
+  private final com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn;
   private final int[] inputBorders;
   private final int[] outputBorders;
   private final int[] kenelSize;
   private final int[] strides;
   private final int inputChannels;
   private final int outputChannels;
-  private volatile PipelineNetwork layer;
 
-  PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels) {
-    this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels, (PipelineNetwork pipeline) -> pipeline.add(new PoolingLayer()
-        .setStrideXY(2, 2).setWindowXY(2, 2).setMode(PoolingLayer.PoolingMode.Avg)));
+  PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels,
+                  int outputChannels) {
+    this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels,
+        (PipelineNetwork pipeline) -> pipeline
+            .add(new PoolingLayer().setStrideXY(2, 2).setWindowXY(2, 2).setMode(PoolingLayer.PoolingMode.Avg)));
   }
 
-  PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels, int outputChannels, Consumer<PipelineNetwork> fn) {
+  PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels,
+                  int outputChannels, com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn) {
     this.fn = fn;
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;
@@ -61,6 +63,23 @@ public enum PoolingPipeline implements VisionPipelineLayer {
     this.outputBorders = outputBorders;
     this.kenelSize = kenelSize;
     this.strides = strides;
+  }
+
+  @Override
+  public PipelineNetwork getLayer() {
+    PipelineNetwork layer = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
+    fn.accept(layer);
+    return layer;
+  }
+
+  @Override
+  public VisionPipeline<?> getPipeline() {
+    return getVisionPipeline().addRef();
+  }
+
+  @Override
+  public String getPipelineName() {
+    return getVisionPipeline().name;
   }
 
   public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
@@ -72,29 +91,6 @@ public enum PoolingPipeline implements VisionPipelineLayer {
       }
     }
     return visionPipeline;
-  }
-
-  @Override
-  public PipelineNetwork getLayer() {
-    if (null == layer) {
-      synchronized (this) {
-        if (null == layer) {
-          layer = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
-          fn.accept(layer);
-        }
-      }
-    }
-    return layer;
-  }
-
-  @Override
-  public String getPipelineName() {
-    return getVisionPipeline().name;
-  }
-
-  @Override
-  public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline().addRef();
   }
 
 }

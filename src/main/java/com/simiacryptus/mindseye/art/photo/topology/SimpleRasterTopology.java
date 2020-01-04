@@ -19,12 +19,8 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-public class SimpleRasterTopology implements RasterTopology {
+public @com.simiacryptus.ref.lang.RefAware
+class SimpleRasterTopology implements RasterTopology {
   protected final int[] dimensions;
   private final int max_neighborhood_size = 9;
 
@@ -33,12 +29,29 @@ public class SimpleRasterTopology implements RasterTopology {
   }
 
   @Override
-  public List<int[]> connectivity() {
+  public int[] getDimensions() {
+    return dimensions;
+  }
+
+  @Override
+  public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
     final ThreadLocal<int[]> neighbors = ThreadLocal.withInitial(() -> new int[max_neighborhood_size]);
-    return IntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
+    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
       final int[] original = neighbors.get();
-      return Arrays.copyOf(original, getNeighbors(getCoordsFromIndex(i), original));
-    }).collect(Collectors.toList());
+      return com.simiacryptus.ref.wrappers.RefArrays.copyOf(original, getNeighbors(getCoordsFromIndex(i), original));
+    }).collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+  }
+
+  @Override
+  public int getIndexFromCoords(int x, int y) {
+    return x + dimensions[0] * y;
+  }
+
+  @Override
+  public int[] getCoordsFromIndex(int i) {
+    final int x = i % dimensions[0];
+    final int y = (i - x) / dimensions[0];
+    return new int[]{x, y};
   }
 
   private int getNeighbors(int[] coords, int[] neighbors) {
@@ -73,22 +86,5 @@ public class SimpleRasterTopology implements RasterTopology {
     }
     //  neighbors[neighborCount++] = getIndexFromCoords(x, y);
     return neighborCount;
-  }
-
-  @Override
-  public int getIndexFromCoords(int x, int y) {
-    return x + dimensions[0] * y;
-  }
-
-  @Override
-  public int[] getCoordsFromIndex(int i) {
-    final int x = i % dimensions[0];
-    final int y = (i - x) / dimensions[0];
-    return new int[]{x, y};
-  }
-
-  @Override
-  public int[] getDimensions() {
-    return dimensions;
   }
 }

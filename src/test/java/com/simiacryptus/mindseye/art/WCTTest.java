@@ -32,7 +32,9 @@ import com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SearchRadiusTopology;
 import com.simiacryptus.mindseye.art.util.Plasma;
-import com.simiacryptus.mindseye.lang.*;
+import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.SerialPrecision;
+import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.WrapperLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.NotebookReportBase;
@@ -46,7 +48,6 @@ import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipFile;
 
@@ -55,20 +56,20 @@ import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.adjust
 import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.degree;
 import static com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology.getRadius;
 
-public class WCTTest extends NotebookReportBase {
+public @com.simiacryptus.ref.lang.RefAware
+class WCTTest extends NotebookReportBase {
 
-//  private String contentImage = "file:///C:/Users/andre/Downloads/winter-with-snow-on-the-ground-landscape.jpg";
-//  private String styleImage = "file:///C:/Users/andre/Downloads/wisconsin-77930_1280.jpg";
+  //  private String contentImage = "file:///C:/Users/andre/Downloads/winter-with-snow-on-the-ground-landscape.jpg";
+  //  private String styleImage = "file:///C:/Users/andre/Downloads/wisconsin-77930_1280.jpg";
 
-  private String contentImage =
-      "file:///C:/Users/andre/Downloads/pictures/E17-E.jpg";
+  private String contentImage = "file:///C:/Users/andre/Downloads/pictures/E17-E.jpg";
   //"file:///C:/Users/andre/Downloads/Herstmonceux_castle_summer_2005_(8414515391).jpg";
   private String styleImage =
       //"file:///C:/Users/andre/Downloads/5212832572_4388ede3fc_o.jpg";
       "file:///C:/Users/andre/Downloads/pictures/1920x1080-kaufman_63748_5.jpg";
 
   //  private String contentImage = "https://upload.wikimedia.org/wikipedia/commons/b/b0/Group_portrait_of_Civil_War_generals_n.d._%283200501542%29.jpg";
-//  private String styleImage = "https://upload.wikimedia.org/wikipedia/commons/b/b6/Gilbert_Stuart_Williamstown_Portrait_of_George_Washington.jpg";
+  //  private String styleImage = "https://upload.wikimedia.org/wikipedia/commons/b/b6/Gilbert_Stuart_Williamstown_Portrait_of_George_Washington.jpg";
   private int imageSize = 600;
   private boolean verbose = false;
 
@@ -78,19 +79,88 @@ public class WCTTest extends NotebookReportBase {
     return ReportType.Applications;
   }
 
+  @Override
+  protected Class<?> getTargetClass() {
+    return FastPhotoStyleTransfer.class;
+  }
+
+  public static @SuppressWarnings("unused")
+  WCTTest[] addRefs(WCTTest[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(WCTTest::addRef).toArray((x) -> new WCTTest[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  WCTTest[][] addRefs(WCTTest[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(WCTTest::addRefs)
+        .toArray((x) -> new WCTTest[x][]);
+  }
+
   @Test
   public void test0() {
     run(this::test0);
   }
 
+  @Test
+  public void test1() {
+    run(this::test1);
+  }
+
+  @Test
+  public void test2() {
+    run(this::test2);
+  }
+
+  @Test
+  public void test3() {
+    run(this::test3);
+  }
+
+  @Test
+  public void test4() {
+    run(this::test4);
+  }
+
+  @Test
+  public void test5() {
+    run(this::test5);
+  }
+
+  @Test
+  public void wct_full() {
+    run(this::wct_full);
+  }
+
+  @Test
+  public void wct_api() {
+    run(this::wct_api);
+  }
+
+  @Test
+  public void photoBlur() {
+    run(this::photoBlur);
+  }
+
+  @Test
+  public void photoBlur_Survey() {
+    run(this::photoBlur_Survey);
+  }
+
+  public @SuppressWarnings("unused")
+  void _free() {
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  WCTTest addRef() {
+    return (WCTTest) super.addRef();
+  }
+
   private void test0(NotebookOutput log) {
-    wct_test(
-        log,
-        new PipelineNetwork(1),
-        new PipelineNetwork(1),
-        contentImage(),
-        styleImage()
-    );
+    wct_test(log, new PipelineNetwork(1), new PipelineNetwork(1), contentImage(), styleImage());
   }
 
   @NotNull
@@ -100,12 +170,7 @@ public class WCTTest extends NotebookReportBase {
 
   @NotNull
   private Tensor resize(Tensor tensor) {
-    final Tensor resized = Tensor.fromRGB(
-        ImageUtil.resize(
-            tensor.toImage(),
-            imageSize,
-            true)
-    );
+    final Tensor resized = Tensor.fromRGB(ImageUtil.resize(tensor.toImage(), imageSize, true));
     tensor.freeRef();
     return resized;
   }
@@ -115,120 +180,36 @@ public class WCTTest extends NotebookReportBase {
     return resize(ImageUtil.getTensor(contentImage));
   }
 
-  @Test
-  public void test1() {
-    run(this::test1);
-  }
-
   private void test1(NotebookOutput log) {
-    wct_test(
-        log,
-        VGG_WCT_Import.encode_1(),
-        VGG_WCT_Import.decode_1(),
-        contentImage(),
-        styleImage()
-    );
-  }
-
-  @Test
-  public void test2() {
-    run(this::test2);
+    wct_test(log, VGG_WCT_Import.encode_1(), VGG_WCT_Import.decode_1(), contentImage(), styleImage());
   }
 
   private void test2(NotebookOutput log) {
     log.h1("Photo");
-    wct_test(
-        log,
-        VGG_WCT_Import.encode_2(),
-        VGG_WCT_Import.photo_decode_2(),
-        contentImage(),
-        styleImage()
-    );
+    wct_test(log, VGG_WCT_Import.encode_2(), VGG_WCT_Import.photo_decode_2(), contentImage(), styleImage());
     log.h1("Centered");
-    wct_test(
-        log,
-        VGG_WCT_Import.encode_2(),
-        VGG_WCT_Import.decode_2(),
-        contentImage(),
-        styleImage()
-    );
-  }
-
-  @Test
-  public void test3() {
-    run(this::test3);
+    wct_test(log, VGG_WCT_Import.encode_2(), VGG_WCT_Import.decode_2(), contentImage(), styleImage());
   }
 
   private void test3(NotebookOutput log) {
     log.h1("Photo");
-    wct_test(
-        log,
-        VGG_WCT_Import.encode_3(),
-        VGG_WCT_Import.photo_decode_3(),
-        contentImage(),
-        styleImage()
-    );
+    wct_test(log, VGG_WCT_Import.encode_3(), VGG_WCT_Import.photo_decode_3(), contentImage(), styleImage());
     log.h1("Centered");
-    wct_test(
-        log,
-        VGG_WCT_Import.encode_3(),
-        VGG_WCT_Import.decode_3(),
-        contentImage(),
-        styleImage()
-    );
-  }
-
-  @Test
-  public void test4() {
-    run(this::test4);
+    wct_test(log, VGG_WCT_Import.encode_3(), VGG_WCT_Import.decode_3(), contentImage(), styleImage());
   }
 
   private void test4(NotebookOutput log) {
     log.h1("Photo");
-    wct_test(
-        log,
-        VGG_WCT_Import.encode_4(),
-        VGG_WCT_Import.photo_decode_4(),
-        contentImage(),
-        styleImage()
-    );
+    wct_test(log, VGG_WCT_Import.encode_4(), VGG_WCT_Import.photo_decode_4(), contentImage(), styleImage());
     log.h1("Centered");
-    wct_test(
-        log,
-        VGG_WCT_Import.encode_4(),
-        VGG_WCT_Import.decode_4(),
-        contentImage(),
-        styleImage()
-    );
-  }
-
-  @Test
-  public void test5() {
-    run(this::test5);
+    wct_test(log, VGG_WCT_Import.encode_4(), VGG_WCT_Import.decode_4(), contentImage(), styleImage());
   }
 
   private void test5(NotebookOutput log) {
     log.h1("Photo");
-    wct_test(
-        log,
-        VGG_WCT_Import.encode_5(),
-        VGG_WCT_Import.photo_decode_5(),
-        contentImage(),
-        styleImage()
-    );
+    wct_test(log, VGG_WCT_Import.encode_5(), VGG_WCT_Import.photo_decode_5(), contentImage(), styleImage());
     log.h1("Centered");
-    wct_test(
-        log,
-        VGG_WCT_Import.encode_5(),
-        VGG_WCT_Import.decode_5(),
-        contentImage(),
-        styleImage()
-    );
-  }
-
-  @Test
-  public void wct_full() {
-    run(this::wct_full);
+    wct_test(log, VGG_WCT_Import.encode_5(), VGG_WCT_Import.decode_5(), contentImage(), styleImage());
   }
 
   private void wct_full(NotebookOutput log) {
@@ -280,11 +261,6 @@ public class WCTTest extends NotebookReportBase {
 
   }
 
-  @Test
-  public void wct_api() {
-    run(this::wct_api);
-  }
-
   private void wct_api(NotebookOutput log) {
     Tensor contentImage = contentImage();
     Tensor styleImage = styleImage();
@@ -314,8 +290,7 @@ public class WCTTest extends NotebookReportBase {
       });
     }
     log.eval(() -> {
-      final RefOperator<Tensor> operator = fastPhotoStyleTransfer
-          .setLambda(1e-4).setEpsilon(1e-4).apply(contentImage);
+      final RefOperator<Tensor> operator = fastPhotoStyleTransfer.setLambda(1e-4).setEpsilon(1e-4).apply(contentImage);
       final BufferedImage image = toImage(operator.apply(styleImage));
       operator.freeRef();
       return image;
@@ -343,11 +318,6 @@ public class WCTTest extends NotebookReportBase {
     return fastPhotoStyleTransfer;
   }
 
-  @Test
-  public void photoBlur() {
-    run(this::photoBlur);
-  }
-
   private void photoBlur(NotebookOutput log) {
     Tensor content = contentImage();
     log.eval(() -> {
@@ -355,11 +325,8 @@ public class WCTTest extends NotebookReportBase {
     });
 
     final int[] dimensions = content.getDimensions();
-    final Tensor[] tensors = new Tensor[]{
-        new Plasma().paint(dimensions[0], dimensions[1]),
-        rawStyledContent(content, log),
-        content
-    };
+    final Tensor[] tensors = new Tensor[]{new Plasma().paint(dimensions[0], dimensions[1]),
+        rawStyledContent(content, log), content};
 
     for (boolean selfRef : new boolean[]{true, false}) {
       for (boolean sqrt : new boolean[]{true, false}) {
@@ -368,8 +335,11 @@ public class WCTTest extends NotebookReportBase {
         log.h3("RadiusRasterTopology - MattingAffinity");
         test(log, log.eval(() -> {
           RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-          RasterAffinity affinity = new MattingAffinity(content, topology).setGraphPower1(2).setMixing(0.5);
-          if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+          RasterAffinity affinity = new MattingAffinity(content, topology)
+              .setGraphPower1(2).setMixing(0.5);
+          if (sqrt)
+            affinity = affinity
+                .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
           return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
         }), tensors);
 
@@ -378,25 +348,35 @@ public class WCTTest extends NotebookReportBase {
 
           log.h3("SearchRadiusTopology");
           test(log, log.eval(() -> {
-            RasterTopology topology = new SearchRadiusTopology(content).setSelfRef(selfRef).setVerbose(true);
-            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
-            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+            com.simiacryptus.mindseye.art.photo.topology.ContentTopology topology = new SearchRadiusTopology(content)
+                .setSelfRef(selfRef).setVerbose(true);
+            RasterAffinity affinity = new RelativeAffinity(content,
+                topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
+            if (sqrt)
+              affinity = affinity
+                  .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
             return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
           }), tensors);
 
           log.h3("RadiusRasterTopology");
           test(log, log.eval(() -> {
             RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
-            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+            RasterAffinity affinity = new RelativeAffinity(content,
+                topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
+            if (sqrt)
+              affinity = affinity
+                  .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
             return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
           }), tensors);
 
           log.h3("RadiusRasterTopology - GaussianAffinity");
           test(log, log.eval(() -> {
             RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-            RasterAffinity affinity = new GaussianAffinity(content, contrast, topology);
-            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+            RasterAffinity affinity = new GaussianAffinity(content,
+                contrast, topology);
+            if (sqrt)
+              affinity = affinity
+                  .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
             return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
           }), tensors);
 
@@ -406,11 +386,6 @@ public class WCTTest extends NotebookReportBase {
 
   }
 
-  @Test
-  public void photoBlur_Survey() {
-    run(this::photoBlur_Survey);
-  }
-
   private void photoBlur_Survey(NotebookOutput log) {
     Tensor content = contentImage();
     log.eval(() -> {
@@ -418,50 +393,51 @@ public class WCTTest extends NotebookReportBase {
     });
 
     final int[] dimensions = content.getDimensions();
-    final Tensor[] tensors = new Tensor[]{
-        new Plasma().paint(dimensions[0], dimensions[1]),
-        rawStyledContent(content, log),
-        content
-    };
+    final Tensor[] tensors = new Tensor[]{new Plasma().paint(dimensions[0], dimensions[1]),
+        rawStyledContent(content, log), content};
 
     for (boolean selfRef : new boolean[]{true, false}) {
       for (boolean sqrt : new boolean[]{true, false}) {
         log.h1(String.format("SelfRef: %s, Sqrt: %s", selfRef, sqrt));
 
-//        log.h3("RadiusRasterTopology - MattingAffinity");
-//        test(log, log.eval(() -> {
-//          RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-//          RasterAffinity affinity = new MattingAffinity(mask, topology).setGraphPower1(2).setMixing(0.5);
-//          if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-//          return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-//        }), tensors);
+        //        log.h3("RadiusRasterTopology - MattingAffinity");
+        //        test(log, log.eval(() -> {
+        //          RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+        //          RasterAffinity affinity = new MattingAffinity(mask, topology).setGraphPower1(2).setMixing(0.5);
+        //          if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+        //          return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+        //        }), tensors);
 
         for (int contrast : new int[]{20, 50, 100}) {
           log.h2("Contrast: " + contrast);
 
           log.h3("SearchRadiusTopology");
           test(log, log.eval(() -> {
-            RasterTopology topology = new SearchRadiusTopology(content).setSelfRef(selfRef).setVerbose(true);
-            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
-            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+            com.simiacryptus.mindseye.art.photo.topology.ContentTopology topology = new SearchRadiusTopology(content)
+                .setSelfRef(selfRef).setVerbose(true);
+            RasterAffinity affinity = new RelativeAffinity(content,
+                topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
+            if (sqrt)
+              affinity = affinity
+                  .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
             return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
           }), tensors);
 
-//          log.h3("RadiusRasterTopology");
-//          test(log, log.eval(() -> {
-//            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-//            RasterAffinity affinity = new RelativeAffinity(mask, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
-//            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-//            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-//          }), tensors);
-//
-//          log.h3("RadiusRasterTopology - GaussianAffinity");
-//          test(log, log.eval(() -> {
-//            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-//            RasterAffinity affinity = new GaussianAffinity(mask, contrast, topology);
-//            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-//            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-//          }), tensors);
+          //          log.h3("RadiusRasterTopology");
+          //          test(log, log.eval(() -> {
+          //            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+          //            RasterAffinity affinity = new RelativeAffinity(mask, topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
+          //            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+          //            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+          //          }), tensors);
+          //
+          //          log.h3("RadiusRasterTopology - GaussianAffinity");
+          //          test(log, log.eval(() -> {
+          //            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+          //            RasterAffinity affinity = new GaussianAffinity(mask, contrast, topology);
+          //            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+          //            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
+          //          }), tensors);
 
         }
       }
@@ -487,7 +463,7 @@ public class WCTTest extends NotebookReportBase {
 
   private void test(NotebookOutput log, RefOperator<Tensor> smoothingTransform, Tensor... styled) {
     try {
-      Arrays.stream(styled).filter(x -> x != null).forEach(tensor -> {
+      com.simiacryptus.ref.wrappers.RefArrays.stream(styled).filter(x -> x != null).forEach(tensor -> {
         log.eval(() -> {
           return smoothingTransform.apply(tensor).toImage();
         });
@@ -519,7 +495,8 @@ public class WCTTest extends NotebookReportBase {
 
     log.h2("Encoding");
     log.eval(() -> {
-      return Arrays.stream(originalFeatures.getDimensions()).mapToObj(Integer::toString).reduce((a, b) -> a + ", " + b).get();
+      return com.simiacryptus.ref.wrappers.RefArrays.stream(originalFeatures.getDimensions())
+          .mapToObj(Integer::toString).reduce((a, b) -> a + ", " + b).get();
     });
     final Tensor encodedStyle = log.eval(() -> {
       return encoder.eval(styleImage).getData().get(0);
@@ -547,8 +524,7 @@ public class WCTTest extends NotebookReportBase {
       });
       stats(log, restyledFeatures);
     } else {
-      restyledFeatures = WCTUtil.applicator(encodedStyle)
-          .eval(originalFeatures).getData().get(0);
+      restyledFeatures = WCTUtil.applicator(encodedStyle).eval(originalFeatures).getData().get(0);
     }
 
     log.h2("Result Images");
@@ -566,9 +542,10 @@ public class WCTTest extends NotebookReportBase {
         return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(restyled));
       });
       restyled.freeRef();
-      if (verbose) log.eval(() -> {
-        return toImage(decoder.eval(originalFeatures, contentImage).getData().get(0));
-      });
+      if (verbose)
+        log.eval(() -> {
+          return toImage(decoder.eval(originalFeatures, contentImage).getData().get(0));
+        });
     } else {
       final Tensor restyled = log.eval(() -> {
         return decoder.eval(restyledFeatures).getData().get(0);
@@ -580,15 +557,18 @@ public class WCTTest extends NotebookReportBase {
         final MattingAffinity affinity = new MattingAffinity(contentImage);
         return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(restyled));
       });
-      if (verbose) log.eval(() -> {
-        return toImage(decoder.eval(originalFeatures).getData().get(0));
-      });
+      if (verbose)
+        log.eval(() -> {
+          return toImage(decoder.eval(originalFeatures).getData().get(0));
+        });
     }
   }
 
   private PipelineNetwork getNetwork(Layer decoder) {
-    if (decoder instanceof PipelineNetwork) return (PipelineNetwork) decoder;
-    if (decoder instanceof WrapperLayer) return getNetwork(((WrapperLayer) decoder).getInner());
+    if (decoder instanceof PipelineNetwork)
+      return (PipelineNetwork) decoder;
+    if (decoder instanceof WrapperLayer)
+      return getNetwork(((WrapperLayer) decoder).getInner());
     throw new RuntimeException(decoder.getClass().getSimpleName());
   }
 
@@ -599,11 +579,6 @@ public class WCTTest extends NotebookReportBase {
     log.eval(() -> {
       return WCTUtil.rms(normalFeatures, normalMeanSignal);
     }).freeRef();
-  }
-
-  @Override
-  protected Class<?> getTargetClass() {
-    return FastPhotoStyleTransfer.class;
   }
 
 }

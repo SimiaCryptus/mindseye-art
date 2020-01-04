@@ -34,7 +34,8 @@ import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
-public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
+public @com.simiacryptus.ref.lang.RefAware
+class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
 
   public final SparseMatrixFloat matrix;
 
@@ -80,13 +81,40 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
     return cooRowIndex;
   }
 
+  public static @SuppressWarnings("unused")
+  CudaSparseMatrix[] addRefs(CudaSparseMatrix[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(CudaSparseMatrix::addRef)
+        .toArray((x) -> new CudaSparseMatrix[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  CudaSparseMatrix[][] addRefs(CudaSparseMatrix[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(CudaSparseMatrix::addRefs)
+        .toArray((x) -> new CudaSparseMatrix[x][]);
+  }
+
   @Override
   @NotNull
   public CudaSparseMatrix.GpuCopy build() {
     return new GpuCopy(this);
   }
 
-  public static final class GpuCopy extends ReferenceCountingBase {
+  public @SuppressWarnings("unused")
+  void _free() {
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  CudaSparseMatrix addRef() {
+    return (CudaSparseMatrix) super.addRef();
+  }
+
+  public static final @com.simiacryptus.ref.lang.RefAware
+  class GpuCopy extends ReferenceCountingBase {
     public final Pointer rowIndices;
     public final Pointer columnIndices;
     public final Pointer values;
@@ -101,6 +129,14 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
       values = toDevice(matrix.values);
     }
 
+    public static @SuppressWarnings("unused")
+    GpuCopy[] addRefs(GpuCopy[] array) {
+      if (array == null)
+        return null;
+      return java.util.Arrays.stream(array).filter((x) -> x != null).map(GpuCopy::addRef)
+          .toArray((x) -> new GpuCopy[x]);
+    }
+
     public Pointer csrRows(cusparseHandle handle) {
       Pointer csrRowPtr = new Pointer();
       cudaMalloc(csrRowPtr, (rows + 1) * Sizeof.INT);
@@ -108,12 +144,17 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
       return csrRowPtr;
     }
 
-    @Override
-    protected void _free() {
+    public void _free() {
       final GpuCopy gpuCopy = this;
       cudaFree(gpuCopy.rowIndices);
       cudaFree(gpuCopy.columnIndices);
       cudaFree(gpuCopy.values);
+    }
+
+    public @Override
+    @SuppressWarnings("unused")
+    GpuCopy addRef() {
+      return (GpuCopy) super.addRef();
     }
 
   }

@@ -19,14 +19,13 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
-import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
-public class TensorOperator extends ReferenceCountingBase implements RefOperator<Tensor> {
+public @com.simiacryptus.ref.lang.RefAware
+class TensorOperator extends ReferenceCountingBase
+    implements RefOperator<Tensor> {
   private final RefOperator<double[][]> inner;
   private final int[] dimensions;
   private final RasterTopology topology;
@@ -37,12 +36,29 @@ public class TensorOperator extends ReferenceCountingBase implements RefOperator
     this.topology = topology;
   }
 
+  public static @SuppressWarnings("unused")
+  TensorOperator[] addRefs(TensorOperator[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(TensorOperator::addRef)
+        .toArray((x) -> new TensorOperator[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  TensorOperator[][] addRefs(TensorOperator[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(TensorOperator::addRefs)
+        .toArray((x) -> new TensorOperator[x][]);
+  }
+
   @Override
   public Tensor apply(Tensor tensor) {
-    if (!Arrays.equals(dimensions, tensor.getDimensions()))
-      throw new IllegalArgumentException(Arrays.toString(dimensions) + " != " + Arrays.toString(tensor.getDimensions()));
+    if (!com.simiacryptus.ref.wrappers.RefArrays.equals(dimensions, tensor.getDimensions()))
+      throw new IllegalArgumentException(com.simiacryptus.ref.wrappers.RefArrays.toString(dimensions) + " != "
+          + com.simiacryptus.ref.wrappers.RefArrays.toString(tensor.getDimensions()));
     final int channels = 3 <= dimensions.length ? dimensions[2] : 1;
-    final double[][] imageMatrix = IntStream.range(0, channels).mapToObj(c -> {
+    final double[][] imageMatrix = com.simiacryptus.ref.wrappers.RefIntStream.range(0, channels).mapToObj(c -> {
       final double[] doubles = new double[dimensions[0] * dimensions[1]];
       for (int y = 0; y < dimensions[1]; y++) {
         for (int x = 0; x < dimensions[0]; x++) {
@@ -59,10 +75,15 @@ public class TensorOperator extends ReferenceCountingBase implements RefOperator
     });
   }
 
-  @Override
-  protected void _free() {
+  public void _free() {
     inner.freeRef();
     super._free();
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  TensorOperator addRef() {
+    return (TensorOperator) super.addRef();
   }
 
 }

@@ -24,6 +24,7 @@ import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 
-public interface SmoothSolver {
+public @com.simiacryptus.ref.lang.RefAware
+interface SmoothSolver {
   RefOperator<Tensor> solve(RasterTopology topology, RasterAffinity affinity, double lambda);
 }

@@ -24,46 +24,39 @@ import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 
 public enum VGG16 implements VisionPipelineLayer {
   VGG16_0a(x -> {
-  }),
-  VGG16_0b(getVgg16_hdf5()::phase0b),
-  VGG16_1a(getVgg16_hdf5()::phase1a),
-  VGG16_1b1(getVgg16_hdf5()::phase1b1),
-  VGG16_1b2(getVgg16_hdf5()::phase1b2),
-  VGG16_1c1(getVgg16_hdf5()::phase1c1),
-  VGG16_1c2(getVgg16_hdf5()::phase1c2),
-  VGG16_1c3(getVgg16_hdf5()::phase1c3),
-  VGG16_1d1(getVgg16_hdf5()::phase1d1),
-  VGG16_1d2(getVgg16_hdf5()::phase1d2),
-  VGG16_1d3(getVgg16_hdf5()::phase1d3),
-  VGG16_1e1(getVgg16_hdf5()::phase1e1),
-  VGG16_1e2(getVgg16_hdf5()::phase1e2),
-  VGG16_1e3(getVgg16_hdf5()::phase1e3),
-  VGG16_2(getVgg16_hdf5()::phase2),
-  VGG16_3a(getVgg16_hdf5()::phase3a),
+  }), VGG16_0b(getVgg16_hdf5()::phase0b), VGG16_1a(getVgg16_hdf5()::phase1a), VGG16_1b1(getVgg16_hdf5()::phase1b1),
+  VGG16_1b2(getVgg16_hdf5()::phase1b2), VGG16_1c1(getVgg16_hdf5()::phase1c1), VGG16_1c2(getVgg16_hdf5()::phase1c2),
+  VGG16_1c3(getVgg16_hdf5()::phase1c3), VGG16_1d1(getVgg16_hdf5()::phase1d1), VGG16_1d2(getVgg16_hdf5()::phase1d2),
+  VGG16_1d3(getVgg16_hdf5()::phase1d3), VGG16_1e1(getVgg16_hdf5()::phase1e1), VGG16_1e2(getVgg16_hdf5()::phase1e2),
+  VGG16_1e3(getVgg16_hdf5()::phase1e3), VGG16_2(getVgg16_hdf5()::phase2), VGG16_3a(getVgg16_hdf5()::phase3a),
   VGG16_3b(getVgg16_hdf5()::phase3b);
 
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
   private static VGG16_HDF5 vgg16_hdf5 = null;
-  private final Consumer<PipelineNetwork> fn;
-  private volatile PipelineNetwork pipeline = null;
+  private final com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn;
 
-  VGG16(Consumer<PipelineNetwork> fn) {
+  VGG16(com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn) {
     this.fn = fn;
   }
 
-  public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
-    if (null == visionPipeline) {
-      synchronized (VGG16.class) {
-        if (null == visionPipeline) {
-          visionPipeline = new VisionPipeline<>(VGG16.class.getSimpleName(), VGG16.values());
-        }
-      }
-    }
-    return visionPipeline;
+  @Override
+  public PipelineNetwork getLayer() {
+    PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
+    fn.accept(pipeline);
+    return pipeline.copyPipeline();
+  }
+
+  @Override
+  public VisionPipeline<?> getPipeline() {
+    return getVisionPipeline().addRef();
+  }
+
+  @Override
+  public String getPipelineName() {
+    return getVisionPipeline().name;
   }
 
   public static VGG16_HDF5 getVgg16_hdf5() {
@@ -75,27 +68,15 @@ public enum VGG16 implements VisionPipelineLayer {
     return vgg16_hdf5;
   }
 
-  @Override
-  public PipelineNetwork getLayer() {
-    if (null == pipeline) {
-      synchronized (this) {
-        if (null == pipeline) {
-          pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
-          fn.accept(pipeline);
+  public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
+    if (null == visionPipeline) {
+      synchronized (VGG16.class) {
+        if (null == visionPipeline) {
+          visionPipeline = new VisionPipeline<>(VGG16.class.getSimpleName(), VGG16.values());
         }
       }
     }
-    return pipeline.copyPipeline();
-  }
-
-  @Override
-  public String getPipelineName() {
-    return getVisionPipeline().name;
-  }
-
-  @Override
-  public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline().addRef();
+    return visionPipeline;
   }
 
 }

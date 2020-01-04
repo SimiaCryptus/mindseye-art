@@ -28,11 +28,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.UnaryOperator;
 
-public interface VisualModifier {
+public @com.simiacryptus.ref.lang.RefAware
+interface VisualModifier {
+
+  default boolean isLocalized() {
+    return false;
+  }
 
   PipelineNetwork build(VisualModifierParameters visualModifierParameters);
 
-  default PipelineNetwork build(VisionPipelineLayer layer, int[] contentDims, UnaryOperator<Tensor> viewLayer, Tensor... image) {
+  default PipelineNetwork build(VisionPipelineLayer layer, int[] contentDims, UnaryOperator<Tensor> viewLayer,
+                                Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
     network.assertAlive();
     PipelineNetwork pipelineNetwork = build(new VisualModifierParameters(network, contentDims, viewLayer, null, image));
@@ -43,21 +49,19 @@ public interface VisualModifier {
   default VisualModifier combine(VisualModifier right) {
     VisualModifier left = this;
     return new VisualModifier() {
-      @Override
-      public String toString() {
-        return String.format("(%s+%s)", left.toString(), right);
-      }
-
       public boolean isLocalized() {
         return left.isLocalized() || right.isLocalized();
       }
 
       @Override
+      public String toString() {
+        return String.format("(%s+%s)", left.toString(), right);
+      }
+
+      @Override
       public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
-        return (PipelineNetwork) SumInputsLayer.combine(
-            VisualModifier.this.build(visualModifierParameters.addRef()),
-            right.build(visualModifierParameters)
-        ).freeze();
+        return (PipelineNetwork) SumInputsLayer.combine(VisualModifier.this.build(visualModifierParameters.addRef()),
+            right.build(visualModifierParameters)).freeze();
       }
     };
   }
@@ -65,13 +69,13 @@ public interface VisualModifier {
   default VisualModifier scale(double scale) {
     VisualModifier left = this;
     return new VisualModifier() {
+      public boolean isLocalized() {
+        return left.isLocalized();
+      }
+
       @Override
       public String toString() {
         return String.format("(%s*%s)", left.toString(), scale);
-      }
-
-      public boolean isLocalized() {
-        return left.isLocalized();
       }
 
       @Override
@@ -86,13 +90,13 @@ public interface VisualModifier {
   default VisualModifier pow(double power) {
     VisualModifier left = this;
     return new VisualModifier() {
+      public boolean isLocalized() {
+        return left.isLocalized();
+      }
+
       @Override
       public String toString() {
         return String.format("(%s^%s)", left.toString(), power);
-      }
-
-      public boolean isLocalized() {
-        return left.isLocalized();
       }
 
       @Override
@@ -102,10 +106,6 @@ public interface VisualModifier {
         return (PipelineNetwork) build.freeze();
       }
     };
-  }
-
-  default boolean isLocalized() {
-    return false;
   }
 
   @NotNull

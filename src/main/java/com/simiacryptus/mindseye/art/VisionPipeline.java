@@ -19,19 +19,19 @@
 
 package com.simiacryptus.mindseye.art;
 
-import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedHashMap;
-
-public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCountingBase {
+public @com.simiacryptus.ref.lang.RefAware
+class VisionPipeline<T extends VisionPipelineLayer>
+    extends ReferenceCountingBase {
   private static final Logger logger = LoggerFactory.getLogger(VisionPipeline.class);
 
   public final String name;
 
-  private final LinkedHashMap<T, PipelineNetwork> layers = new LinkedHashMap<>();
+  private final com.simiacryptus.ref.wrappers.RefLinkedHashMap<T, PipelineNetwork> layers = new com.simiacryptus.ref.wrappers.RefLinkedHashMap<>();
 
   public VisionPipeline(String name, T... values) {
     this.name = name;
@@ -43,18 +43,34 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
     pipelineNetwork.freeRef();
   }
 
-  public LinkedHashMap<T, PipelineNetwork> getLayers() {
-    return new LinkedHashMap<>(layers);
+  public com.simiacryptus.ref.wrappers.RefLinkedHashMap<T, PipelineNetwork> getLayers() {
+    return new com.simiacryptus.ref.wrappers.RefLinkedHashMap<>(layers);
   }
 
-  @Override
-  public VisionPipeline<T> addRef() {
-    return (VisionPipeline<T>) super.addRef();
+  public static @SuppressWarnings("unused")
+  VisionPipeline[] addRefs(VisionPipeline[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRef)
+        .toArray((x) -> new VisionPipeline[x]);
   }
 
-  @Override
-  protected void _free() {
+  public static @SuppressWarnings("unused")
+  VisionPipeline[][] addRefs(VisionPipeline[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRefs)
+        .toArray((x) -> new VisionPipeline[x][]);
+  }
+
+  public void _free() {
     layers.values().stream().forEach(ReferenceCountingBase::freeRef);
     super._free();
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  VisionPipeline<T> addRef() {
+    return (VisionPipeline<T>) super.addRef();
   }
 }

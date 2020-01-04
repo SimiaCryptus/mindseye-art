@@ -19,11 +19,8 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-public class RadiusRasterTopology implements RasterTopology {
+public @com.simiacryptus.ref.lang.RefAware
+class RadiusRasterTopology implements RasterTopology {
   protected final int[] dimensions;
   private final double maxRadius;
   private final double minRadius;
@@ -34,36 +31,32 @@ public class RadiusRasterTopology implements RasterTopology {
     this.minRadius = minRadius;
   }
 
+  @Override
+  public int[] getDimensions() {
+    return dimensions;
+  }
+
   public static double getRadius(int distA, int distB) {
     return Math.sqrt(distA * distA + distB * distB) + 1e-4;
   }
 
   @Override
-  public List<int[]> connectivity() {
+  public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
     final int maxRadius = (int) Math.ceil(this.maxRadius);
     final double maxSq = this.maxRadius * this.maxRadius;
     final double minSq = Math.signum(this.minRadius) * (this.minRadius * this.minRadius);
-    return IntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
+    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
       final int[] coordsFromIndex = getCoordsFromIndex(i);
-      final int[] ints = IntStream.range(-maxRadius, maxRadius).flatMap(x -> {
+      final int[] ints = com.simiacryptus.ref.wrappers.RefIntStream.range(-maxRadius, maxRadius).flatMap(x -> {
         final int xx = x + coordsFromIndex[0];
-        return IntStream.range(-maxRadius, maxRadius)
-            .filter(y -> {
-              final int radiusSq = x * x + y * y;
-              return radiusSq > minSq && radiusSq <= maxSq;
-            })
-            .map(y -> y + coordsFromIndex[1])
-            .filter(yy -> yy >= 0 && xx >= 0)
-            .filter(yy -> yy < dimensions[1] && xx < dimensions[0])
-            .map(yy -> getIndexFromCoords(xx, yy));
+        return com.simiacryptus.ref.wrappers.RefIntStream.range(-maxRadius, maxRadius).filter(y -> {
+          final int radiusSq = x * x + y * y;
+          return radiusSq > minSq && radiusSq <= maxSq;
+        }).map(y -> y + coordsFromIndex[1]).filter(yy -> yy >= 0 && xx >= 0)
+            .filter(yy -> yy < dimensions[1] && xx < dimensions[0]).map(yy -> getIndexFromCoords(xx, yy));
       }).toArray();
       return ints;
-    }).collect(Collectors.toList());
-  }
-
-  @Override
-  public int[] getDimensions() {
-    return dimensions;
+    }).collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
   }
 
   @Override

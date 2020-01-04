@@ -22,13 +22,11 @@ package com.simiacryptus.mindseye.art.photo.affinity;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-public class GaussianAffinity implements RasterAffinity {
+public @com.simiacryptus.ref.lang.RefAware
+class GaussianAffinity extends ReferenceCountingBase
+    implements RasterAffinity {
   protected final Tensor content;
   private final double sigma;
   private final int[] dimensions;
@@ -45,27 +43,6 @@ public class GaussianAffinity implements RasterAffinity {
     this.sigma = sigma;
   }
 
-  @Override
-  public List<double[]> affinityList(List<int[]> graphEdges) {
-    return IntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i ->
-        Arrays.stream(graphEdges.get(i)).mapToDouble(j ->
-            affinity(i, j)).toArray()
-    ).collect(Collectors.toList());
-  }
-
-  protected double affinity(int i, int j) {
-    final double[] pixel_i = pixel(i);
-    final double[] pixel_j = pixel(j);
-    return Math.exp(-IntStream.range(0, pixel_i.length).mapToDouble(idx -> pixel_i[idx] - pixel_j[idx]).map(x -> x * x).sum() / (sigma * sigma));
-  }
-
-  private double[] pixel(int i) {
-    final int[] coords = getTopology().getCoordsFromIndex(i);
-    return IntStream.range(0, dimensions[2]).mapToDouble(c -> {
-      return content.get(coords[0], coords[1], c);
-    }).toArray();
-  }
-
   public RasterTopology getTopology() {
     return topology;
   }
@@ -74,5 +51,53 @@ public class GaussianAffinity implements RasterAffinity {
     this.topology = topology;
     return this;
   }
-}
 
+  public static @SuppressWarnings("unused")
+  GaussianAffinity[] addRefs(GaussianAffinity[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(GaussianAffinity::addRef)
+        .toArray((x) -> new GaussianAffinity[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  GaussianAffinity[][] addRefs(GaussianAffinity[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(GaussianAffinity::addRefs)
+        .toArray((x) -> new GaussianAffinity[x][]);
+  }
+
+  @Override
+  public com.simiacryptus.ref.wrappers.RefList<double[]> affinityList(
+      com.simiacryptus.ref.wrappers.RefList<int[]> graphEdges) {
+    return com.simiacryptus.ref.wrappers.RefIntStream
+        .range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> com.simiacryptus.ref.wrappers.RefArrays
+            .stream(graphEdges.get(i)).mapToDouble(j -> affinity(i, j)).toArray())
+        .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+  }
+
+  public @SuppressWarnings("unused")
+  void _free() {
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  GaussianAffinity addRef() {
+    return (GaussianAffinity) super.addRef();
+  }
+
+  protected double affinity(int i, int j) {
+    final double[] pixel_i = pixel(i);
+    final double[] pixel_j = pixel(j);
+    return Math.exp(-com.simiacryptus.ref.wrappers.RefIntStream.range(0, pixel_i.length)
+        .mapToDouble(idx -> pixel_i[idx] - pixel_j[idx]).map(x -> x * x).sum() / (sigma * sigma));
+  }
+
+  private double[] pixel(int i) {
+    final int[] coords = getTopology().getCoordsFromIndex(i);
+    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[2]).mapToDouble(c -> {
+      return content.get(coords[0], coords[1], c);
+    }).toArray();
+  }
+}

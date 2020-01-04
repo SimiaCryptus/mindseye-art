@@ -20,21 +20,24 @@
 package com.simiacryptus.mindseye.art.photo;
 
 import java.util.DoubleSummaryStatistics;
-import java.util.Set;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-public class DoubleVectorStatistics implements Consumer<double[]> {
+public @com.simiacryptus.ref.lang.RefAware
+class DoubleVectorStatistics
+    implements com.simiacryptus.ref.wrappers.RefConsumer<double[]> {
 
   final DoubleSummaryStatistics[] firstOrder;
   final DoubleSummaryStatistics[] secondOrder;
 
   public DoubleVectorStatistics(int length) {
-    firstOrder = IntStream.range(0, length).mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);
-    secondOrder = IntStream.range(0, length).mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);
+    firstOrder = com.simiacryptus.ref.wrappers.RefIntStream.range(0, length)
+        .mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);
+    secondOrder = com.simiacryptus.ref.wrappers.RefIntStream.range(0, length)
+        .mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);
   }
 
   public static Collector<double[], DoubleVectorStatistics, DoubleVectorStatistics> collector(int dims) {
@@ -65,10 +68,9 @@ public class DoubleVectorStatistics implements Consumer<double[]> {
       }
 
       @Override
-      public Set<Characteristics> characteristics() {
-        return Stream.of(
-            Characteristics.UNORDERED
-        ).collect(Collectors.toSet());
+      public com.simiacryptus.ref.wrappers.RefSet<Characteristics> characteristics() {
+        return com.simiacryptus.ref.wrappers.RefStream.of(Characteristics.UNORDERED)
+            .collect(com.simiacryptus.ref.wrappers.RefCollectors.toSet());
       }
     };
   }
@@ -76,13 +78,16 @@ public class DoubleVectorStatistics implements Consumer<double[]> {
   @Override
   public void accept(double[] doubles) {
     assert firstOrder.length == doubles.length;
-    IntStream.range(0, doubles.length).forEach(i -> firstOrder[i].accept(doubles[i]));
-    IntStream.range(0, doubles.length).forEach(i -> secondOrder[i].accept(doubles[i] * doubles[i]));
+    com.simiacryptus.ref.wrappers.RefIntStream.range(0, doubles.length).forEach(i -> firstOrder[i].accept(doubles[i]));
+    com.simiacryptus.ref.wrappers.RefIntStream.range(0, doubles.length)
+        .forEach(i -> secondOrder[i].accept(doubles[i] * doubles[i]));
   }
 
   public void combine(DoubleVectorStatistics colorStats) {
     assert firstOrder.length == colorStats.firstOrder.length;
-    IntStream.range(0, firstOrder.length).forEach(i -> firstOrder[i].combine(colorStats.firstOrder[i]));
-    IntStream.range(0, secondOrder.length).forEach(i -> secondOrder[i].combine(colorStats.secondOrder[i]));
+    com.simiacryptus.ref.wrappers.RefIntStream.range(0, firstOrder.length)
+        .forEach(i -> firstOrder[i].combine(colorStats.firstOrder[i]));
+    com.simiacryptus.ref.wrappers.RefIntStream.range(0, secondOrder.length)
+        .forEach(i -> secondOrder[i].combine(colorStats.secondOrder[i]));
   }
 }

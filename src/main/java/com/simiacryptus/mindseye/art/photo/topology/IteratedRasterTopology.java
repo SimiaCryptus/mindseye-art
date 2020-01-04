@@ -19,48 +19,14 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-public class IteratedRasterTopology implements RasterTopology {
+public @com.simiacryptus.ref.lang.RefAware
+class IteratedRasterTopology implements RasterTopology {
   private final RasterTopology inner;
   private int iterations = 2;
 
   public IteratedRasterTopology(RasterTopology inner) {
     this.inner = inner;
     this.setIterations(getIterations());
-  }
-
-  public static List<int[]> iterate(List<int[]> edges, int pow) {
-    assert pow > 0;
-    if (1 == pow) {
-      return edges;
-    } else {
-      final List<int[]> prev = iterate(edges, pow - 1);
-      return IntStream.range(0, prev.size()).parallel().mapToObj(j ->
-          Arrays.stream(prev.get(j))
-              .flatMap(i -> Arrays.stream(prev.get(i)))
-              .filter(i -> i != j)
-              .distinct().toArray()
-      ).collect(Collectors.toList());
-    }
-  }
-
-  @Override
-  public List<int[]> connectivity() {
-    return iterate(inner.connectivity(), getIterations());
-  }
-
-  @Override
-  public int getIndexFromCoords(int x, int y) {
-    return inner.getIndexFromCoords(x, y);
-  }
-
-  @Override
-  public int[] getCoordsFromIndex(int i) {
-    return inner.getCoordsFromIndex(i);
   }
 
   @Override
@@ -75,5 +41,35 @@ public class IteratedRasterTopology implements RasterTopology {
   public IteratedRasterTopology setIterations(int iterations) {
     this.iterations = iterations;
     return this;
+  }
+
+  public static com.simiacryptus.ref.wrappers.RefList<int[]> iterate(com.simiacryptus.ref.wrappers.RefList<int[]> edges,
+                                                                     int pow) {
+    assert pow > 0;
+    if (1 == pow) {
+      return edges;
+    } else {
+      final com.simiacryptus.ref.wrappers.RefList<int[]> prev = iterate(edges, pow - 1);
+      return com.simiacryptus.ref.wrappers.RefIntStream.range(0, prev.size()).parallel()
+          .mapToObj(j -> com.simiacryptus.ref.wrappers.RefArrays.stream(prev.get(j))
+              .flatMap(i -> com.simiacryptus.ref.wrappers.RefArrays.stream(prev.get(i))).filter(i -> i != j).distinct()
+              .toArray())
+          .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+    }
+  }
+
+  @Override
+  public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
+    return iterate(inner.connectivity(), getIterations());
+  }
+
+  @Override
+  public int getIndexFromCoords(int x, int y) {
+    return inner.getIndexFromCoords(x, y);
+  }
+
+  @Override
+  public int[] getCoordsFromIndex(int i) {
+    return inner.getCoordsFromIndex(i);
   }
 }

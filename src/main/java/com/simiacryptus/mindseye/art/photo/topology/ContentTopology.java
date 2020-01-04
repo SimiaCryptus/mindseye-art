@@ -21,97 +21,114 @@ package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.util.JsonUtil;
 
 import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
-public abstract class ContentTopology implements RasterTopology {
+public abstract @com.simiacryptus.ref.lang.RefAware
+class ContentTopology extends ReferenceCountingBase
+    implements RasterTopology {
   protected final int[] dimensions;
   protected final MultivariateFrameOfReference contentRegion;
   protected final Tensor content;
-  private List<double[]> pixels;
+  private com.simiacryptus.ref.wrappers.RefList<double[]> pixels;
 
   public ContentTopology(Tensor content) {
     this.content = content;
     this.dimensions = content.getDimensions();
     this.contentRegion = new MultivariateFrameOfReference(() -> content.getPixelStream().parallel(), dimensions[2]);
-    pixels = IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+    pixels = com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final int[] coords = getCoordsFromIndex(i);
-      return contentRegion.adjust(IntStream.range(0, dimensions[2])
-          .mapToDouble(c -> content.get(coords[0], coords[1], c))
-          .toArray());
-    }).collect(toList());
-  }
-
-  public static List<int[]> dual(List<int[]> asymmetric, int[] dimensions) {
-    final int[] rows = IntStream.range(0, asymmetric.size()).flatMap(i -> Arrays.stream(asymmetric.get(i)).map(x -> i)).toArray();
-    final int[] cols = IntStream.range(0, asymmetric.size()).flatMap(i -> Arrays.stream(asymmetric.get(i))).toArray();
-    final Map<Integer, int[]> transposed = IntStream.range(0, cols.length).mapToObj(x -> x)
-        .collect(Collectors.groupingBy(x -> cols[x], Collectors.toList()))
-        .entrySet().stream()
-        .collect(toMap(x -> x.getKey(), x -> x.getValue().stream().mapToInt(xx -> rows[xx]).toArray()));
-    return IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i ->
-        IntStream.concat(
-            Arrays.stream(asymmetric.get(i)),
-            Arrays.stream(transposed.getOrDefault(i, new int[]{}))
-        ).distinct().sorted().toArray()).collect(toList());
-  }
-
-  @Override
-  public abstract List<int[]> connectivity();
-
-  public void log(List<int[]> graph) {
-    log(graph, System.out);
-  }
-
-  public void log(List<int[]> graph, PrintStream out) {
-    out.println("Connectivity Statistics: " + graph.stream().mapToInt(x -> x.length).summaryStatistics());
-    out.println("Connectivity Histogram: " + JsonUtil.toJson(graph.stream().collect(Collectors.groupingBy(x -> x.length, Collectors.counting()))));
-    out.println("Spatial Distance Statistics: " + IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
-      final int[] pos = getCoordsFromIndex(i);
-      return Arrays.stream(graph.get(i)).mapToObj(j -> getCoordsFromIndex(j))
-          .mapToDouble(posJ -> IntStream.range(0, pos.length)
-              .mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
-          .map(Math::sqrt).toArray();
-    }).flatMapToDouble(Arrays::stream).summaryStatistics());
-    out.println("Spatial Distance Histogram: " + JsonUtil.toJson(IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
-      final int[] pos = getCoordsFromIndex(i);
-      return Arrays.stream(graph.get(i)).mapToObj(j -> getCoordsFromIndex(j))
-          .mapToDouble(posJ -> IntStream.range(0, pos.length)
-              .mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
-          .map(Math::sqrt).map(Math::round).mapToInt(x -> (int) x).toArray();
-    }).flatMapToInt(Arrays::stream).mapToObj(x -> x).collect(Collectors.groupingBy(x -> x, Collectors.counting()))));
-    out.println("Color Distance Statistics: " + IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
-      final double[] pixel = pixel(i);
-      return Arrays.stream(graph.get(i)).mapToObj(this::pixel)
-          .collect(toList()).stream().mapToDouble(p -> chromaDistance(p, pixel))
-          .toArray();
-    }).flatMapToDouble(Arrays::stream).summaryStatistics());
-  }
-
-  public List<int[]> dual(List<int[]> asymmetric) {
-    return dual(asymmetric, dimensions);
-  }
-
-  protected double[] pixel(int i) {
-    return pixels.get(i);
-  }
-
-  protected double chromaDistance(double[] a, double[] b) {
-    return contentRegion.dist(IntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i]).toArray());
+      return contentRegion.adjust(com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[2])
+          .mapToDouble(c -> content.get(coords[0], coords[1], c)).toArray());
+    }).collect(RefCollectors.toList());
   }
 
   @Override
   public int[] getDimensions() {
     return dimensions;
+  }
+
+  public static com.simiacryptus.ref.wrappers.RefList<int[]> dual(
+      com.simiacryptus.ref.wrappers.RefList<int[]> asymmetric, int[] dimensions) {
+    final int[] rows = com.simiacryptus.ref.wrappers.RefIntStream.range(0, asymmetric.size())
+        .flatMap(i -> com.simiacryptus.ref.wrappers.RefArrays.stream(asymmetric.get(i)).map(x -> i)).toArray();
+    final int[] cols = com.simiacryptus.ref.wrappers.RefIntStream.range(0, asymmetric.size())
+        .flatMap(i -> com.simiacryptus.ref.wrappers.RefArrays.stream(asymmetric.get(i))).toArray();
+    final com.simiacryptus.ref.wrappers.RefMap<Integer, int[]> transposed = com.simiacryptus.ref.wrappers.RefIntStream
+        .range(0, cols.length).mapToObj(x -> x)
+        .collect(com.simiacryptus.ref.wrappers.RefCollectors.groupingBy(x -> cols[x],
+            com.simiacryptus.ref.wrappers.RefCollectors.toList()))
+        .entrySet().stream()
+        .collect(RefCollectors.toMap(x -> x.getKey(), x -> x.getValue().stream().mapToInt(xx -> rows[xx]).toArray()));
+    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[0] * dimensions[1])
+        .mapToObj(i -> com.simiacryptus.ref.wrappers.RefIntStream
+            .concat(com.simiacryptus.ref.wrappers.RefArrays.stream(asymmetric.get(i)),
+                com.simiacryptus.ref.wrappers.RefArrays.stream(transposed.getOrDefault(i, new int[]{})))
+            .distinct().sorted().toArray())
+        .collect(RefCollectors.toList());
+  }
+
+  public static @SuppressWarnings("unused")
+  ContentTopology[] addRefs(ContentTopology[] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(ContentTopology::addRef)
+        .toArray((x) -> new ContentTopology[x]);
+  }
+
+  public static @SuppressWarnings("unused")
+  ContentTopology[][] addRefs(ContentTopology[][] array) {
+    if (array == null)
+      return null;
+    return java.util.Arrays.stream(array).filter((x) -> x != null).map(ContentTopology::addRefs)
+        .toArray((x) -> new ContentTopology[x][]);
+  }
+
+  @Override
+  public abstract com.simiacryptus.ref.wrappers.RefList<int[]> connectivity();
+
+  public void log(com.simiacryptus.ref.wrappers.RefList<int[]> graph) {
+    log(graph, System.out);
+  }
+
+  public void log(com.simiacryptus.ref.wrappers.RefList<int[]> graph, PrintStream out) {
+    out.println("Connectivity Statistics: " + graph.stream().mapToInt(x -> x.length).summaryStatistics());
+    out.println(
+        "Connectivity Histogram: " + JsonUtil.toJson(graph.stream().collect(com.simiacryptus.ref.wrappers.RefCollectors
+            .groupingBy(x -> x.length, com.simiacryptus.ref.wrappers.RefCollectors.counting()))));
+    out.println("Spatial Distance Statistics: "
+        + com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+      final int[] pos = getCoordsFromIndex(i);
+      return com.simiacryptus.ref.wrappers.RefArrays.stream(graph.get(i)).mapToObj(j -> getCoordsFromIndex(j))
+          .mapToDouble(posJ -> com.simiacryptus.ref.wrappers.RefIntStream.range(0, pos.length)
+              .mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
+          .map(Math::sqrt).toArray();
+    }).flatMapToDouble(com.simiacryptus.ref.wrappers.RefArrays::stream).summaryStatistics());
+    out.println("Spatial Distance Histogram: " + JsonUtil
+        .toJson(com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+          final int[] pos = getCoordsFromIndex(i);
+          return com.simiacryptus.ref.wrappers.RefArrays.stream(graph.get(i)).mapToObj(j -> getCoordsFromIndex(j))
+              .mapToDouble(posJ -> com.simiacryptus.ref.wrappers.RefIntStream.range(0, pos.length)
+                  .mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
+              .map(Math::sqrt).map(Math::round).mapToInt(x -> (int) x).toArray();
+        }).flatMapToInt(com.simiacryptus.ref.wrappers.RefArrays::stream).mapToObj(x -> x)
+            .collect(com.simiacryptus.ref.wrappers.RefCollectors.groupingBy(x -> x,
+                com.simiacryptus.ref.wrappers.RefCollectors.counting()))));
+    out.println("Color Distance Statistics: "
+        + com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+      final double[] pixel = pixel(i);
+      return com.simiacryptus.ref.wrappers.RefArrays.stream(graph.get(i)).mapToObj(this::pixel).collect(toList())
+          .stream().mapToDouble(p -> chromaDistance(p, pixel)).toArray();
+    }).flatMapToDouble(com.simiacryptus.ref.wrappers.RefArrays::stream).summaryStatistics());
+  }
+
+  public com.simiacryptus.ref.wrappers.RefList<int[]> dual(com.simiacryptus.ref.wrappers.RefList<int[]> asymmetric) {
+    return dual(asymmetric, dimensions);
   }
 
   @Override
@@ -124,5 +141,24 @@ public abstract class ContentTopology implements RasterTopology {
     final int x = i % dimensions[0];
     final int y = (i - x) / dimensions[0];
     return new int[]{x, y};
+  }
+
+  public @SuppressWarnings("unused")
+  void _free() {
+  }
+
+  public @Override
+  @SuppressWarnings("unused")
+  ContentTopology addRef() {
+    return (ContentTopology) super.addRef();
+  }
+
+  protected double[] pixel(int i) {
+    return pixels.get(i);
+  }
+
+  protected double chromaDistance(double[] a, double[] b) {
+    return contentRegion
+        .dist(com.simiacryptus.ref.wrappers.RefIntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i]).toArray());
   }
 }

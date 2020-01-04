@@ -25,16 +25,11 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 
-public class TextUtil {
-  public static BufferedImage draw(
-      final String text,
-      final int resolution,
-      final int padding,
-      final String fontName,
-      final int style
-  ) {
+public @com.simiacryptus.ref.lang.RefAware
+class TextUtil {
+  public static BufferedImage draw(final String text, final int resolution, final int padding, final String fontName,
+                                   final int style) {
     return draw(text, resolution, padding, fitWidth(text, resolution, padding, fontName, style));
   }
 
@@ -53,7 +48,8 @@ public class TextUtil {
   }
 
   public @NotNull
-  static BufferedImage draw(String text, int width, int height, int padding, Font font, Rectangle2D bounds) {
+  static BufferedImage draw(String text, int width, int height, int padding, Font font,
+                            Rectangle2D bounds) {
     BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     Graphics2D graphics = (Graphics2D) image.getGraphics();
     graphics.setColor(Color.WHITE);
@@ -79,19 +75,17 @@ public class TextUtil {
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
     graphics.setFont(font);
     String[] lines = text.split("\n");
-    double width = Arrays.stream(lines).mapToInt(t -> (int) graphics.getFontMetrics().getStringBounds(t, graphics).getWidth()).max().getAsInt();
-    int height = Arrays.stream(lines).mapToInt(t -> (int) graphics.getFontMetrics().getLineMetrics(t, graphics).getAscent()).sum();
+    double width = com.simiacryptus.ref.wrappers.RefArrays.stream(lines)
+        .mapToInt(t -> (int) graphics.getFontMetrics().getStringBounds(t, graphics).getWidth()).max().getAsInt();
+    int height = com.simiacryptus.ref.wrappers.RefArrays.stream(lines)
+        .mapToInt(t -> (int) graphics.getFontMetrics().getLineMetrics(t, graphics).getAscent()).sum();
     double line1height = graphics.getFontMetrics().getLineMetrics(lines[0], graphics).getAscent();
     return new Rectangle2D.Double(0, line1height, width, height);
   }
 
   @Nonnull
-  public static Font fitWidth(
-      final String text,
-      final int resolution,
-      final int padding,
-      final String fontName, final int style
-  ) {
+  public static Font fitWidth(final String text, final int resolution, final int padding, final String fontName,
+                              final int style) {
     final Font font;
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
     double width = 0;
@@ -99,10 +93,8 @@ public class TextUtil {
     while (width < (resolution - 2 * padding) && size < 1000) {
       size += 2;
       graphics.setFont(new Font(fontName, style, size));
-      width = Arrays.stream(text.split("\n")).mapToInt(t -> (int) graphics.getFontMetrics().getStringBounds(
-          t,
-          graphics
-      ).getWidth()).max().getAsInt();
+      width = com.simiacryptus.ref.wrappers.RefArrays.stream(text.split("\n"))
+          .mapToInt(t -> (int) graphics.getFontMetrics().getStringBounds(t, graphics).getWidth()).max().getAsInt();
     }
     size -= 2;
     font = new Font(fontName, style, size);
@@ -110,12 +102,8 @@ public class TextUtil {
   }
 
   @Nonnull
-  public static Font fitHeight(
-      final String text,
-      final int resolution,
-      final int padding,
-      final String fontName, final int style
-  ) {
+  public static Font fitHeight(final String text, final int resolution, final int padding, final String fontName,
+                               final int style) {
     final Font font;
     double height = 0;
     int size = 12;
@@ -129,13 +117,8 @@ public class TextUtil {
   }
 
   @Nonnull
-  public static Font fit(
-      final String text,
-      final int max_width,
-      final int max_height,
-      final int padding,
-      final String fontName, final int style
-  ) {
+  public static Font fit(final String text, final int max_width, final int max_height, final int padding,
+                         final String fontName, final int style) {
     final Font font;
     double height = 0;
     double width = 0;

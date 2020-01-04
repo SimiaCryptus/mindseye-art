@@ -31,7 +31,8 @@ import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
-public class ContentConvolutionMatcher implements VisualModifier {
+public @com.simiacryptus.ref.lang.RefAware
+class ContentConvolutionMatcher implements VisualModifier {
 
   private int minValue = -1;
   private int maxValue = 1;
@@ -40,45 +41,21 @@ public class ContentConvolutionMatcher implements VisualModifier {
   private int patternSize = 32 * 32 * 3;
   private PoolingLayer.PoolingMode poolingMode = PoolingLayer.PoolingMode.Max;
 
-  @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
-    PipelineNetwork network = visualModifierParameters.network;
-    network = network.copyPipeline();
-    Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
-    visualModifierParameters.freeRef();
-    double mag = balanced ? baseContent.rms() : 1;
-    int[] baseContentDimensions = baseContent.getDimensions();
-    int patternSize = (int) Math.ceil(Math.sqrt(getPatternSize() / baseContentDimensions[2]));
-    PoolingLayer poolingLayer = new PoolingLayer().setMode(getPoolingMode())
-        .setStrideXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)))
-        .setWindowXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)));
-    Tensor pooledContent = poolingLayer.eval(baseContent).getData().get(0);
-    baseContent.freeRef();
-    network.add(poolingLayer).freeRef();
-    int[] pooledContentDimensions = pooledContent.getDimensions();
-    network.add(new ConvolutionLayer(pooledContentDimensions[0], pooledContentDimensions[1], pooledContentDimensions[2], 1)
-        .setPaddingXY(0, 0).set(pooledContent
-            .scaleInPlace(Math.pow(pooledContent.rms(), -2)).permuteDimensions(Integer.MAX_VALUE, -1, 2)).explode()).freeRef();
-    final Layer[] layers = new Layer[]{new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
-    network.add(PipelineNetwork.build(1, layers).setName(String.format("-RMS / %.0E", mag))).freeRef();
-    return (PipelineNetwork) network.freeze();
+  public int getMaxValue() {
+    return maxValue;
   }
 
-  public boolean isAveraging() {
-    return averaging;
-  }
-
-  public ContentConvolutionMatcher setAveraging(boolean averaging) {
-    this.averaging = averaging;
+  public ContentConvolutionMatcher setMaxValue(int maxValue) {
+    this.maxValue = maxValue;
     return this;
   }
 
-  public boolean isBalanced() {
-    return balanced;
+  public int getMinValue() {
+    return minValue;
   }
 
-  public ContentConvolutionMatcher setBalanced(boolean balanced) {
-    this.balanced = balanced;
+  public ContentConvolutionMatcher setMinValue(int minValue) {
+    this.minValue = minValue;
     return this;
   }
 
@@ -100,21 +77,52 @@ public class ContentConvolutionMatcher implements VisualModifier {
     return this;
   }
 
-  public int getMinValue() {
-    return minValue;
+  public boolean isAveraging() {
+    return averaging;
   }
 
-  public ContentConvolutionMatcher setMinValue(int minValue) {
-    this.minValue = minValue;
+  public ContentConvolutionMatcher setAveraging(boolean averaging) {
+    this.averaging = averaging;
     return this;
   }
 
-  public int getMaxValue() {
-    return maxValue;
+  public boolean isBalanced() {
+    return balanced;
   }
 
-  public ContentConvolutionMatcher setMaxValue(int maxValue) {
-    this.maxValue = maxValue;
+  public ContentConvolutionMatcher setBalanced(boolean balanced) {
+    this.balanced = balanced;
     return this;
+  }
+
+  @Override
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    PipelineNetwork network = visualModifierParameters.network;
+    network = network.copyPipeline();
+    Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
+    visualModifierParameters.freeRef();
+    double mag = balanced ? baseContent.rms() : 1;
+    int[] baseContentDimensions = baseContent.getDimensions();
+    int patternSize = (int) Math.ceil(Math.sqrt(getPatternSize() / baseContentDimensions[2]));
+    PoolingLayer poolingLayer = new PoolingLayer().setMode(getPoolingMode())
+        .setStrideXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)),
+            (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)))
+        .setWindowXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)),
+            (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)));
+    Tensor pooledContent = poolingLayer.eval(baseContent).getData().get(0);
+    baseContent.freeRef();
+    network.add(poolingLayer).freeRef();
+    int[] pooledContentDimensions = pooledContent.getDimensions();
+    network
+        .add(new ConvolutionLayer(pooledContentDimensions[0], pooledContentDimensions[1], pooledContentDimensions[2], 1)
+            .setPaddingXY(0, 0).set(pooledContent.scaleInPlace(Math.pow(pooledContent.rms(), -2))
+                .permuteDimensions(Integer.MAX_VALUE, -1, 2))
+            .explode())
+        .freeRef();
+    final Layer[] layers = new Layer[]{
+        new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(),
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
+    network.add(PipelineNetwork.build(1, layers).setName(String.format("-RMS / %.0E", mag))).freeRef();
+    return (PipelineNetwork) network.freeze();
   }
 }

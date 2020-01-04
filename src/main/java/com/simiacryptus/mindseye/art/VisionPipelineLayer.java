@@ -28,17 +28,12 @@ import javax.annotation.Nonnull;
 
 import static com.simiacryptus.mindseye.layers.cudnn.PoolingLayer.getPoolingLayer;
 
-public interface VisionPipelineLayer {
+public @com.simiacryptus.ref.lang.RefAware
+interface VisionPipelineLayer {
   final VisionPipelineLayer.Noop NOOP = new VisionPipelineLayer.Noop();
 
   @Nonnull
-  String name();
-
-  @Nonnull
-  VisionPipeline<?> getPipeline();
-
-  @Nonnull
-  String getPipelineName();
+  Layer getLayer();
 
   @Nonnull
   default PipelineNetwork getNetwork() {
@@ -49,7 +44,13 @@ public interface VisionPipelineLayer {
   }
 
   @Nonnull
-  Layer getLayer();
+  VisionPipeline<?> getPipeline();
+
+  @Nonnull
+  String getPipelineName();
+
+  @Nonnull
+  String name();
 
   default VisionPipelineLayer prependAvgPool(int radius) {
     return prependPool(radius, PoolingLayer.PoolingMode.Avg);
@@ -87,18 +88,23 @@ public interface VisionPipelineLayer {
     return new AppendVisionPipelineLayer(this, layer);
   }
 
-  public static class Noop implements VisionPipelineLayer {
+  public static @com.simiacryptus.ref.lang.RefAware
+  class Noop implements VisionPipelineLayer {
 
     @Nonnull
     @Override
-    public String name() {
-      return "NOOP";
+    public Layer getLayer() {
+      return new PipelineNetwork(1);
     }
 
     @Nonnull
     @Override
     public VisionPipeline<Noop> getPipeline() {
       return new VisionPipeline<Noop>(name(), this) {
+
+        public @SuppressWarnings("unused")
+        void _free() {
+        }
       };
     }
 
@@ -110,8 +116,8 @@ public interface VisionPipelineLayer {
 
     @Nonnull
     @Override
-    public Layer getLayer() {
-      return new PipelineNetwork(1);
+    public String name() {
+      return "NOOP";
     }
   }
 

@@ -31,15 +31,15 @@ import org.ejml.sparse.FillReducing;
 import org.ejml.sparse.csc.factory.LinearSolverFactory_DSCC;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.UnaryOperator;
 
-public class SmoothSolver_EJML implements SmoothSolver {
+public @com.simiacryptus.ref.lang.RefAware
+class SmoothSolver_EJML implements SmoothSolver {
 
   public static UnaryOperator<SimpleMatrix> solve(DMatrixSparseCSC affinity, double lambda) {
     final double alpha = 1.0 / (1.0 + lambda);
-    final LinearSolverSparse<DMatrixSparseCSC, DMatrixRMaj> solver = LinearSolverFactory_DSCC.cholesky(FillReducing.NONE);
+    final LinearSolverSparse<DMatrixSparseCSC, DMatrixRMaj> solver = LinearSolverFactory_DSCC
+        .cholesky(FillReducing.NONE);
     final SimpleMatrix identity = SimpleMatrix.identity(affinity.numRows, DMatrixSparseCSC.class);
     solver.setA(identity.scale(1).minus(new SimpleMatrix(affinity).scale(alpha)).getDSCC());
     return img -> {
@@ -58,8 +58,9 @@ public class SmoothSolver_EJML implements SmoothSolver {
   public static UnaryOperator<Tensor> wrap(UnaryOperator<SimpleMatrix> solver, RasterTopology topology) {
     final int[] dimensions = topology.getDimensions();
     return tensor -> {
-      if (!Arrays.equals(dimensions, tensor.getDimensions()))
-        throw new IllegalArgumentException(Arrays.toString(dimensions) + " != " + Arrays.toString(tensor.getDimensions()));
+      if (!com.simiacryptus.ref.wrappers.RefArrays.equals(dimensions, tensor.getDimensions()))
+        throw new IllegalArgumentException(com.simiacryptus.ref.wrappers.RefArrays.toString(dimensions) + " != "
+            + com.simiacryptus.ref.wrappers.RefArrays.toString(tensor.getDimensions()));
       final SimpleMatrix imageMatrix = new SimpleMatrix(dimensions[0] * dimensions[1], dimensions[2]);
       for (int x = 0; x < dimensions[0]; x++) {
         for (int y = 0; y < dimensions[1]; y++) {
@@ -76,7 +77,8 @@ public class SmoothSolver_EJML implements SmoothSolver {
     };
   }
 
-  public static @NotNull DMatrixSparseCSC laplacian(List<int[]> graphEdges, List<double[]> affinityList) {
+  public static @NotNull DMatrixSparseCSC laplacian(com.simiacryptus.ref.wrappers.RefList<int[]> graphEdges,
+                                                    com.simiacryptus.ref.wrappers.RefList<double[]> affinityList) {
     final int pixels = graphEdges.size();
     final DMatrixSparseCSC adjacency = new DMatrixSparseCSC(pixels, pixels);
     for (int i = 0; i < pixels; i++) {
@@ -85,22 +87,28 @@ public class SmoothSolver_EJML implements SmoothSolver {
       assert affinities.length == edges.length;
       for (int j = 0; j < edges.length; j++) {
         final double affinity = affinities[j];
-        if (affinity > 0) adjacency.set(i, edges[j], affinity);
+        if (affinity > 0)
+          adjacency.set(i, edges[j], affinity);
       }
     }
-    final double[] degree = affinityList.stream().mapToDouble(x -> Arrays.stream(x).sum()).toArray();
+    final double[] degree = affinityList.stream()
+        .mapToDouble(x -> com.simiacryptus.ref.wrappers.RefArrays.stream(x).sum()).toArray();
     // Calclulate normalized laplacian
     final DMatrixSparseCSC rescaled = new DMatrixSparseCSC(pixels, pixels);
     for (int i = 0; i < pixels; i++) {
       final double deg_i = degree[i];
-      if (deg_i == 0) continue;
+      if (deg_i == 0)
+        continue;
       for (int j : graphEdges.get(i)) {
         //assert i != j;
-        if (i > j) continue;
+        if (i > j)
+          continue;
         final double deg_j = degree[j];
-        if (deg_j == 0) continue;
+        if (deg_j == 0)
+          continue;
         final double adj = adjacency.get(i, j);
-        if (adj == 0) continue;
+        if (adj == 0)
+          continue;
         final double val = adj / Math.sqrt(deg_j * deg_i);
         rescaled.set(i, j, val);
         rescaled.set(j, i, val);
@@ -112,6 +120,5 @@ public class SmoothSolver_EJML implements SmoothSolver {
   public RefOperator<Tensor> solve(RasterTopology topology, RasterAffinity affinity, double lambda) {
     return RefOperator.wrap(wrap(solve(laplacian(affinity, topology), lambda), topology));
   }
-
 
 }

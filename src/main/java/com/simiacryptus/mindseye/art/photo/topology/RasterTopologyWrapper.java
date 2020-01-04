@@ -21,9 +21,8 @@ package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.lang.Singleton;
 
-import java.util.List;
-
-public class RasterTopologyWrapper implements RasterTopology {
+public @com.simiacryptus.ref.lang.RefAware
+class RasterTopologyWrapper implements RasterTopology {
 
   public final RasterTopology inner;
 
@@ -32,7 +31,12 @@ public class RasterTopologyWrapper implements RasterTopology {
   }
 
   @Override
-  public List<int[]> connectivity() {
+  public int[] getDimensions() {
+    return inner.getDimensions();
+  }
+
+  @Override
+  public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
     return inner.connectivity();
   }
 
@@ -46,21 +50,17 @@ public class RasterTopologyWrapper implements RasterTopology {
     return inner.getCoordsFromIndex(i);
   }
 
-  @Override
-  public int[] getDimensions() {
-    return inner.getDimensions();
-  }
+  public static @com.simiacryptus.ref.lang.RefAware
+  class CachedRasterTopology extends RasterTopologyWrapper {
 
-  public static class CachedRasterTopology extends RasterTopologyWrapper {
-
-    private final Singleton<List<int[]>> cache = new Singleton<>();
+    private final Singleton<com.simiacryptus.ref.wrappers.RefList<int[]>> cache = new Singleton<>();
 
     public CachedRasterTopology(RasterTopology inner) {
       super(inner);
     }
 
     @Override
-    public List<int[]> connectivity() {
+    public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
       return cache.getOrInit(() -> super.connectivity());
     }
   }

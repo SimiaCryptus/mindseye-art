@@ -28,22 +28,11 @@ import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 
-public class ChannelPowerEnhancer implements VisualModifier {
+public @com.simiacryptus.ref.lang.RefAware
+class ChannelPowerEnhancer implements VisualModifier {
 
   private boolean averaging = true;
   private boolean balanced = true;
-
-  @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
-    PipelineNetwork network = visualModifierParameters.network;
-    network = network.copyPipeline();
-    double mag = balanced ? network.eval(visualModifierParameters.style).getData().get(0).rms() : 1;
-    final Layer[] layers = new Layer[]{new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(), new LinearActivationLayer().setScale(-Math.pow(mag, -2))};
-    network.add(PipelineNetwork.build(1, layers).setName(String.format("-RMS / %.0E", mag))).freeRef();
-    final PipelineNetwork freeze = (PipelineNetwork) network.freeze();
-    visualModifierParameters.freeRef();
-    return freeze;
-  }
 
   public boolean isAveraging() {
     return averaging;
@@ -61,5 +50,19 @@ public class ChannelPowerEnhancer implements VisualModifier {
   public ChannelPowerEnhancer setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
+  }
+
+  @Override
+  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+    PipelineNetwork network = visualModifierParameters.network;
+    network = network.copyPipeline();
+    double mag = balanced ? network.eval(visualModifierParameters.style).getData().get(0).rms() : 1;
+    final Layer[] layers = new Layer[]{new SquareActivationLayer(),
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
+        new LinearActivationLayer().setScale(-Math.pow(mag, -2))};
+    network.add(PipelineNetwork.build(1, layers).setName(String.format("-RMS / %.0E", mag))).freeRef();
+    final PipelineNetwork freeze = (PipelineNetwork) network.freeze();
+    visualModifierParameters.freeRef();
+    return freeze;
   }
 }
