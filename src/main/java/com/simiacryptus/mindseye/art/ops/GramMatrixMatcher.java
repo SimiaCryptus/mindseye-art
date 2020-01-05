@@ -30,13 +30,15 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class GramMatrixMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixMatcher.class);
   private final Precision precision = Precision.Float;
@@ -82,9 +84,9 @@ class GramMatrixMatcher implements VisualModifier {
   }
 
   public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, int padding, Tensor... image) {
-    final Tensor tensor = com.simiacryptus.ref.wrappers.RefArrays.stream(image).flatMap(img -> {
+    final Tensor tensor = RefArrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
-      return com.simiacryptus.ref.wrappers.RefArrays
+      return RefArrays
           .stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
           .map(selector -> {
             //log.info(selector.toString());
@@ -132,7 +134,7 @@ class GramMatrixMatcher implements VisualModifier {
   @NotNull
   public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor mask, Tensor model, Tensor... image) {
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
-    int pixels = com.simiacryptus.ref.wrappers.RefArrays.stream(image).mapToInt(x -> {
+    int pixels = RefArrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
@@ -149,7 +151,7 @@ class GramMatrixMatcher implements VisualModifier {
           .freeRef();
       network
           .add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision).setAlpha(
-              1.0 / com.simiacryptus.ref.wrappers.RefArrays.stream(boolMask.getData()).average().getAsDouble()))
+              1.0 / RefArrays.stream(boolMask.getData()).average().getAsDouble()))
           .freeRef();
       boolMask.freeRef();
     } else {

@@ -29,18 +29,22 @@ import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.mindseye.test.unit.StandardLayerTests;
 import com.simiacryptus.notebook.NotebookOutput;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefAssert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Random;
 
 import static com.simiacryptus.mindseye.art.models.Inception5H.*;
 import static com.simiacryptus.mindseye.art.models.VGG16.*;
 import static com.simiacryptus.mindseye.art.models.VGG19.*;
 
-public abstract @com.simiacryptus.ref.lang.RefAware
+public abstract @RefAware
 class VisionPipelineTest extends NotebookReportBase {
   private static final Logger log = LoggerFactory.getLogger(VisionPipelineTest.class);
 
@@ -57,7 +61,7 @@ class VisionPipelineTest extends NotebookReportBase {
     int[] dimensions = layer.evalDims(inputDims);
     layer.freeRef();
     int[] actuals = dimensions;
-    com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(com.simiacryptus.ref.wrappers.RefArrays.toString(actuals),
+    RefAssert.assertArrayEquals(RefArrays.toString(actuals),
         expectedOutputDims, actuals);
   }
 
@@ -78,7 +82,7 @@ class VisionPipelineTest extends NotebookReportBase {
   VisionPipelineTest[] addRefs(VisionPipelineTest[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRef)
         .toArray((x) -> new VisionPipelineTest[x]);
   }
 
@@ -86,7 +90,7 @@ class VisionPipelineTest extends NotebookReportBase {
   VisionPipelineTest[][] addRefs(VisionPipelineTest[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRefs)
         .toArray((x) -> new VisionPipelineTest[x][]);
   }
 
@@ -190,7 +194,7 @@ class VisionPipelineTest extends NotebookReportBase {
     return (VisionPipelineTest) super.addRef();
   }
 
-  public static @com.simiacryptus.ref.lang.RefAware
+  public static @RefAware
   class VGG16Test extends VisionPipelineTest {
     @Override
     protected Class<?> getTargetClass() {
@@ -206,7 +210,7 @@ class VisionPipelineTest extends NotebookReportBase {
     VGG16Test[] addRefs(VGG16Test[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(VGG16Test::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(VGG16Test::addRef)
           .toArray((x) -> new VGG16Test[x]);
     }
 
@@ -228,8 +232,8 @@ class VisionPipelineTest extends NotebookReportBase {
     public void pipelineTest(NotebookOutput log) {
       log.run(() -> {
         int[] outputSize = testDims(226, 226, 3);
-        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(
-            com.simiacryptus.ref.wrappers.RefArrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
+        RefAssert.assertArrayEquals(
+            RefArrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
       });
     }
 
@@ -244,7 +248,7 @@ class VisionPipelineTest extends NotebookReportBase {
     }
   }
 
-  public static @com.simiacryptus.ref.lang.RefAware
+  public static @RefAware
   class VGG19Test extends VisionPipelineTest {
     @Override
     protected Class<?> getTargetClass() {
@@ -260,7 +264,7 @@ class VisionPipelineTest extends NotebookReportBase {
     VGG19Test[] addRefs(VGG19Test[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(VGG19Test::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(VGG19Test::addRef)
           .toArray((x) -> new VGG19Test[x]);
     }
 
@@ -282,8 +286,8 @@ class VisionPipelineTest extends NotebookReportBase {
     public void pipelineTest(NotebookOutput log) {
       log.run(() -> {
         int[] outputSize = testDims(226, 226, 3);
-        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(
-            com.simiacryptus.ref.wrappers.RefArrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
+        RefAssert.assertArrayEquals(
+            RefArrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
       });
     }
 
@@ -298,7 +302,7 @@ class VisionPipelineTest extends NotebookReportBase {
     }
   }
 
-  public static @com.simiacryptus.ref.lang.RefAware
+  public static @RefAware
   class Inception5HTest extends VisionPipelineTest {
     @Override
     protected Class<?> getTargetClass() {
@@ -314,7 +318,7 @@ class VisionPipelineTest extends NotebookReportBase {
     Inception5HTest[] addRefs(Inception5HTest[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(Inception5HTest::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(Inception5HTest::addRef)
           .toArray((x) -> new Inception5HTest[x]);
     }
 
@@ -336,16 +340,16 @@ class VisionPipelineTest extends NotebookReportBase {
 
     public void pipelineTest(NotebookOutput log) {
       log.run(() -> {
-        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(testDims(320, 320, 3), new int[]{10, 10, 1024});
+        RefAssert.assertArrayEquals(testDims(320, 320, 3), new int[]{10, 10, 1024});
       });
       log.run(() -> {
-        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(testDims(32, 32, 3), new int[]{1, 1, 1024});
+        RefAssert.assertArrayEquals(testDims(32, 32, 3), new int[]{1, 1, 1024});
       });
       log.run(() -> {
-        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(testDims(400, 400, 3), new int[]{13, 13, 1024});
+        RefAssert.assertArrayEquals(testDims(400, 400, 3), new int[]{13, 13, 1024});
       });
       log.run(() -> {
-        com.simiacryptus.ref.wrappers.RefAssert.assertArrayEquals(testDims(40, 40, 3), new int[]{2, 2, 1024});
+        RefAssert.assertArrayEquals(testDims(40, 40, 3), new int[]{2, 2, 1024});
       });
     }
 

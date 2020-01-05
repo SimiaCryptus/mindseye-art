@@ -19,7 +19,12 @@
 
 package com.simiacryptus.mindseye.art.photo.affinity;
 
-public @com.simiacryptus.ref.lang.RefAware
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefCollectors;
+import com.simiacryptus.ref.wrappers.RefList;
+
+public @RefAware
 class TruncatedAffinity extends AffinityWrapper {
   private double min = 1e-2;
   private double power = 0.5;
@@ -47,15 +52,15 @@ class TruncatedAffinity extends AffinityWrapper {
   }
 
   @Override
-  public com.simiacryptus.ref.wrappers.RefList<double[]> affinityList(
-      com.simiacryptus.ref.wrappers.RefList<int[]> graphEdges) {
-    final com.simiacryptus.ref.wrappers.RefList<double[]> innerResult = inner.affinityList(graphEdges);
+  public RefList<double[]> affinityList(
+      RefList<int[]> graphEdges) {
+    final RefList<double[]> innerResult = inner.affinityList(graphEdges);
     final double[] degree = RasterAffinity.degree(innerResult);
-    final com.simiacryptus.ref.wrappers.RefList<double[]> doubles = RasterAffinity.adjust(graphEdges, innerResult,
+    final RefList<double[]> doubles = RasterAffinity.adjust(graphEdges, innerResult,
         degree, getPower());
-    final com.simiacryptus.ref.wrappers.RefList<double[]> truncated = doubles.stream()
-        .map(list -> com.simiacryptus.ref.wrappers.RefArrays.stream(list).map(x -> x >= getMin() ? x : 0.0).toArray())
-        .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+    final RefList<double[]> truncated = doubles.stream()
+        .map(list -> RefArrays.stream(list).map(x -> x >= getMin() ? x : 0.0).toArray())
+        .collect(RefCollectors.toList());
     return RasterAffinity.adjust(graphEdges, truncated, degree, -getPower());
   }
 }

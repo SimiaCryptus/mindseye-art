@@ -19,7 +19,10 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-public @com.simiacryptus.ref.lang.RefAware
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefList;
+
+public @RefAware
 interface RasterTopology {
 
   int[] getDimensions();
@@ -28,7 +31,7 @@ interface RasterTopology {
     return new RasterTopologyWrapper.CachedRasterTopology(this);
   }
 
-  com.simiacryptus.ref.wrappers.RefList<int[]> connectivity();
+  RefList<int[]> connectivity();
 
   int getIndexFromCoords(int x, int y);
 

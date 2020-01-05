@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art.photo;
 import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -34,7 +35,7 @@ import java.util.stream.Stream;
 
 import static java.lang.Math.log;
 
-public abstract @com.simiacryptus.ref.lang.RefAware
+public abstract @RefAware
 class RegionAssembler
     implements Comparator<RegionAssembler.Connection> {
 
@@ -298,7 +299,7 @@ class RegionAssembler
     return this;
   }
 
-  public static @com.simiacryptus.ref.lang.RefAware
+  public static @RefAware
   class RegionTree {
     public final int[] regions;
     public final RegionTree[] children;
@@ -315,7 +316,7 @@ class RegionAssembler
     }
   }
 
-  public @com.simiacryptus.ref.lang.RefAware
+  public @RefAware
   class Connection {
     public final Region from;
     public final Region to;
@@ -359,7 +360,7 @@ class RegionAssembler
     }
   }
 
-  public @com.simiacryptus.ref.lang.RefAware
+  public @RefAware
   class Region {
     public final HashMap<Region, Connection> connections = new HashMap<>();
     public final HashSet<Integer> pixels = new HashSet<>();

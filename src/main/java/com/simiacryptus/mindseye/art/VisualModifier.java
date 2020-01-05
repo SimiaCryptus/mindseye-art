@@ -24,11 +24,12 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.UnaryOperator;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 interface VisualModifier {
 
   default boolean isLocalized() {

@@ -25,9 +25,10 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 import org.jetbrains.annotations.NotNull;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class WCTUtil {
 
   public static PipelineNetwork applicator(Tensor encodedStyle, double contentDensity, double styleDensity) {

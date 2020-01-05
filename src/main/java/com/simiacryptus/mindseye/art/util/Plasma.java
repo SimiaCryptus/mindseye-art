@@ -21,13 +21,15 @@ package com.simiacryptus.mindseye.art.util;
 
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.util.ImageUtil;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
 
 import javax.annotation.Nonnull;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class Plasma {
   private int bands;
   private double[] noiseAmplitude;
@@ -87,7 +89,7 @@ class Plasma {
     while (image.getDimensions()[0] < Math.max(width, height)) {
       final double factor = Math.pow(image.getDimensions()[0], noisePower);
       Tensor newImage = expandPlasma(image,
-          com.simiacryptus.ref.wrappers.RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
+          RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
       image.freeRef();
       image = newImage;
     }

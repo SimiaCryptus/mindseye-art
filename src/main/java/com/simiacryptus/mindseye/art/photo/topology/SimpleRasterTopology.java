@@ -19,7 +19,13 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-public @com.simiacryptus.ref.lang.RefAware
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefCollectors;
+import com.simiacryptus.ref.wrappers.RefIntStream;
+import com.simiacryptus.ref.wrappers.RefList;
+
+public @RefAware
 class SimpleRasterTopology implements RasterTopology {
   protected final int[] dimensions;
   private final int max_neighborhood_size = 9;
@@ -34,12 +40,12 @@ class SimpleRasterTopology implements RasterTopology {
   }
 
   @Override
-  public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
+  public RefList<int[]> connectivity() {
     final ThreadLocal<int[]> neighbors = ThreadLocal.withInitial(() -> new int[max_neighborhood_size]);
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
+    return RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
       final int[] original = neighbors.get();
-      return com.simiacryptus.ref.wrappers.RefArrays.copyOf(original, getNeighbors(getCoordsFromIndex(i), original));
-    }).collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+      return RefArrays.copyOf(original, getNeighbors(getCoordsFromIndex(i), original));
+    }).collect(RefCollectors.toList());
   }
 
   @Override

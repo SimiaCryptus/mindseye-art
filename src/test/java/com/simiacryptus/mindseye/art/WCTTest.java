@@ -28,6 +28,7 @@ import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
 import com.simiacryptus.mindseye.art.photo.affinity.RelativeAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
+import com.simiacryptus.mindseye.art.photo.topology.ContentTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SearchRadiusTopology;
@@ -40,6 +41,8 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.notebook.NotebookOutput;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -48,6 +51,7 @@ import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipFile;
 
@@ -56,7 +60,7 @@ import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.adjust
 import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.degree;
 import static com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology.getRadius;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class WCTTest extends NotebookReportBase {
 
   //  private String contentImage = "file:///C:/Users/andre/Downloads/winter-with-snow-on-the-ground-landscape.jpg";
@@ -88,14 +92,14 @@ class WCTTest extends NotebookReportBase {
   WCTTest[] addRefs(WCTTest[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(WCTTest::addRef).toArray((x) -> new WCTTest[x]);
+    return Arrays.stream(array).filter((x) -> x != null).map(WCTTest::addRef).toArray((x) -> new WCTTest[x]);
   }
 
   public static @SuppressWarnings("unused")
   WCTTest[][] addRefs(WCTTest[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(WCTTest::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(WCTTest::addRefs)
         .toArray((x) -> new WCTTest[x][]);
   }
 
@@ -348,7 +352,7 @@ class WCTTest extends NotebookReportBase {
 
           log.h3("SearchRadiusTopology");
           test(log, log.eval(() -> {
-            com.simiacryptus.mindseye.art.photo.topology.ContentTopology topology = new SearchRadiusTopology(content)
+            ContentTopology topology = new SearchRadiusTopology(content)
                 .setSelfRef(selfRef).setVerbose(true);
             RasterAffinity affinity = new RelativeAffinity(content,
                 topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
@@ -413,7 +417,7 @@ class WCTTest extends NotebookReportBase {
 
           log.h3("SearchRadiusTopology");
           test(log, log.eval(() -> {
-            com.simiacryptus.mindseye.art.photo.topology.ContentTopology topology = new SearchRadiusTopology(content)
+            ContentTopology topology = new SearchRadiusTopology(content)
                 .setSelfRef(selfRef).setVerbose(true);
             RasterAffinity affinity = new RelativeAffinity(content,
                 topology).setContrast(contrast).setGraphPower1(2).setMixing(0.5);
@@ -463,7 +467,7 @@ class WCTTest extends NotebookReportBase {
 
   private void test(NotebookOutput log, RefOperator<Tensor> smoothingTransform, Tensor... styled) {
     try {
-      com.simiacryptus.ref.wrappers.RefArrays.stream(styled).filter(x -> x != null).forEach(tensor -> {
+      RefArrays.stream(styled).filter(x -> x != null).forEach(tensor -> {
         log.eval(() -> {
           return smoothingTransform.apply(tensor).toImage();
         });
@@ -495,7 +499,7 @@ class WCTTest extends NotebookReportBase {
 
     log.h2("Encoding");
     log.eval(() -> {
-      return com.simiacryptus.ref.wrappers.RefArrays.stream(originalFeatures.getDimensions())
+      return RefArrays.stream(originalFeatures.getDimensions())
           .mapToObj(Integer::toString).reduce((a, b) -> a + ", " + b).get();
     });
     final Tensor encodedStyle = log.eval(() -> {

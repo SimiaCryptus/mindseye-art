@@ -33,19 +33,22 @@ import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.notebook.NotebookOutput;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.simiacryptus.mindseye.art.photo.RegionAssembler.volumeEntropy;
 import static com.simiacryptus.mindseye.art.photo.SegmentUtil.*;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class SegmentTest extends NotebookReportBase {
 
   private String contentImage = "file:///C:/Users/andre/Downloads/pictures/E17-E.jpg";
@@ -66,7 +69,7 @@ class SegmentTest extends NotebookReportBase {
   SegmentTest[] addRefs(SegmentTest[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRef)
         .toArray((x) -> new SegmentTest[x]);
   }
 
@@ -74,7 +77,7 @@ class SegmentTest extends NotebookReportBase {
   SegmentTest[][] addRefs(SegmentTest[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRefs)
         .toArray((x) -> new SegmentTest[x][]);
   }
 
@@ -138,7 +141,7 @@ class SegmentTest extends NotebookReportBase {
       final int[] dimensions = topology.getDimensions();
       final int pixels = dimensions[0] * dimensions[1];
       final int[] islands = markIslands(topology, flattenedTensor::getPixel,
-          (a, b) -> com.simiacryptus.ref.wrappers.RefIntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i])
+          (a, b) -> RefIntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i])
               .map(x -> x * x).average().getAsDouble() < 0.2,
           128, pixels);
       pixelMap.set(islands);
@@ -147,7 +150,7 @@ class SegmentTest extends NotebookReportBase {
     return pixelMap.get();
   }
 
-  private static @com.simiacryptus.ref.lang.RefAware
+  private static @RefAware
   class Assemble_minCut extends ReferenceCountingBase {
     private final Tensor content;
     private final RasterTopology topology;
@@ -165,7 +168,7 @@ class SegmentTest extends NotebookReportBase {
     Assemble_minCut[] addRefs(Assemble_minCut[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(Assemble_minCut::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(Assemble_minCut::addRef)
           .toArray((x) -> new Assemble_minCut[x]);
     }
 
@@ -184,42 +187,42 @@ class SegmentTest extends NotebookReportBase {
       update(graph.getDenseProjection());
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).mapToObj(x->x).sorted(Comparator.comparing(x->-x)).mapToDouble(x->x).toArray()
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).sorted().toArray()
-      final com.simiacryptus.ref.wrappers.RefMap<float[], Float> eigensystem = log
+      final RefMap<float[], Float> eigensystem = log
           .eval(() -> this.graph.dense_graph_eigensys());
       log.run(() -> {
-        System.out.println("Sorted Eigenvalues: " + com.simiacryptus.ref.wrappers.RefArrays
+        System.out.println("Sorted Eigenvalues: " + RefArrays
             .toString(eigensystem.values().stream().mapToDouble(Float::doubleValue).toArray()));
       });
       final int sampleEigenvectors = 20;
       log.h2("Smallest Eigenvectors");
       int index = 0;
       for (Map.Entry<float[], Float> tuple : eigensystem.entrySet().stream()
-          .sorted(com.simiacryptus.ref.wrappers.RefComparator.comparing(x -> x.getValue())).limit(sampleEigenvectors)
-          .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList())) {
+          .sorted(RefComparator.comparing(x -> x.getValue())).limit(sampleEigenvectors)
+          .collect(RefCollectors.toList())) {
         log.h3("Eigenvector " + index++);
         log.eval(() -> tuple.getValue());
         final double[] vector = SparseMatrixFloat.toDouble(tuple.getKey());
         updateAndDisplay(log,
-            com.simiacryptus.ref.wrappers.RefArrays.stream(vector).mapToInt(x -> x < 0 ? 0 : x == 0 ? 1 : 2).toArray());
+            RefArrays.stream(vector).mapToInt(x -> x < 0 ? 0 : x == 0 ? 1 : 2).toArray());
         final double median = log
-            .eval(() -> com.simiacryptus.ref.wrappers.RefArrays.stream(vector).sorted().toArray()[vector.length / 2]);
-        updateAndDisplay(log, com.simiacryptus.ref.wrappers.RefArrays.stream(vector)
+            .eval(() -> RefArrays.stream(vector).sorted().toArray()[vector.length / 2]);
+        updateAndDisplay(log, RefArrays.stream(vector)
             .mapToInt(x -> x < median ? 0 : x == median ? 1 : 2).toArray());
       }
 
       log.h2("Largest Eigenvectors");
       index = 0;
       for (Map.Entry<float[], Float> tuple : eigensystem.entrySet().stream()
-          .sorted(com.simiacryptus.ref.wrappers.RefComparator.comparing(x -> -x.getValue())).limit(sampleEigenvectors)
-          .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList())) {
+          .sorted(RefComparator.comparing(x -> -x.getValue())).limit(sampleEigenvectors)
+          .collect(RefCollectors.toList())) {
         log.h3("Eigenvector " + index++);
         log.eval(() -> tuple.getValue());
         final double[] vector = SparseMatrixFloat.toDouble(tuple.getKey());
         updateAndDisplay(log,
-            com.simiacryptus.ref.wrappers.RefArrays.stream(vector).mapToInt(x -> x < 0 ? 0 : x == 0 ? 1 : 2).toArray());
+            RefArrays.stream(vector).mapToInt(x -> x < 0 ? 0 : x == 0 ? 1 : 2).toArray());
         final double median = log
-            .eval(() -> com.simiacryptus.ref.wrappers.RefArrays.stream(vector).sorted().toArray()[vector.length / 2]);
-        updateAndDisplay(log, com.simiacryptus.ref.wrappers.RefArrays.stream(vector)
+            .eval(() -> RefArrays.stream(vector).sorted().toArray()[vector.length / 2]);
+        updateAndDisplay(log, RefArrays.stream(vector)
             .mapToInt(x -> x < median ? 0 : x == median ? 1 : 2).toArray());
       }
 
@@ -227,11 +230,11 @@ class SegmentTest extends NotebookReportBase {
       update(log.eval(() -> {
         //final double[] secondSmallestEigenvector = eigenDecomposition.getEigenvector(sortedIndexes[1]).toArray();
         final Map.Entry<float[], Float> secondLowest = eigensystem.entrySet().stream()
-            .sorted(com.simiacryptus.ref.wrappers.RefComparator.comparing(x -> x.getValue())).limit(sampleEigenvectors)
-            .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList()).get(1);
+            .sorted(RefComparator.comparing(x -> x.getValue())).limit(sampleEigenvectors)
+            .collect(RefCollectors.toList()).get(1);
         System.out.println(
-            "Second Smallest Eigenvector " + com.simiacryptus.ref.wrappers.RefArrays.toString(secondLowest.getKey()));
-        return com.simiacryptus.ref.wrappers.RefArrays.stream(SparseMatrixFloat.toDouble(secondLowest.getKey()))
+            "Second Smallest Eigenvector " + RefArrays.toString(secondLowest.getKey()));
+        return RefArrays.stream(SparseMatrixFloat.toDouble(secondLowest.getKey()))
             .mapToInt(x -> x < 0 ? 0 : 1).toArray();
       }));
       display(log);
@@ -269,7 +272,7 @@ class SegmentTest extends NotebookReportBase {
     }
   }
 
-  private static @com.simiacryptus.ref.lang.RefAware
+  private static @RefAware
   class Assemble_volumeEntropy extends ReferenceCountingBase {
     private final Tensor content;
     private final RasterTopology topology;
@@ -287,7 +290,7 @@ class SegmentTest extends NotebookReportBase {
     Assemble_volumeEntropy[] addRefs(Assemble_volumeEntropy[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(Assemble_volumeEntropy::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(Assemble_volumeEntropy::addRef)
           .toArray((x) -> new Assemble_volumeEntropy[x]);
     }
 

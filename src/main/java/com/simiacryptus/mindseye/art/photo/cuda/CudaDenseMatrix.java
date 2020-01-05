@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.ref.lang.LazyVal;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import jcuda.Pointer;
 import jcuda.Sizeof;
@@ -28,13 +29,15 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+
 import static jcuda.jcusolver.JCusolverSp.cusolverSpCreate;
 import static jcuda.jcusparse.JCusparse.*;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
 
   public final SparseMatrixFloat matrix;
@@ -85,7 +88,7 @@ class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
   CudaDenseMatrix[] addRefs(CudaDenseMatrix[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(CudaDenseMatrix::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(CudaDenseMatrix::addRef)
         .toArray((x) -> new CudaDenseMatrix[x]);
   }
 
@@ -93,7 +96,7 @@ class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
   CudaDenseMatrix[][] addRefs(CudaDenseMatrix[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(CudaDenseMatrix::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(CudaDenseMatrix::addRefs)
         .toArray((x) -> new CudaDenseMatrix[x][]);
   }
 
@@ -113,7 +116,7 @@ class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
     return (CudaDenseMatrix) super.addRef();
   }
 
-  public static final @com.simiacryptus.ref.lang.RefAware
+  public static final @RefAware
   class GpuCopy extends ReferenceCountingBase {
     public final Pointer rowIndices;
     public final Pointer columnIndices;
@@ -133,7 +136,7 @@ class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
     GpuCopy[] addRefs(GpuCopy[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(GpuCopy::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(GpuCopy::addRef)
           .toArray((x) -> new GpuCopy[x]);
     }
 

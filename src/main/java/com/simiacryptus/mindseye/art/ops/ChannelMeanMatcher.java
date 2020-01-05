@@ -26,9 +26,11 @@ import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
 import org.jetbrains.annotations.NotNull;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class ChannelMeanMatcher implements VisualModifier {
 
   private boolean balanced = true;
@@ -69,7 +71,7 @@ class ChannelMeanMatcher implements VisualModifier {
     if (meanSignal == null) {
       final PipelineNetwork meanNetwork = PipelineNetwork.build(1,
           new ImgTileSubnetLayer(network.addRef(), tileSize, tileSize), new BandAvgReducerLayer());
-      meanSignal = com.simiacryptus.ref.wrappers.RefArrays.stream(image)
+      meanSignal = RefArrays.stream(image)
           .map(tensor -> meanNetwork.eval(tensor).getData().get(0)).reduce((a, b) -> {
             Tensor c = a.addAndFree(b);
             b.freeRef();

@@ -33,13 +33,15 @@ import com.simiacryptus.mindseye.layers.java.AbsActivationLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class GramMatrixEnhancer implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixEnhancer.class);
   private final Precision precision = Precision.Float;
@@ -115,7 +117,7 @@ class GramMatrixEnhancer implements VisualModifier {
     PipelineNetwork network = visualModifierParameters.network;
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
     final UUID uuid = GramMatrixMatcher.getAppendUUID(network, GramianLayer.class);
-    int pixels = com.simiacryptus.ref.wrappers.RefArrays.stream(visualModifierParameters.style).mapToInt(x -> {
+    int pixels = RefArrays.stream(visualModifierParameters.style).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();
@@ -144,7 +146,7 @@ class GramMatrixEnhancer implements VisualModifier {
     return this;
   }
 
-  public static @com.simiacryptus.ref.lang.RefAware
+  public static @RefAware
   class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
     @NotNull
     public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {

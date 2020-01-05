@@ -19,7 +19,10 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefIntStream;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcusolver.JCusolver;
@@ -29,13 +32,15 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.runtime.JCuda;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+
 import static jcuda.jcusolver.JCusolverSp.cusolverSpScsrlsvchol;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class CudaMatrixSolver extends ReferenceCountingBase
     implements RefOperator<double[][]> {
 
@@ -68,7 +73,7 @@ class CudaMatrixSolver extends ReferenceCountingBase
   CudaMatrixSolver[] addRefs(CudaMatrixSolver[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRef)
         .toArray((x) -> new CudaMatrixSolver[x]);
   }
 
@@ -76,7 +81,7 @@ class CudaMatrixSolver extends ReferenceCountingBase
   CudaMatrixSolver[][] addRefs(CudaMatrixSolver[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRefs)
         .toArray((x) -> new CudaMatrixSolver[x][]);
   }
 
@@ -88,7 +93,7 @@ class CudaMatrixSolver extends ReferenceCountingBase
   @Override
   public double[][] apply(double[][] img) {
     final int channels = img.length;
-    final float[] flattened = new float[com.simiacryptus.ref.wrappers.RefArrays.stream(img).mapToInt(x -> x.length)
+    final float[] flattened = new float[RefArrays.stream(img).mapToInt(x -> x.length)
         .sum()];
     for (int i = 0; i < flattened.length; i++) {
       flattened[i] = (float) img[i / pixels][i % pixels];
@@ -111,8 +116,8 @@ class CudaMatrixSolver extends ReferenceCountingBase
     cudaMemcpy(Pointer.to(floats), gpuResult, (long) channels * Sizeof.FLOAT * pixels, cudaMemcpyDeviceToHost);
     cudaFree(gpuResult);
 
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, channels)
-        .mapToObj(c -> com.simiacryptus.ref.wrappers.RefIntStream.range(0, pixels)
+    return RefIntStream.range(0, channels)
+        .mapToObj(c -> RefIntStream.range(0, pixels)
             .mapToDouble(i -> scaleOutput * floats[c * pixels + i]).toArray())
         .toArray(i -> new double[i][]);
   }

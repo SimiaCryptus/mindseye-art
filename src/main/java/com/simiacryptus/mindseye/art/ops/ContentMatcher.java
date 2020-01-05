@@ -28,8 +28,9 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class ContentMatcher implements VisualModifier {
 
   private boolean averaging = true;

@@ -27,8 +27,9 @@ import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class ChannelPowerEnhancer implements VisualModifier {
 
   private boolean averaging = true;

@@ -21,11 +21,13 @@ package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
+import java.util.Arrays;
 import java.util.Objects;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class AppendVisionPipelineLayer extends ReferenceCountingBase
     implements VisionPipelineLayer {
 
@@ -68,7 +70,7 @@ class AppendVisionPipelineLayer extends ReferenceCountingBase
   AppendVisionPipelineLayer[] addRefs(AppendVisionPipelineLayer[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRef)
         .toArray((x) -> new AppendVisionPipelineLayer[x]);
   }
 
@@ -76,7 +78,7 @@ class AppendVisionPipelineLayer extends ReferenceCountingBase
   AppendVisionPipelineLayer[][] addRefs(AppendVisionPipelineLayer[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRefs)
         .toArray((x) -> new AppendVisionPipelineLayer[x][]);
   }
 
@@ -91,7 +93,7 @@ class AppendVisionPipelineLayer extends ReferenceCountingBase
       return true;
     if (o == null || getClass() != o.getClass())
       return false;
-    com.simiacryptus.mindseye.art.VisionPipelineLayer that = (com.simiacryptus.mindseye.art.VisionPipelineLayer) o;
+    VisionPipelineLayer that = (VisionPipelineLayer) o;
     if (!Objects.equals(getPipelineName(), that.getPipelineName()))
       return false;
     if (!Objects.equals(name(), that.name()))

@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.wrappers.RefConsumer;
 
 import java.util.UUID;
 
@@ -39,7 +40,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   Pooling128(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3);
 
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
-  private final com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn;
+  private final RefConsumer<PipelineNetwork> fn;
   private final int[] inputBorders;
   private final int[] outputBorders;
   private final int[] kenelSize;
@@ -55,7 +56,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   }
 
   PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels,
-                  int outputChannels, com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn) {
+                  int outputChannels, RefConsumer<PipelineNetwork> fn) {
     this.fn = fn;
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;

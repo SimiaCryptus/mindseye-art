@@ -22,6 +22,8 @@ package com.simiacryptus.mindseye.art.photo.cuda;
 import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.*;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.jblas.Eigen;
 import org.jblas.FloatMatrix;
@@ -32,7 +34,7 @@ import java.util.function.DoubleBinaryOperator;
 
 import static java.util.Arrays.binarySearch;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class SparseMatrixFloat {
   public final int[] rowIndices;
   public final int[] colIndices;
@@ -42,8 +44,8 @@ class SparseMatrixFloat {
 
   public SparseMatrixFloat(int[] rowIndices, int[] colIndices, float[] values) {
     this(rowIndices, colIndices, values,
-        com.simiacryptus.ref.wrappers.RefArrays.stream(rowIndices).max().getAsInt() + 1,
-        com.simiacryptus.ref.wrappers.RefArrays.stream(colIndices).max().getAsInt() + 1);
+        RefArrays.stream(rowIndices).max().getAsInt() + 1,
+        RefArrays.stream(colIndices).max().getAsInt() + 1);
   }
 
   public SparseMatrixFloat(int[] rowIndices, int[] colIndices, float[] values, int rows, int cols) {
@@ -59,13 +61,13 @@ class SparseMatrixFloat {
   }
 
   public int[] getDenseProjection() {
-    final com.simiacryptus.ref.wrappers.RefMap<Integer, Long> rowCounts = com.simiacryptus.ref.wrappers.RefArrays
-        .stream(rowIndices).mapToObj(x -> x).collect(com.simiacryptus.ref.wrappers.RefCollectors.groupingBy(x -> x,
-            com.simiacryptus.ref.wrappers.RefCollectors.counting()));
+    final RefMap<Integer, Long> rowCounts = RefArrays
+        .stream(rowIndices).mapToObj(x -> x).collect(RefCollectors.groupingBy(x -> x,
+            RefCollectors.counting()));
     final int[] activeRows = rowCounts.entrySet().stream().filter(x -> x.getValue() > 1).mapToInt(x -> x.getKey())
         .sorted().toArray();
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, rows).map(x -> {
-      final int newIndex = com.simiacryptus.ref.wrappers.RefArrays.binarySearch(activeRows, x);
+    return RefIntStream.range(0, rows).map(x -> {
+      final int newIndex = RefArrays.binarySearch(activeRows, x);
       return newIndex < 0 ? 0 : newIndex;
     }).toArray();
   }
@@ -83,7 +85,7 @@ class SparseMatrixFloat {
   }
 
   public static double[] toDouble(float[] data) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, data.length).mapToDouble(x -> data[x]).toArray();
+    return RefIntStream.range(0, data.length).mapToDouble(x -> data[x]).toArray();
   }
 
   public static float[] toFloat(double[] doubles) {
@@ -95,15 +97,15 @@ class SparseMatrixFloat {
   }
 
   public static long[] reorder(long[] data, int[] index) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, index.length).mapToLong(i -> data[index[i]]).toArray();
+    return RefIntStream.range(0, index.length).mapToLong(i -> data[index[i]]).toArray();
   }
 
   public static int[] reorder(int[] data, int[] index) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, index.length).map(i -> data[index[i]]).toArray();
+    return RefIntStream.range(0, index.length).map(i -> data[index[i]]).toArray();
   }
 
   public static double[] reorder(double[] data, int[] index) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, index.length).mapToDouble(i -> data[index[i]]).toArray();
+    return RefIntStream.range(0, index.length).mapToDouble(i -> data[index[i]]).toArray();
   }
 
   public static float[] reorder(float[] data, int[] index) {
@@ -112,29 +114,29 @@ class SparseMatrixFloat {
     for (int i = 0; i < index.length; i++) {
       float datum = data[index[i]];
       if (copy.length == count)
-        copy = com.simiacryptus.ref.wrappers.RefArrays.copyOf(copy, count * 2);
+        copy = RefArrays.copyOf(copy, count * 2);
       copy[count++] = datum;
     }
-    copy = com.simiacryptus.ref.wrappers.RefArrays.copyOfRange(copy, 0, count);
+    copy = RefArrays.copyOfRange(copy, 0, count);
     return copy;
   }
 
   public static int[] index(long[] data) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, data.length).mapToObj(x -> x)
-        .sorted(com.simiacryptus.ref.wrappers.RefComparator.comparing(i -> data[i])).mapToInt(x -> x).toArray();
+    return RefIntStream.range(0, data.length).mapToObj(x -> x)
+        .sorted(RefComparator.comparing(i -> data[i])).mapToInt(x -> x).toArray();
   }
 
   public static int[] index(int[] data) {
-    return index(data, com.simiacryptus.ref.wrappers.RefComparator.comparingInt(i -> data[i]));
+    return index(data, RefComparator.comparingInt(i -> data[i]));
   }
 
-  public static int[] index(int[] data, com.simiacryptus.ref.wrappers.RefComparator<Integer> comparator) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, data.length).mapToObj(x -> x).sorted(comparator)
+  public static int[] index(int[] data, RefComparator<Integer> comparator) {
+    return RefIntStream.range(0, data.length).mapToObj(x -> x).sorted(comparator)
         .mapToInt(x -> x).toArray();
   }
 
   public static int[] filterValues(int[] base, int[] filter) {
-    return com.simiacryptus.ref.wrappers.RefArrays.stream(base).filter(i -> 0 > binarySearch(filter, i)).toArray();
+    return RefArrays.stream(base).filter(i -> 0 > binarySearch(filter, i)).toArray();
   }
 
   public static int[] zeros(float[] values) {
@@ -142,22 +144,22 @@ class SparseMatrixFloat {
   }
 
   public static int[] zeros(float[] values, double tol) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, values.length).filter(i -> Math.abs(values[i]) < tol)
+    return RefIntStream.range(0, values.length).filter(i -> Math.abs(values[i]) < tol)
         .sorted().toArray();
   }
 
   public static SparseMatrixFloat identity(int size) {
     final float[] values = new float[size];
-    com.simiacryptus.ref.wrappers.RefArrays.fill(values, 1.0f);
-    return new SparseMatrixFloat(com.simiacryptus.ref.wrappers.RefIntStream.range(0, size).toArray(),
-        com.simiacryptus.ref.wrappers.RefIntStream.range(0, size).toArray(), values, size, size).sortAndPrune();
+    RefArrays.fill(values, 1.0f);
+    return new SparseMatrixFloat(RefIntStream.range(0, size).toArray(),
+        RefIntStream.range(0, size).toArray(), values, size, size).sortAndPrune();
   }
 
   public static int binarySearch_first(int[] ints, int row) {
     final int search = binarySearch(ints, row);
     if (search <= 0)
       return search;
-    return com.simiacryptus.ref.wrappers.RefIntStream.iterate(search - 1, x -> x - 1).limit(search)
+    return RefIntStream.iterate(search - 1, x -> x - 1).limit(search)
         .filter(r -> r >= 0 && ints[r] != row).findFirst().orElse(-1) + 1;
   }
 
@@ -165,29 +167,29 @@ class SparseMatrixFloat {
     final int search = binarySearch(ints, row);
     if (search <= 0)
       return search;
-    return com.simiacryptus.ref.wrappers.RefIntStream.iterate(search - 1, x -> x - 1).limit(search)
+    return RefIntStream.iterate(search - 1, x -> x - 1).limit(search)
         .filter(r -> r >= 0 && ints[r] != row).findFirst().orElse(-1) + 1;
   }
 
   public static int[] project(int[] assignments, int[] projection) {
-    return com.simiacryptus.ref.wrappers.RefArrays.stream(assignments).map(i -> projection[i]).toArray();
+    return RefArrays.stream(assignments).map(i -> projection[i]).toArray();
   }
 
   public SparseMatrixFloat recalculateConnectionWeights(RasterTopology topology, Tensor content, int[] pixelMap,
                                                         double scale, double mixing, double minValue) {
     final MultivariateFrameOfReference globalFOR = new MultivariateFrameOfReference(() -> content.getPixelStream(), 3);
-    final com.simiacryptus.ref.wrappers.RefMap<Integer, MultivariateFrameOfReference> islandDistributions = com.simiacryptus.ref.wrappers.RefIntStream
+    final RefMap<Integer, MultivariateFrameOfReference> islandDistributions = RefIntStream
         .range(0, pixelMap.length).mapToObj(x -> x)
-        .collect(com.simiacryptus.ref.wrappers.RefCollectors.groupingBy(x -> pixelMap[x],
-            com.simiacryptus.ref.wrappers.RefCollectors.toList()))
-        .entrySet().stream().collect(com.simiacryptus.ref.wrappers.RefCollectors.toMap(Map.Entry::getKey,
-            (Map.Entry<Integer, com.simiacryptus.ref.wrappers.RefList<Integer>> entry) -> {
+        .collect(RefCollectors.groupingBy(x -> pixelMap[x],
+            RefCollectors.toList()))
+        .entrySet().stream().collect(RefCollectors.toMap(Map.Entry::getKey,
+            (Map.Entry<Integer, RefList<Integer>> entry) -> {
               final MultivariateFrameOfReference localFOR = new MultivariateFrameOfReference(() -> entry.getValue()
                   .stream().map(pixelIndex -> content.getPixel(topology.getCoordsFromIndex(pixelIndex))), 3);
               return new MultivariateFrameOfReference(globalFOR, localFOR, mixing);
             }));
     return new SparseMatrixFloat(this.rowIndices, this.colIndices,
-        toFloat(com.simiacryptus.ref.wrappers.RefIntStream.range(0, this.rowIndices.length).mapToDouble(i -> {
+        toFloat(RefIntStream.range(0, this.rowIndices.length).mapToDouble(i -> {
           final MultivariateFrameOfReference a = islandDistributions.get(this.rowIndices[i]);
           final MultivariateFrameOfReference b = islandDistributions.get(this.colIndices[i]);
           double dist = a.dist(b);
@@ -207,15 +209,15 @@ class SparseMatrixFloat {
     return matrix;
   }
 
-  public com.simiacryptus.ref.wrappers.RefMap<float[], Float> dense_graph_eigensys() {
+  public RefMap<float[], Float> dense_graph_eigensys() {
     final SparseMatrixFloat sparse_W = filterDiagonal();
     final FloatMatrix matrix_W = sparse_W.toJBLAS();
     final FloatMatrix matrix_D = sparse_W.degreeMatrix().toJBLAS();
     final FloatMatrix matrix_A = matrix_D.sub(matrix_W);
     final FloatMatrix[] eigensys = Eigen.symmetricGeneralizedEigenvectors(matrix_A, matrix_D);
     final float[] realEigenvalues = eigensys[1].data;
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, realEigenvalues.length).mapToObj(i -> i).collect(
-        com.simiacryptus.ref.wrappers.RefCollectors.toMap(i -> eigensys[0].getColumn(i).data, i -> realEigenvalues[i]));
+    return RefIntStream.range(0, realEigenvalues.length).mapToObj(i -> i).collect(
+        RefCollectors.toMap(i -> eigensys[0].getColumn(i).data, i -> realEigenvalues[i]));
   }
 
   public FloatMatrix toJBLAS() {
@@ -228,48 +230,48 @@ class SparseMatrixFloat {
 
   public SparseMatrixFloat degreeMatrix() {
     assert null != assertSymmetric();
-    return new SparseMatrixFloat(com.simiacryptus.ref.wrappers.RefIntStream.range(0, rows).toArray(),
-        com.simiacryptus.ref.wrappers.RefIntStream.range(0, rows).toArray(), toFloat(degree()), rows, cols);
+    return new SparseMatrixFloat(RefIntStream.range(0, rows).toArray(),
+        RefIntStream.range(0, rows).toArray(), toFloat(degree()), rows, cols);
   }
 
   public SparseMatrixFloat project(int[] projection) {
     final int[] rowIndices = project(this.rowIndices, projection);
     final int[] colIndices = project(this.colIndices, projection);
     return new SparseMatrixFloat(rowIndices, colIndices, values,
-        com.simiacryptus.ref.wrappers.RefArrays.stream(rowIndices).max().getAsInt() + 1,
-        com.simiacryptus.ref.wrappers.RefArrays.stream(colIndices).max().getAsInt() + 1).sortAndPrune().aggregate();
+        RefArrays.stream(rowIndices).max().getAsInt() + 1,
+        RefArrays.stream(colIndices).max().getAsInt() + 1).sortAndPrune().aggregate();
   }
 
   public int[] activeRows() {
-    return com.simiacryptus.ref.wrappers.RefArrays.stream(rowIndices).distinct().sorted().toArray();
+    return RefArrays.stream(rowIndices).distinct().sorted().toArray();
   }
 
   public SparseMatrixFloat select(int[] projection) {
-    final com.simiacryptus.ref.wrappers.RefMap<Integer, Integer> reverseIndex = com.simiacryptus.ref.wrappers.RefIntStream
+    final RefMap<Integer, Integer> reverseIndex = RefIntStream
         .range(0, projection.length).mapToObj(x -> x)
-        .collect(com.simiacryptus.ref.wrappers.RefCollectors.toMap(x -> projection[x], x -> x));
-    final int[] indices = com.simiacryptus.ref.wrappers.RefIntStream.range(0, this.rowIndices.length)
+        .collect(RefCollectors.toMap(x -> projection[x], x -> x));
+    final int[] indices = RefIntStream.range(0, this.rowIndices.length)
         .filter(i -> reverseIndex.containsKey(this.rowIndices[i]) && reverseIndex.containsKey(this.colIndices[i]))
         .toArray();
-    final int[] rowIndices = com.simiacryptus.ref.wrappers.RefArrays.stream(indices).map(i -> this.rowIndices[i])
+    final int[] rowIndices = RefArrays.stream(indices).map(i -> this.rowIndices[i])
         .map(i -> reverseIndex.get(i)).toArray();
-    final int[] colIndices = com.simiacryptus.ref.wrappers.RefArrays.stream(indices).map(i -> this.colIndices[i])
+    final int[] colIndices = RefArrays.stream(indices).map(i -> this.colIndices[i])
         .map(i -> reverseIndex.get(i)).toArray();
     final float[] floats = new float[indices.length];
     for (int i = 0; i < floats.length; i++) {
       floats[i] = values[indices[i]];
     }
     return new SparseMatrixFloat(rowIndices, colIndices, floats,
-        com.simiacryptus.ref.wrappers.RefArrays.stream(rowIndices).max().getAsInt() + 1,
-        com.simiacryptus.ref.wrappers.RefArrays.stream(colIndices).max().getAsInt() + 1).sortAndPrune().aggregate();
+        RefArrays.stream(rowIndices).max().getAsInt() + 1,
+        RefArrays.stream(colIndices).max().getAsInt() + 1).sortAndPrune().aggregate();
   }
 
   public SparseMatrixFloat sortAndPrune() {
     assert rowIndices.length == colIndices.length;
     assert rowIndices.length == values.length;
-    assert com.simiacryptus.ref.wrappers.RefArrays.stream(rowIndices).allMatch(x -> x >= 0 && x < rows);
-    assert com.simiacryptus.ref.wrappers.RefArrays.stream(colIndices).allMatch(x -> x >= 0 && x < cols);
-    final com.simiacryptus.ref.wrappers.RefComparator<Integer> comparator = com.simiacryptus.ref.wrappers.RefComparator
+    assert RefArrays.stream(rowIndices).allMatch(x -> x >= 0 && x < rows);
+    assert RefArrays.stream(colIndices).allMatch(x -> x >= 0 && x < cols);
+    final RefComparator<Integer> comparator = RefComparator
         .comparingInt((Integer i) -> rowIndices[i]).thenComparingInt(i -> colIndices[i]);
     final int[] sortedAndFiltered = filterValues(index(rowIndices, comparator), zeros(values));
     return new SparseMatrixFloat(reorder(rowIndices, sortedAndFiltered), reorder(colIndices, sortedAndFiltered),
@@ -301,34 +303,34 @@ class SparseMatrixFloat {
     assert right.rows == rows : right.rows + " != " + rows;
     assert right.cols == cols : right.cols + " != " + cols;
 
-    long[] indices_left = com.simiacryptus.ref.wrappers.RefIntStream.range(0, rowIndices.length)
+    long[] indices_left = RefIntStream.range(0, rowIndices.length)
         .mapToLong(i -> (long) rowIndices[i] * cols + colIndices[i]).toArray();
     final int[] index_left = index(indices_left);
     indices_left = reorder(indices_left, index_left);
     final float[] sortedValues_left = reorder(values, index_left);
 
-    long[] indices_right = com.simiacryptus.ref.wrappers.RefIntStream.range(0, right.rowIndices.length)
+    long[] indices_right = RefIntStream.range(0, right.rowIndices.length)
         .mapToLong(i -> (long) right.rowIndices[i] * cols + right.colIndices[i]).toArray();
     final int[] index_right = index(indices_right);
     indices_right = reorder(indices_right, index_right);
     final float[] sortedValues_right = reorder(right.values, index_right);
 
-    final long[] finalIndices = com.simiacryptus.ref.wrappers.RefLongStream
-        .concat(com.simiacryptus.ref.wrappers.RefArrays.stream(indices_left),
-            com.simiacryptus.ref.wrappers.RefArrays.stream(indices_right))
+    final long[] finalIndices = RefLongStream
+        .concat(RefArrays.stream(indices_left),
+            RefArrays.stream(indices_right))
         .distinct().toArray();
     long[] finalIndices_left = indices_left;
     long[] finalIndices_right = indices_right;
-    return new SparseMatrixFloat(com.simiacryptus.ref.wrappers.RefIntStream.range(0, finalIndices.length)
+    return new SparseMatrixFloat(RefIntStream.range(0, finalIndices.length)
         .mapToLong(i -> finalIndices[i]).mapToInt(elementIndex -> {
           final int i1 = (int) (elementIndex / cols);
           assert 0 <= i1 : i1;
           assert rows > i1 : i1;
           return i1;
         }).toArray(),
-        com.simiacryptus.ref.wrappers.RefIntStream.range(0, finalIndices.length).mapToLong(i -> finalIndices[i])
+        RefIntStream.range(0, finalIndices.length).mapToLong(i -> finalIndices[i])
             .mapToInt(elementIndex -> (int) (elementIndex % cols)).toArray(),
-        toFloat(com.simiacryptus.ref.wrappers.RefIntStream.range(0, finalIndices.length).mapToLong(i -> finalIndices[i])
+        toFloat(RefIntStream.range(0, finalIndices.length).mapToLong(i -> finalIndices[i])
             .mapToDouble(elementIndex -> {
               final int idx_left = binarySearch_first(finalIndices_left, elementIndex);
               final int idx_right = binarySearch_first(finalIndices_right, elementIndex);
@@ -346,11 +348,11 @@ class SparseMatrixFloat {
     if (begin < 0)
       return new int[]{};
     int end = getEnd(row, begin);
-    return com.simiacryptus.ref.wrappers.RefArrays.copyOfRange(colIndices, begin, end);
+    return RefArrays.copyOfRange(colIndices, begin, end);
   }
 
   public int getEnd(int row, int begin) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(begin, rowIndices.length).filter(r -> rowIndices[r] != row)
+    return RefIntStream.range(begin, rowIndices.length).filter(r -> rowIndices[r] != row)
         .findFirst().orElse(rowIndices.length);
   }
 
@@ -364,7 +366,7 @@ class SparseMatrixFloat {
     if (begin < 0)
       return new float[]{};
     int end = getEnd(row, begin);
-    return com.simiacryptus.ref.wrappers.RefArrays.copyOfRange(values, begin, end);
+    return RefArrays.copyOfRange(values, begin, end);
   }
 
   public double getValSum(int row) {
@@ -374,16 +376,16 @@ class SparseMatrixFloat {
       return 0;
     final int nnz = this.rowIndices.length;
     assert begin < nnz;
-    int end = com.simiacryptus.ref.wrappers.RefIntStream.range(begin, nnz).filter(i -> this.rowIndices[i] != row)
+    int end = RefIntStream.range(begin, nnz).filter(i -> this.rowIndices[i] != row)
         .findFirst().orElse(nnz);
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(begin, end).filter(i -> colIndices[i] != row)
+    return RefIntStream.range(begin, end).filter(i -> colIndices[i] != row)
         .mapToDouble(i -> values[i]).sum();
   }
 
   public SparseMatrixFloat assertSymmetric() {
-    assert com.simiacryptus.ref.wrappers.RefArrays.stream(this.activeRows()).map(x -> this.getCols(x).length)
+    assert RefArrays.stream(this.activeRows()).map(x -> this.getCols(x).length)
         .sum() == this.getNumNonZeros();
-    assert com.simiacryptus.ref.wrappers.RefArrays.stream(this.activeRows()).map(x -> this.getVals(x).length)
+    assert RefArrays.stream(this.activeRows()).map(x -> this.getVals(x).length)
         .sum() == this.getNumNonZeros();
     assert transpose().equals(sortAndPrune(), 1e-4);
     return this;
@@ -417,9 +419,9 @@ class SparseMatrixFloat {
       }
       sourceIndex++;
     }
-    return new SparseMatrixFloat(com.simiacryptus.ref.wrappers.RefArrays.copyOf(rowIndices, targetIndex),
-        com.simiacryptus.ref.wrappers.RefArrays.copyOf(colIndices, targetIndex),
-        com.simiacryptus.ref.wrappers.RefArrays.copyOf(values, targetIndex), rows, cols);
+    return new SparseMatrixFloat(RefArrays.copyOf(rowIndices, targetIndex),
+        RefArrays.copyOf(colIndices, targetIndex),
+        RefArrays.copyOf(values, targetIndex), rows, cols);
   }
 
   public SparseMatrixFloat filterDiagonal() {
@@ -437,9 +439,9 @@ class SparseMatrixFloat {
       }
       sourceIndex++;
     }
-    return new SparseMatrixFloat(com.simiacryptus.ref.wrappers.RefArrays.copyOf(rowIndices, targetIndex),
-        com.simiacryptus.ref.wrappers.RefArrays.copyOf(colIndices, targetIndex),
-        com.simiacryptus.ref.wrappers.RefArrays.copyOf(values, targetIndex), rows, cols);
+    return new SparseMatrixFloat(RefArrays.copyOf(rowIndices, targetIndex),
+        RefArrays.copyOf(colIndices, targetIndex),
+        RefArrays.copyOf(values, targetIndex), rows, cols);
   }
 
   public double[] degree() {
@@ -453,8 +455,8 @@ class SparseMatrixFloat {
   protected SparseMatrixFloat aggregate() {
     assert rowIndices.length == colIndices.length;
     assert rowIndices.length == values.length;
-    assert com.simiacryptus.ref.wrappers.RefArrays.stream(rowIndices).allMatch(x -> x >= 0 && x < rows);
-    assert com.simiacryptus.ref.wrappers.RefArrays.stream(colIndices).allMatch(x -> x >= 0 && x < cols);
+    assert RefArrays.stream(rowIndices).allMatch(x -> x >= 0 && x < rows);
+    assert RefArrays.stream(colIndices).allMatch(x -> x >= 0 && x < cols);
     final int[] rowIndices_copy = new int[rowIndices.length];
     final int[] colIndices_copy = new int[colIndices.length];
     final float[] values_copy = new float[values.length];
@@ -469,9 +471,9 @@ class SparseMatrixFloat {
         j++;
       }
     }
-    return new SparseMatrixFloat(com.simiacryptus.ref.wrappers.RefArrays.copyOfRange(rowIndices_copy, 0, j),
-        com.simiacryptus.ref.wrappers.RefArrays.copyOfRange(colIndices_copy, 0, j),
-        com.simiacryptus.ref.wrappers.RefArrays.copyOfRange(values_copy, 0, j), rows, cols);
+    return new SparseMatrixFloat(RefArrays.copyOfRange(rowIndices_copy, 0, j),
+        RefArrays.copyOfRange(colIndices_copy, 0, j),
+        RefArrays.copyOfRange(values_copy, 0, j), rows, cols);
   }
 
   private boolean equals(SparseMatrixFloat other, double tolerance) {

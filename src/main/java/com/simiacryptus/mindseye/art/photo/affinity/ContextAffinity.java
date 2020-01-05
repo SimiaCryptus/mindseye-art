@@ -23,13 +23,16 @@ import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.art.photo.topology.IteratedRasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.*;
 import org.ejml.simple.SimpleMatrix;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.function.Supplier;
 
-public abstract @com.simiacryptus.ref.lang.RefAware
+public abstract @RefAware
 class ContextAffinity extends ReferenceCountingBase
     implements RasterAffinity {
   protected final Tensor content;
@@ -92,12 +95,12 @@ class ContextAffinity extends ReferenceCountingBase
 
   @NotNull
   public static SimpleMatrix covariance(SimpleMatrix means, SimpleMatrix rms,
-                                        Supplier<com.simiacryptus.ref.wrappers.RefStream<double[]>> stream, int size) {
+                                        Supplier<RefStream<double[]>> stream, int size) {
     final SimpleMatrix cov = new SimpleMatrix(size, size);
-    com.simiacryptus.ref.wrappers.RefIntStream.range(0, size).parallel().forEach(c1 -> {
+    RefIntStream.range(0, size).parallel().forEach(c1 -> {
       final double mean1 = means.get(c1);
       final double rms1 = rms.get(c1);
-      com.simiacryptus.ref.wrappers.RefIntStream.range(0, size).forEach(c2 -> {
+      RefIntStream.range(0, size).forEach(c2 -> {
         final double mean2 = means.get(c2);
         final double rms2 = rms.get(c2);
         final double covariance = stream.get().mapToDouble(p -> ((p[c1] - mean1) / rms1) * ((p[c2] - mean2) / rms2))
@@ -110,9 +113,9 @@ class ContextAffinity extends ReferenceCountingBase
 
   @NotNull
   public static SimpleMatrix magnitude(SimpleMatrix means,
-                                       Supplier<com.simiacryptus.ref.wrappers.RefStream<double[]>> stream, int size) {
+                                       Supplier<RefStream<double[]>> stream, int size) {
     final SimpleMatrix rms = new SimpleMatrix(size, 1);
-    com.simiacryptus.ref.wrappers.RefIntStream.range(0, size).forEach(c -> rms.set(c, 0,
+    RefIntStream.range(0, size).forEach(c -> rms.set(c, 0,
         //        256
         //        1.0 * Math.sqrt(neighborhood.stream().mapToDouble(p -> p[c] - means.get(c)).map(p -> p * p).average().getAsDouble())
         Math.sqrt(stream.get().mapToDouble(p -> p[c] - means.get(c)).map(Math::abs).max().getAsDouble())));
@@ -120,9 +123,9 @@ class ContextAffinity extends ReferenceCountingBase
   }
 
   @NotNull
-  public static SimpleMatrix means(Supplier<com.simiacryptus.ref.wrappers.RefStream<double[]>> stream, int size) {
+  public static SimpleMatrix means(Supplier<RefStream<double[]>> stream, int size) {
     final SimpleMatrix means = new SimpleMatrix(size, 1);
-    com.simiacryptus.ref.wrappers.RefIntStream.range(0, size)
+    RefIntStream.range(0, size)
         .forEach(c -> means.set(c, 0, stream.get().mapToDouble(p -> p[c]).average().orElse(0)));
     return means;
   }
@@ -131,7 +134,7 @@ class ContextAffinity extends ReferenceCountingBase
   ContextAffinity[] addRefs(ContextAffinity[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(ContextAffinity::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(ContextAffinity::addRef)
         .toArray((x) -> new ContextAffinity[x]);
   }
 
@@ -139,12 +142,12 @@ class ContextAffinity extends ReferenceCountingBase
   ContextAffinity[][] addRefs(ContextAffinity[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(ContextAffinity::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(ContextAffinity::addRefs)
         .toArray((x) -> new ContextAffinity[x][]);
   }
 
-  private static com.simiacryptus.ref.wrappers.RefIntStream expand(
-      com.simiacryptus.ref.wrappers.RefList<int[]> graphEdges, com.simiacryptus.ref.wrappers.RefIntStream stream,
+  private static RefIntStream expand(
+      RefList<int[]> graphEdges, RefIntStream stream,
       int iterations) {
     if (iterations <= 0) {
       return stream;
@@ -155,28 +158,28 @@ class ContextAffinity extends ReferenceCountingBase
     }
   }
 
-  private static com.simiacryptus.ref.wrappers.RefIntStream expand(
-      com.simiacryptus.ref.wrappers.RefList<int[]> graphEdges, com.simiacryptus.ref.wrappers.RefIntStream intStream) {
-    return intStream.mapToObj(graphEdges::get).flatMapToInt(com.simiacryptus.ref.wrappers.RefArrays::stream).distinct();
+  private static RefIntStream expand(
+      RefList<int[]> graphEdges, RefIntStream intStream) {
+    return intStream.mapToObj(graphEdges::get).flatMapToInt(RefArrays::stream).distinct();
   }
 
   @Override
-  public com.simiacryptus.ref.wrappers.RefList<double[]> affinityList(
-      com.simiacryptus.ref.wrappers.RefList<int[]> graphEdges) {
+  public RefList<double[]> affinityList(
+      RefList<int[]> graphEdges) {
     final int channels = dimensions[2];
     final int pixels = dimensions[0] * dimensions[1];
-    final com.simiacryptus.ref.wrappers.RefList<int[]> iteratedGraph = IteratedRasterTopology.iterate(graphEdges,
+    final RefList<int[]> iteratedGraph = IteratedRasterTopology.iterate(graphEdges,
         getGraphPower1());
     MultivariateFrameOfReference region_global = new MultivariateFrameOfReference(
         () -> content.getPixelStream().parallel(), channels);
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, pixels).parallel()
-        .mapToObj(i -> com.simiacryptus.ref.wrappers.RefArrays.stream(graphEdges.get(i)).mapToDouble(j -> {
+    return RefIntStream.range(0, pixels).parallel()
+        .mapToObj(i -> RefArrays.stream(graphEdges.get(i)).mapToDouble(j -> {
           if (i == j) {
             return 1;
           } else {
-            final com.simiacryptus.ref.wrappers.RefList<double[]> neighborhood = expand(iteratedGraph,
-                com.simiacryptus.ref.wrappers.RefIntStream.of(i, j), getGraphPower2()).mapToObj(this::pixel)
-                .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+            final RefList<double[]> neighborhood = expand(iteratedGraph,
+                RefIntStream.of(i, j), getGraphPower2()).mapToObj(this::pixel)
+                .collect(RefCollectors.toList());
             if (neighborhood.isEmpty())
               return 1;
             MultivariateFrameOfReference mix = new MultivariateFrameOfReference(region_global,
@@ -184,7 +187,7 @@ class ContextAffinity extends ReferenceCountingBase
             return dist(toMatrix(mix.adjust(pixel(i))), toMatrix(mix.adjust(pixel(j))), mix.cov, neighborhood.size(),
                 pixels);
           }
-        }).toArray()).collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+        }).toArray()).collect(RefCollectors.toList());
   }
 
   public @SuppressWarnings("unused")
@@ -198,7 +201,7 @@ class ContextAffinity extends ReferenceCountingBase
   }
 
   protected double[] adjust(double[] pixel_i, SimpleMatrix means, SimpleMatrix rms) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[2])
+    return RefIntStream.range(0, dimensions[2])
         .mapToDouble(c -> ((pixel_i[c]) - means.get(c)) / rms.get(c)).toArray();
   }
 
@@ -207,7 +210,7 @@ class ContextAffinity extends ReferenceCountingBase
 
   protected double[] pixel(int i) {
     final int[] coords = getTopology().getCoordsFromIndex(i);
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[2]).mapToDouble(c -> {
+    return RefIntStream.range(0, dimensions[2]).mapToDouble(c -> {
       return content.get(coords[0], coords[1], c);
     }).toArray();
   }

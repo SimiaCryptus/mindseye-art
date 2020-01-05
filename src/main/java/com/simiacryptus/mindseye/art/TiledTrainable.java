@@ -31,16 +31,20 @@ import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefIntStream;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.UUID;
 
-public abstract @com.simiacryptus.ref.lang.RefAware
+public abstract @RefAware
 class TiledTrainable extends ReferenceCountingBase
     implements Trainable {
 
@@ -84,7 +88,7 @@ class TiledTrainable extends ReferenceCountingBase
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
     if (cols != 1 || rows != 1) {
       this.selectors = selectors(padding, width, height, tileSize, fade);
-      networks = com.simiacryptus.ref.wrappers.RefArrays.stream(this.getSelectors())
+      networks = RefArrays.stream(this.getSelectors())
           .map(selector -> PipelineNetwork.build(1, filter.addRef(), selector)).map(this::getNetwork)
           .toArray(i -> new PipelineNetwork[i]);
     } else {
@@ -180,7 +184,7 @@ class TiledTrainable extends ReferenceCountingBase
   TiledTrainable[] addRefs(TiledTrainable[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRef)
         .toArray((x) -> new TiledTrainable[x]);
   }
 
@@ -188,7 +192,7 @@ class TiledTrainable extends ReferenceCountingBase
   TiledTrainable[][] addRefs(TiledTrainable[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRefs)
         .toArray((x) -> new TiledTrainable[x][]);
   }
 
@@ -199,7 +203,7 @@ class TiledTrainable extends ReferenceCountingBase
     if (null == getSelectors() || 0 == getSelectors().length) {
       Trainable trainable = new BasicTrainable(PipelineNetwork.build(1, filter.addRef(),
           networkSingleton.getOrInit(() -> getNetwork(filter.addRef())).addRef())).setMask(isMutableCanvas())
-          .setData(com.simiacryptus.ref.wrappers.RefArrays.asList(new Tensor[][]{{canvas}}));
+          .setData(RefArrays.asList(new Tensor[][]{{canvas}}));
       PointSample measure = trainable.measure(monitor);
       trainable.freeRef();
       filter.freeRef();
@@ -213,7 +217,7 @@ class TiledTrainable extends ReferenceCountingBase
       }
       filter.freeRef();
       AtomicDouble resultSum = new AtomicDouble(0);
-      final DeltaSet<UUID> delta = com.simiacryptus.ref.wrappers.RefIntStream.range(0, getSelectors().length)
+      final DeltaSet<UUID> delta = RefIntStream.range(0, getSelectors().length)
           .mapToObj(i -> {
             final DeltaSet<UUID> deltaSet = new DeltaSet<>();
             Result tileInput = getSelectors()[i].eval(canvasBuffer);
@@ -248,9 +252,9 @@ class TiledTrainable extends ReferenceCountingBase
 
   public void _free() {
     if (null != getSelectors())
-      com.simiacryptus.ref.wrappers.RefArrays.stream(getSelectors()).forEach(ReferenceCounting::freeRef);
+      RefArrays.stream(getSelectors()).forEach(ReferenceCounting::freeRef);
     if (null != networks)
-      com.simiacryptus.ref.wrappers.RefArrays.stream(networks).forEach(ReferenceCounting::freeRef);
+      RefArrays.stream(networks).forEach(ReferenceCounting::freeRef);
     if (networkSingleton.isDefined())
       networkSingleton.get().freeRef();
     filter.freeRef();

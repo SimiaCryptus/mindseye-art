@@ -23,6 +23,9 @@ import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefList;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.DMatrixSparseCSC;
 import org.ejml.interfaces.linsol.LinearSolverSparse;
@@ -33,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.UnaryOperator;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class SmoothSolver_EJML implements SmoothSolver {
 
   public static UnaryOperator<SimpleMatrix> solve(DMatrixSparseCSC affinity, double lambda) {
@@ -58,9 +61,9 @@ class SmoothSolver_EJML implements SmoothSolver {
   public static UnaryOperator<Tensor> wrap(UnaryOperator<SimpleMatrix> solver, RasterTopology topology) {
     final int[] dimensions = topology.getDimensions();
     return tensor -> {
-      if (!com.simiacryptus.ref.wrappers.RefArrays.equals(dimensions, tensor.getDimensions()))
-        throw new IllegalArgumentException(com.simiacryptus.ref.wrappers.RefArrays.toString(dimensions) + " != "
-            + com.simiacryptus.ref.wrappers.RefArrays.toString(tensor.getDimensions()));
+      if (!RefArrays.equals(dimensions, tensor.getDimensions()))
+        throw new IllegalArgumentException(RefArrays.toString(dimensions) + " != "
+            + RefArrays.toString(tensor.getDimensions()));
       final SimpleMatrix imageMatrix = new SimpleMatrix(dimensions[0] * dimensions[1], dimensions[2]);
       for (int x = 0; x < dimensions[0]; x++) {
         for (int y = 0; y < dimensions[1]; y++) {
@@ -77,8 +80,8 @@ class SmoothSolver_EJML implements SmoothSolver {
     };
   }
 
-  public static @NotNull DMatrixSparseCSC laplacian(com.simiacryptus.ref.wrappers.RefList<int[]> graphEdges,
-                                                    com.simiacryptus.ref.wrappers.RefList<double[]> affinityList) {
+  public static @NotNull DMatrixSparseCSC laplacian(RefList<int[]> graphEdges,
+                                                    RefList<double[]> affinityList) {
     final int pixels = graphEdges.size();
     final DMatrixSparseCSC adjacency = new DMatrixSparseCSC(pixels, pixels);
     for (int i = 0; i < pixels; i++) {
@@ -92,7 +95,7 @@ class SmoothSolver_EJML implements SmoothSolver {
       }
     }
     final double[] degree = affinityList.stream()
-        .mapToDouble(x -> com.simiacryptus.ref.wrappers.RefArrays.stream(x).sum()).toArray();
+        .mapToDouble(x -> RefArrays.stream(x).sum()).toArray();
     // Calclulate normalized laplacian
     final DMatrixSparseCSC rescaled = new DMatrixSparseCSC(pixels, pixels);
     for (int i = 0; i < pixels; i++) {

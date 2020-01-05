@@ -19,7 +19,13 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-public @com.simiacryptus.ref.lang.RefAware
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefCollectors;
+import com.simiacryptus.ref.wrappers.RefIntStream;
+import com.simiacryptus.ref.wrappers.RefList;
+
+public @RefAware
 class IteratedRasterTopology implements RasterTopology {
   private final RasterTopology inner;
   private int iterations = 2;
@@ -43,23 +49,23 @@ class IteratedRasterTopology implements RasterTopology {
     return this;
   }
 
-  public static com.simiacryptus.ref.wrappers.RefList<int[]> iterate(com.simiacryptus.ref.wrappers.RefList<int[]> edges,
-                                                                     int pow) {
+  public static RefList<int[]> iterate(RefList<int[]> edges,
+                                       int pow) {
     assert pow > 0;
     if (1 == pow) {
       return edges;
     } else {
-      final com.simiacryptus.ref.wrappers.RefList<int[]> prev = iterate(edges, pow - 1);
-      return com.simiacryptus.ref.wrappers.RefIntStream.range(0, prev.size()).parallel()
-          .mapToObj(j -> com.simiacryptus.ref.wrappers.RefArrays.stream(prev.get(j))
-              .flatMap(i -> com.simiacryptus.ref.wrappers.RefArrays.stream(prev.get(i))).filter(i -> i != j).distinct()
+      final RefList<int[]> prev = iterate(edges, pow - 1);
+      return RefIntStream.range(0, prev.size()).parallel()
+          .mapToObj(j -> RefArrays.stream(prev.get(j))
+              .flatMap(i -> RefArrays.stream(prev.get(i))).filter(i -> i != j).distinct()
               .toArray())
-          .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+          .collect(RefCollectors.toList());
     }
   }
 
   @Override
-  public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
+  public RefList<int[]> connectivity() {
     return iterate(inner.connectivity(), getIterations());
   }
 

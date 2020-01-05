@@ -22,12 +22,14 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.util.ImageUtil;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class VisualModifierParameters extends ReferenceCountingBase {
   public final PipelineNetwork network;
   public final Tensor mask;
@@ -52,7 +54,7 @@ class VisualModifierParameters extends ReferenceCountingBase {
   VisualModifierParameters[] addRefs(VisualModifierParameters[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRef)
         .toArray((x) -> new VisualModifierParameters[x]);
   }
 
@@ -60,7 +62,7 @@ class VisualModifierParameters extends ReferenceCountingBase {
   VisualModifierParameters[][] addRefs(VisualModifierParameters[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRefs)
         .toArray((x) -> new VisualModifierParameters[x][]);
   }
 

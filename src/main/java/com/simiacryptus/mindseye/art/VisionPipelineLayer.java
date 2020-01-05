@@ -22,13 +22,14 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 
 import static com.simiacryptus.mindseye.layers.cudnn.PoolingLayer.getPoolingLayer;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 interface VisionPipelineLayer {
   final VisionPipelineLayer.Noop NOOP = new VisionPipelineLayer.Noop();
 
@@ -88,7 +89,7 @@ interface VisionPipelineLayer {
     return new AppendVisionPipelineLayer(this, layer);
   }
 
-  public static @com.simiacryptus.ref.lang.RefAware
+  public static @RefAware
   class Noop implements VisionPipelineLayer {
 
     @Nonnull

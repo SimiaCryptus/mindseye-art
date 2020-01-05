@@ -43,12 +43,13 @@ import com.simiacryptus.mindseye.opt.region.RangeConstraint;
 import com.simiacryptus.mindseye.opt.region.TrustRegion;
 import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.notebook.NullNotebookOutput;
+import com.simiacryptus.ref.lang.RefAware;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class OptimizationTest {
   private static final Logger log = LoggerFactory.getLogger(OptimizationTest.class);
 

@@ -27,6 +27,7 @@ import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.TestUtil;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,7 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-@com.simiacryptus.ref.lang.RefAware
+@RefAware
 class VGG16_HDF5 {
 
   public static final Logger log = LoggerFactory.getLogger(VGG16_HDF5.class);

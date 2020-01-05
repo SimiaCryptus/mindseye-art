@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.art.util.ImageArtUtil;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.wrappers.RefMap;
 import com.simiacryptus.tensorflow.ImageNetworkPipeline;
 
 public enum Inception5H implements VisionPipelineLayer {
@@ -30,7 +31,7 @@ public enum Inception5H implements VisionPipelineLayer {
   Inc5H_4b("mixed4b"), Inc5H_4c("mixed4c"), Inc5H_4d("mixed4d"), Inc5H_4e("mixed4e"), Inc5H_5a("mixed5a"),
   Inc5H_5b("mixed5b");
 
-  private static transient com.simiacryptus.ref.wrappers.RefMap<String, PipelineNetwork> inception5h = null;
+  private static transient RefMap<String, PipelineNetwork> inception5h = null;
   private static volatile VisionPipeline<Inception5H> visionPipeline = null;
   private final String layerId;
 
@@ -64,7 +65,7 @@ public enum Inception5H implements VisionPipelineLayer {
     return visionPipeline;
   }
 
-  public static com.simiacryptus.ref.wrappers.RefMap<String, PipelineNetwork> layerMap() {
+  public static RefMap<String, PipelineNetwork> layerMap() {
     if (null == inception5h) {
       synchronized (Inception5H.class) {
         if (null == inception5h) {

@@ -19,6 +19,9 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.*;
+
 import java.util.DoubleSummaryStatistics;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -26,17 +29,17 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class DoubleVectorStatistics
-    implements com.simiacryptus.ref.wrappers.RefConsumer<double[]> {
+    implements RefConsumer<double[]> {
 
   final DoubleSummaryStatistics[] firstOrder;
   final DoubleSummaryStatistics[] secondOrder;
 
   public DoubleVectorStatistics(int length) {
-    firstOrder = com.simiacryptus.ref.wrappers.RefIntStream.range(0, length)
+    firstOrder = RefIntStream.range(0, length)
         .mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);
-    secondOrder = com.simiacryptus.ref.wrappers.RefIntStream.range(0, length)
+    secondOrder = RefIntStream.range(0, length)
         .mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);
   }
 
@@ -68,9 +71,9 @@ class DoubleVectorStatistics
       }
 
       @Override
-      public com.simiacryptus.ref.wrappers.RefSet<Characteristics> characteristics() {
-        return com.simiacryptus.ref.wrappers.RefStream.of(Characteristics.UNORDERED)
-            .collect(com.simiacryptus.ref.wrappers.RefCollectors.toSet());
+      public RefSet<Characteristics> characteristics() {
+        return RefStream.of(Characteristics.UNORDERED)
+            .collect(RefCollectors.toSet());
       }
     };
   }
@@ -78,16 +81,16 @@ class DoubleVectorStatistics
   @Override
   public void accept(double[] doubles) {
     assert firstOrder.length == doubles.length;
-    com.simiacryptus.ref.wrappers.RefIntStream.range(0, doubles.length).forEach(i -> firstOrder[i].accept(doubles[i]));
-    com.simiacryptus.ref.wrappers.RefIntStream.range(0, doubles.length)
+    RefIntStream.range(0, doubles.length).forEach(i -> firstOrder[i].accept(doubles[i]));
+    RefIntStream.range(0, doubles.length)
         .forEach(i -> secondOrder[i].accept(doubles[i] * doubles[i]));
   }
 
   public void combine(DoubleVectorStatistics colorStats) {
     assert firstOrder.length == colorStats.firstOrder.length;
-    com.simiacryptus.ref.wrappers.RefIntStream.range(0, firstOrder.length)
+    RefIntStream.range(0, firstOrder.length)
         .forEach(i -> firstOrder[i].combine(colorStats.firstOrder[i]));
-    com.simiacryptus.ref.wrappers.RefIntStream.range(0, secondOrder.length)
+    RefIntStream.range(0, secondOrder.length)
         .forEach(i -> secondOrder[i].combine(colorStats.secondOrder[i]));
   }
 }

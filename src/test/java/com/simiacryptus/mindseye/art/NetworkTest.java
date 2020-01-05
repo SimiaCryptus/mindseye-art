@@ -32,13 +32,15 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.notebook.NullNotebookOutput;
+import com.simiacryptus.ref.lang.RefAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.Random;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class NetworkTest extends LayerTestBase {
   private static final Logger log = LoggerFactory.getLogger(NetworkTest.class);
   private static final BufferedImage styleImage = ImageArtUtil.load(new NullNotebookOutput(),
@@ -60,7 +62,7 @@ class NetworkTest extends LayerTestBase {
   NetworkTest[] addRefs(NetworkTest[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRef)
         .toArray((x) -> new NetworkTest[x]);
   }
 
@@ -68,7 +70,7 @@ class NetworkTest extends LayerTestBase {
   NetworkTest[][] addRefs(NetworkTest[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRefs)
         .toArray((x) -> new NetworkTest[x][]);
   }
 

@@ -33,14 +33,18 @@ import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefStream;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.UUID;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class MomentMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(MomentMatcher.class);
   private static int padding = 8;
@@ -106,7 +110,7 @@ class MomentMatcher implements VisualModifier {
   }
 
   @NotNull
-  public static Tensor sum(com.simiacryptus.ref.wrappers.RefStream<Tensor> tensorStream) {
+  public static Tensor sum(RefStream<Tensor> tensorStream) {
     return tensorStream.reduce((a, b) -> {
       a.addAndFree(b);
       b.freeRef();
@@ -148,17 +152,17 @@ class MomentMatcher implements VisualModifier {
 
   public static Tensor toMask(Tensor tensor) {
     return tensor.mapPixels(pixel -> {
-      if (com.simiacryptus.ref.wrappers.RefArrays.stream(pixel).filter(x -> x != 0).findFirst().isPresent()) {
-        return com.simiacryptus.ref.wrappers.RefArrays.stream(pixel).map(x -> 1).toArray();
+      if (RefArrays.stream(pixel).filter(x -> x != 0).findFirst().isPresent()) {
+        return RefArrays.stream(pixel).map(x -> 1).toArray();
       } else {
-        return com.simiacryptus.ref.wrappers.RefArrays.stream(pixel).map(x -> 0).toArray();
+        return RefArrays.stream(pixel).map(x -> 0).toArray();
       }
     });
   }
 
   public static boolean test(PipelineNetwork network, Tensor... images) {
     if (images.length > 1)
-      return com.simiacryptus.ref.wrappers.RefArrays.stream(images).map(x -> test(network, x)).reduce((a, b) -> a && b)
+      return RefArrays.stream(images).map(x -> test(network, x)).reduce((a, b) -> a && b)
           .get();
     try {
       network.eval(images[0]).getData().freeRef();
@@ -173,14 +177,14 @@ class MomentMatcher implements VisualModifier {
     if (image.length <= 0) {
       throw new IllegalArgumentException("image.length <= 0");
     }
-    final Tensor sum = sum(com.simiacryptus.ref.wrappers.RefArrays.stream(image).flatMap(img -> {
+    final Tensor sum = sum(RefArrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
       final Layer[] selectors = TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize,
           true);
       if (selectors.length <= 0) {
         throw new IllegalArgumentException("selectors.length <= 0");
       }
-      return com.simiacryptus.ref.wrappers.RefArrays.stream(selectors).map(selector -> {
+      return RefArrays.stream(selectors).map(selector -> {
         //log.info(selector.toString());
         Tensor tile = selector.eval(img).getData().get(0);
         selector.freeRef();
@@ -214,8 +218,8 @@ class MomentMatcher implements VisualModifier {
 
     if (null != visualModifierParameters.mask) {
       final Tensor boolMask = toMask(transform(network, visualModifierParameters.mask, getPrecision()));
-      log.info("Mask: " + com.simiacryptus.ref.wrappers.RefArrays.toString(boolMask.getDimensions()));
-      final double maskFactor = com.simiacryptus.ref.wrappers.RefArrays.stream(boolMask.getData()).average()
+      log.info("Mask: " + RefArrays.toString(boolMask.getDimensions()));
+      final double maskFactor = RefArrays.stream(boolMask.getData()).average()
           .getAsDouble();
       PipelineNetwork maskedNetwork = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
       assert test(maskedNetwork, visualModifierParameters.mask);
@@ -247,7 +251,7 @@ class MomentMatcher implements VisualModifier {
   }
 
   public int getPixels(Tensor[] images) {
-    return Math.max(1, com.simiacryptus.ref.wrappers.RefArrays.stream(images).mapToInt(x -> {
+    return Math.max(1, RefArrays.stream(images).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum());
@@ -309,7 +313,7 @@ class MomentMatcher implements VisualModifier {
     return evalRoot;
   }
 
-  private static @com.simiacryptus.ref.lang.RefAware
+  private static @RefAware
   class MomentParams extends ReferenceCountingBase {
     private final InnerNode avgNode;
     private final Tensor avgValue;
@@ -334,7 +338,7 @@ class MomentMatcher implements VisualModifier {
     MomentParams[] addRefs(MomentParams[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(MomentParams::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(MomentParams::addRef)
           .toArray((x) -> new MomentParams[x]);
     }
 

@@ -21,7 +21,9 @@ package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.util.FastRandom;
 import jcuda.Pointer;
 import jcuda.Sizeof;
@@ -32,13 +34,15 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.runtime.JCuda;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+
 import static jcuda.jcusolver.JCusolverSp.cusolverSpScsreigvsi;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class EigenvectorSolver_Cuda extends ReferenceCountingBase
     implements RefOperator<double[][]> {
   final CudaSparseMatrix laplacian;
@@ -67,7 +71,7 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
     return new int[]{dimensions[0], dimensions[1]};
   }
 
-  public static Tensor remaining(com.simiacryptus.ref.wrappers.RefCollection<Tensor> eigenVectors, int... dimensions) {
+  public static Tensor remaining(RefCollection<Tensor> eigenVectors, int... dimensions) {
     Tensor seed = new Tensor(dimensions).set(() -> FastRandom.INSTANCE.random()).unit();
     for (Tensor eigenVector : eigenVectors) {
       final double dot = eigenVector.dot(seed);
@@ -81,7 +85,7 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
   EigenvectorSolver_Cuda[] addRefs(EigenvectorSolver_Cuda[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(EigenvectorSolver_Cuda::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(EigenvectorSolver_Cuda::addRef)
         .toArray((x) -> new EigenvectorSolver_Cuda[x]);
   }
 
@@ -89,12 +93,12 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
   EigenvectorSolver_Cuda[][] addRefs(EigenvectorSolver_Cuda[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(EigenvectorSolver_Cuda::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(EigenvectorSolver_Cuda::addRefs)
         .toArray((x) -> new EigenvectorSolver_Cuda[x][]);
   }
 
-  public com.simiacryptus.ref.wrappers.RefList<Tensor> eigenVectors(RasterTopology topology, int n) {
-    final com.simiacryptus.ref.wrappers.RefList<Tensor> eigenVectors = new com.simiacryptus.ref.wrappers.RefArrayList<>();
+  public RefList<Tensor> eigenVectors(RasterTopology topology, int n) {
+    final RefList<Tensor> eigenVectors = new RefArrayList<>();
     final int[] dimensions = topology.getDimensions();
     final TensorOperator eigenSolver = eigenRefiner(topology);
     for (int i = 0; i < n; i++) {
@@ -116,7 +120,7 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
 
   public double[][] apply(double[][] img) {
     final int channels = img.length;
-    final float[] flattened = new float[com.simiacryptus.ref.wrappers.RefArrays.stream(img).mapToInt(x -> x.length)
+    final float[] flattened = new float[RefArrays.stream(img).mapToInt(x -> x.length)
         .sum()];
     for (int i = 0; i < flattened.length; i++) {
       flattened[i] = (float) img[i / pixels][i % pixels];
@@ -138,8 +142,8 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
     final float[] floats = new float[channels * pixels];
     cudaMemcpy(Pointer.to(floats), gpuResult, (long) channels * Sizeof.FLOAT * pixels, cudaMemcpyDeviceToHost);
     cudaFree(gpuResult);
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, channels)
-        .mapToObj(c -> com.simiacryptus.ref.wrappers.RefIntStream.range(0, pixels)
+    return RefIntStream.range(0, channels)
+        .mapToObj(c -> RefIntStream.range(0, pixels)
             .mapToDouble(i -> floats[c * pixels + i] * mu[0]).toArray())
         .toArray(i -> new double[i][]);
   }

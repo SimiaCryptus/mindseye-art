@@ -31,6 +31,8 @@ import com.simiacryptus.mindseye.layers.java.PhotoUnpoolingLayer;
 import com.simiacryptus.mindseye.layers.java.UnpoolingLayer;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.*;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -82,7 +84,7 @@ convertInv('conv4_1')
 convertInv('conv5_1')
 ```
  */
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class VGG_WCT_Import {
 
   public static final Logger log = LoggerFactory.getLogger(VGG_WCT_Import.class);
@@ -660,11 +662,11 @@ class VGG_WCT_Import {
         weight1, inBands, outBands);
   }
 
-  private static com.simiacryptus.ref.wrappers.RefDoubleStream toStream(Object data) {
+  private static RefDoubleStream toStream(Object data) {
     if (data instanceof Double) {
-      return com.simiacryptus.ref.wrappers.RefDoubleStream.of((Double) data);
+      return RefDoubleStream.of((Double) data);
     } else {
-      return com.simiacryptus.ref.wrappers.RefArrays.stream(((Object[]) data)).flatMapToDouble(x -> toStream(x));
+      return RefArrays.stream(((Object[]) data)).flatMapToDouble(x -> toStream(x));
     }
   }
 
@@ -673,12 +675,12 @@ class VGG_WCT_Import {
       return new int[]{};
     } else {
       int length = ((Object[]) data).length;
-      com.simiacryptus.ref.wrappers.RefList<int[]> childDims = com.simiacryptus.ref.wrappers.RefArrays
-          .stream(((Object[]) data)).map(x -> dims(x)).collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+      RefList<int[]> childDims = RefArrays
+          .stream(((Object[]) data)).map(x -> dims(x)).collect(RefCollectors.toList());
       int[] head = childDims.get(0);
-      childDims.stream().forEach(d -> com.simiacryptus.ref.wrappers.RefArrays.equals(head, d));
-      return com.simiacryptus.ref.wrappers.RefIntStream.concat(com.simiacryptus.ref.wrappers.RefIntStream.of(length),
-          com.simiacryptus.ref.wrappers.RefArrays.stream(head)).toArray();
+      childDims.stream().forEach(d -> RefArrays.equals(head, d));
+      return RefIntStream.concat(RefIntStream.of(length),
+          RefArrays.stream(head)).toArray();
     }
   }
 
@@ -688,7 +690,7 @@ class VGG_WCT_Import {
       if (!data.endsWith("]"))
         throw new AssertionError();
       final String strippedString = data.substring(1, data.length() - 1);
-      com.simiacryptus.ref.wrappers.RefArrayList<String> splitBuffer = new com.simiacryptus.ref.wrappers.RefArrayList<>();
+      RefArrayList<String> splitBuffer = new RefArrayList<>();
       int parenBalence = 0;
       int lastCut = 0;
       for (int i = 0; i < strippedString.length(); i++) {

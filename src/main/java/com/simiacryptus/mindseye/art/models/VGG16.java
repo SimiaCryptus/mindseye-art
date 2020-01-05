@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art.models;
 import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.wrappers.RefConsumer;
 
 import java.util.UUID;
 
@@ -36,9 +37,9 @@ public enum VGG16 implements VisionPipelineLayer {
 
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
   private static VGG16_HDF5 vgg16_hdf5 = null;
-  private final com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn;
+  private final RefConsumer<PipelineNetwork> fn;
 
-  VGG16(com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn) {
+  VGG16(RefConsumer<PipelineNetwork> fn) {
     this.fn = fn;
   }
 

@@ -22,6 +22,8 @@ package com.simiacryptus.mindseye.art.util;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.FloatPointer;
@@ -40,7 +42,7 @@ import java.util.regex.Pattern;
 
 import static org.bytedeco.javacpp.hdf5.*;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class Hdf5Archive {
   private static final Logger log = LoggerFactory.getLogger(Hdf5Archive.class);
 
@@ -92,7 +94,7 @@ class Hdf5Archive {
       @Nullable
       Tensor tensor = hdf5.readDataSet(datasetName.toString(), path);
       log.info(String.format("%sDataset %s: %s", prefix, datasetName,
-          com.simiacryptus.ref.wrappers.RefArrays.toString(tensor.getDimensions())));
+          RefArrays.toString(tensor.getDimensions())));
       if (printData)
         log.info(String.format("%s%s", prefix, tensor.prettyPrint().replaceAll("\n", "\n" + prefix)));
       tensor.freeRef();
@@ -101,7 +103,7 @@ class Hdf5Archive {
       log.info((String.format("%sAttribute: %s => %s", prefix, k, v)));
     });
     for (String t : hdf5.getGroups(path).stream().map(CharSequence::toString)
-        .sorted(new com.simiacryptus.ref.wrappers.RefComparator<String>() {
+        .sorted(new RefComparator<String>() {
           @Override
           public int compare(@Nonnull String o1, @Nonnull String o2) {
             @Nonnull
@@ -115,7 +117,7 @@ class Hdf5Archive {
             else
               return o1.compareTo(o2);
           }
-        }).collect(com.simiacryptus.ref.wrappers.RefCollectors.toList())) {
+        }).collect(RefCollectors.toList())) {
       log.info(prefix + t);
       printTree(hdf5, prefix + "\t", printData, log, concat(path, t));
     }
@@ -186,7 +188,7 @@ class Hdf5Archive {
   }
 
   @Nonnull
-  public com.simiacryptus.ref.wrappers.RefMap<CharSequence, Object> getAttributes(@Nonnull String... groups) {
+  public RefMap<CharSequence, Object> getAttributes(@Nonnull String... groups) {
     if (groups.length == 0) {
       return getAttributes(this.file);
     }
@@ -194,16 +196,16 @@ class Hdf5Archive {
     Group[] groupArray = openGroups(groups);
     Group group = groupArray[groupArray.length - 1];
     @Nonnull
-    com.simiacryptus.ref.wrappers.RefMap<CharSequence, Object> attributes = getAttributes(group);
+    RefMap<CharSequence, Object> attributes = getAttributes(group);
     closeGroups(groupArray);
     return attributes;
   }
 
   @Nonnull
-  public com.simiacryptus.ref.wrappers.RefMap<CharSequence, Object> getAttributes(@Nonnull Group group) {
+  public RefMap<CharSequence, Object> getAttributes(@Nonnull Group group) {
     int numAttrs = group.getNumAttrs();
     @Nonnull
-    com.simiacryptus.ref.wrappers.RefTreeMap<CharSequence, Object> attributes = new com.simiacryptus.ref.wrappers.RefTreeMap<>();
+    RefTreeMap<CharSequence, Object> attributes = new RefTreeMap<>();
     for (int i = 0; i < numAttrs; i++) {
       Attribute attribute = group.openAttribute(i);
       CharSequence name = attribute.getName().getString();
@@ -220,28 +222,28 @@ class Hdf5Archive {
   }
 
   @Nonnull
-  public com.simiacryptus.ref.wrappers.RefList<CharSequence> getDataSets(@Nonnull String... groups) {
+  public RefList<CharSequence> getDataSets(@Nonnull String... groups) {
     if (groups.length == 0) {
       return getObjects(this.file, H5O_TYPE_DATASET);
     }
     @Nonnull
     Group[] groupArray = openGroups(groups);
     @Nonnull
-    com.simiacryptus.ref.wrappers.RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1],
+    RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1],
         H5O_TYPE_DATASET);
     closeGroups(groupArray);
     return ls;
   }
 
   @Nonnull
-  public com.simiacryptus.ref.wrappers.RefList<CharSequence> getGroups(@Nonnull String... groups) {
+  public RefList<CharSequence> getGroups(@Nonnull String... groups) {
     if (groups.length == 0) {
       return getObjects(this.file, H5O_TYPE_GROUP);
     }
     @Nonnull
     Group[] groupArray = openGroups(groups);
     @Nonnull
-    com.simiacryptus.ref.wrappers.RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1],
+    RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1],
         H5O_TYPE_GROUP);
     closeGroups(groupArray);
     return ls;
@@ -387,9 +389,9 @@ class Hdf5Archive {
   }
 
   @Nonnull
-  private com.simiacryptus.ref.wrappers.RefList<CharSequence> getObjects(@Nonnull Group fileGroup, int objType) {
+  private RefList<CharSequence> getObjects(@Nonnull Group fileGroup, int objType) {
     @Nonnull
-    com.simiacryptus.ref.wrappers.RefList<CharSequence> groups = new com.simiacryptus.ref.wrappers.RefArrayList<CharSequence>();
+    RefList<CharSequence> groups = new RefArrayList<CharSequence>();
     for (int i = 0; i < fileGroup.getNumObjs(); i++) {
       BytePointer objPtr = fileGroup.getObjnameByIdx(i);
       if (fileGroup.childObjType(objPtr) == objType) {

@@ -19,6 +19,8 @@
 
 package com.simiacryptus.mindseye.art.util;
 
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -26,7 +28,7 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class TextUtil {
   public static BufferedImage draw(final String text, final int resolution, final int padding, final String fontName,
                                    final int style) {
@@ -75,9 +77,9 @@ class TextUtil {
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
     graphics.setFont(font);
     String[] lines = text.split("\n");
-    double width = com.simiacryptus.ref.wrappers.RefArrays.stream(lines)
+    double width = RefArrays.stream(lines)
         .mapToInt(t -> (int) graphics.getFontMetrics().getStringBounds(t, graphics).getWidth()).max().getAsInt();
-    int height = com.simiacryptus.ref.wrappers.RefArrays.stream(lines)
+    int height = RefArrays.stream(lines)
         .mapToInt(t -> (int) graphics.getFontMetrics().getLineMetrics(t, graphics).getAscent()).sum();
     double line1height = graphics.getFontMetrics().getLineMetrics(lines[0], graphics).getAscent();
     return new Rectangle2D.Double(0, line1height, width, height);
@@ -93,7 +95,7 @@ class TextUtil {
     while (width < (resolution - 2 * padding) && size < 1000) {
       size += 2;
       graphics.setFont(new Font(fontName, style, size));
-      width = com.simiacryptus.ref.wrappers.RefArrays.stream(text.split("\n"))
+      width = RefArrays.stream(text.split("\n"))
           .mapToInt(t -> (int) graphics.getFontMetrics().getStringBounds(t, graphics).getWidth()).max().getAsInt();
     }
     size -= 2;

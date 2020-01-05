@@ -19,7 +19,12 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-public @com.simiacryptus.ref.lang.RefAware
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefCollectors;
+import com.simiacryptus.ref.wrappers.RefIntStream;
+import com.simiacryptus.ref.wrappers.RefList;
+
+public @RefAware
 class RadiusRasterTopology implements RasterTopology {
   protected final int[] dimensions;
   private final double maxRadius;
@@ -41,22 +46,22 @@ class RadiusRasterTopology implements RasterTopology {
   }
 
   @Override
-  public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
+  public RefList<int[]> connectivity() {
     final int maxRadius = (int) Math.ceil(this.maxRadius);
     final double maxSq = this.maxRadius * this.maxRadius;
     final double minSq = Math.signum(this.minRadius) * (this.minRadius * this.minRadius);
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
+    return RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
       final int[] coordsFromIndex = getCoordsFromIndex(i);
-      final int[] ints = com.simiacryptus.ref.wrappers.RefIntStream.range(-maxRadius, maxRadius).flatMap(x -> {
+      final int[] ints = RefIntStream.range(-maxRadius, maxRadius).flatMap(x -> {
         final int xx = x + coordsFromIndex[0];
-        return com.simiacryptus.ref.wrappers.RefIntStream.range(-maxRadius, maxRadius).filter(y -> {
+        return RefIntStream.range(-maxRadius, maxRadius).filter(y -> {
           final int radiusSq = x * x + y * y;
           return radiusSq > minSq && radiusSq <= maxSq;
         }).map(y -> y + coordsFromIndex[1]).filter(yy -> yy >= 0 && xx >= 0)
             .filter(yy -> yy < dimensions[1] && xx < dimensions[0]).map(yy -> getIndexFromCoords(xx, yy));
       }).toArray();
       return ints;
-    }).collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+    }).collect(RefCollectors.toList());
   }
 
   @Override

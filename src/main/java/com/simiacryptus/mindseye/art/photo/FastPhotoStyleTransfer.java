@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
+import com.simiacryptus.mindseye.art.photo.affinity.ContextAffinity;
 import com.simiacryptus.mindseye.art.photo.affinity.RelativeAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
@@ -29,13 +30,17 @@ import com.simiacryptus.mindseye.lang.SerialPrecision;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.ZipSerializable;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.RefHashMap;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.zip.ZipFile;
@@ -49,7 +54,7 @@ import static com.simiacryptus.util.JsonUtil.toJson;
  * A Closed-form Solution to Photorealistic Image Stylization
  * https://arxiv.org/pdf/1802.06474.pdf
  */
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class FastPhotoStyleTransfer extends ReferenceCountingBase
     implements Function<Tensor, UnaryOperator<Tensor>> {
 
@@ -117,7 +122,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
   @Nonnull
   public static FastPhotoStyleTransfer fromZip(@Nonnull final ZipFile zipfile) {
     @Nonnull
-    com.simiacryptus.ref.wrappers.RefHashMap<CharSequence, byte[]> resources = ZipSerializable.extract(zipfile);
+    HashMap<CharSequence, byte[]> resources = ZipSerializable.extract(zipfile);
     return new FastPhotoStyleTransfer(fromJson(toJson(resources.get("decode_1.json")), resources),
         fromJson(toJson(resources.get("encode_1.json")), resources),
         fromJson(toJson(resources.get("decode_2.json")), resources),
@@ -146,7 +151,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
   FastPhotoStyleTransfer[] addRefs(FastPhotoStyleTransfer[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(FastPhotoStyleTransfer::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(FastPhotoStyleTransfer::addRef)
         .toArray((x) -> new FastPhotoStyleTransfer[x]);
   }
 
@@ -154,7 +159,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
   FastPhotoStyleTransfer[][] addRefs(FastPhotoStyleTransfer[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(FastPhotoStyleTransfer::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(FastPhotoStyleTransfer::addRefs)
         .toArray((x) -> new FastPhotoStyleTransfer[x][]);
   }
 
@@ -173,7 +178,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
   public void writeZip(@Nonnull File out, SerialPrecision precision) {
     try (@Nonnull
          ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(out))) {
-      final com.simiacryptus.ref.wrappers.RefHashMap<CharSequence, byte[]> resources = new com.simiacryptus.ref.wrappers.RefHashMap<>();
+      final HashMap<CharSequence, byte[]> resources = new HashMap<>();
       decode_1.writeZip(zipOutputStream, precision, resources, "decode_1.json");
       encode_1.writeZip(zipOutputStream, precision, resources, "encode_1.json");
       decode_2.writeZip(zipOutputStream, precision, resources, "decode_2.json");
@@ -254,7 +259,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
       RasterTopology topology = new RadiusRasterTopology(content.getDimensions(), RadiusRasterTopology.getRadius(1, 1),
           -1);
       //      RasterAffinity affinity = new MattingAffinity(mask, topology);
-      com.simiacryptus.mindseye.art.photo.affinity.ContextAffinity affinity = new RelativeAffinity(content, topology);
+      ContextAffinity affinity = new RelativeAffinity(content, topology);
       //RasterAffinity affinity = new GaussianAffinity(mask, 20, topology);
       //affinity = new TruncatedAffinity(affinity).setMin(1e-2);
       return (isUseCuda() ? new SmoothSolver_Cuda() : new SmoothSolver_EJML()).solve(topology, affinity, getLambda());
@@ -268,14 +273,14 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
     return (FastPhotoStyleTransfer) super.addRef();
   }
 
-  private static @com.simiacryptus.ref.lang.RefAware
+  private static @RefAware
   class NullOperator<T> extends ReferenceCountingBase
       implements RefOperator<T> {
     public static @SuppressWarnings("unused")
     NullOperator[] addRefs(NullOperator[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(NullOperator::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(NullOperator::addRef)
           .toArray((x) -> new NullOperator[x]);
     }
 
@@ -295,7 +300,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
     }
   }
 
-  private static @com.simiacryptus.ref.lang.RefAware
+  private static @RefAware
   class StyleOperator extends ReferenceCountingBase
       implements RefOperator<Tensor> {
     final RefOperator<Tensor> photoSmooth;
@@ -312,7 +317,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
     StyleOperator[] addRefs(StyleOperator[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(StyleOperator::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(StyleOperator::addRef)
           .toArray((x) -> new StyleOperator[x]);
     }
 

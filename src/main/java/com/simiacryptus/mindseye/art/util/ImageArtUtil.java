@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.util;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.simiacryptus.hadoop_jgit.GitFileSystem;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.CudaSystem;
 import com.simiacryptus.mindseye.layers.cudnn.conv.SimpleConvolutionLayer;
@@ -30,6 +31,8 @@ import com.simiacryptus.mindseye.util.TFConverter;
 import com.simiacryptus.notebook.MarkdownNotebookOutput;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.notebook.UploadImageQuery;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.tensorflow.GraphModel;
 import com.simiacryptus.util.FastRandom;
 import com.simiacryptus.util.JsonUtil;
@@ -52,7 +55,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class ImageArtUtil {
 
   @Nonnull
@@ -61,7 +64,7 @@ class ImageArtUtil {
     File tempDir = new File("temp");
     tempDir.mkdirs();
     configuration.set("hadoop.tmp.dir", tempDir.getAbsolutePath());
-    configuration.set("fs.git.impl", com.simiacryptus.hadoop_jgit.GitFileSystem.class.getCanonicalName());
+    configuration.set("fs.git.impl", GitFileSystem.class.getCanonicalName());
     configuration.set("fs.s3a.impl", S3AFileSystem.class.getCanonicalName());
     configuration.set("fs.s3.impl", S3AFileSystem.class.getCanonicalName());
     configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getCanonicalName());
@@ -97,7 +100,7 @@ class ImageArtUtil {
     });
     if (interceptLog)
       log.subreport(sublog -> {
-        CudaSystem.addLog(new com.simiacryptus.ref.wrappers.RefConsumer<String>() {
+        CudaSystem.addLog(new RefConsumer<String>() {
           PrintWriter out;
           long remainingOut = 0;
           long killAt = 0;
@@ -143,14 +146,14 @@ class ImageArtUtil {
   }
 
   @NotNull
-  public static com.simiacryptus.ref.wrappers.RefMap<String, PipelineNetwork> convertPipeline(GraphDef graphDef,
-                                                                                              String... nodes) {
+  public static RefMap<String, PipelineNetwork> convertPipeline(GraphDef graphDef,
+                                                                String... nodes) {
     GraphModel graphModel = new GraphModel(graphDef.toByteArray());
-    com.simiacryptus.ref.wrappers.RefMap<String, PipelineNetwork> graphs = new com.simiacryptus.ref.wrappers.RefHashMap<>();
+    RefMap<String, PipelineNetwork> graphs = new RefHashMap<>();
     TFConverter tfConverter = new TFConverter();
     TFLayer tfLayer0 = new TFLayer(graphModel.getChild(nodes[0])
-        .subgraph(new com.simiacryptus.ref.wrappers.RefHashSet<>(com.simiacryptus.ref.wrappers.RefArrays.asList()))
-        .toByteArray(), new com.simiacryptus.ref.wrappers.RefHashMap<>(), nodes[0], "input");
+        .subgraph(new RefHashSet<>(RefArrays.asList()))
+        .toByteArray(), new RefHashMap<>(), nodes[0], "input");
     graphs.put(nodes[0], tfConverter.convert(tfLayer0));
     tfLayer0.freeRef();
     for (int i = 1; i < nodes.length; i++) {
@@ -158,10 +161,10 @@ class ImageArtUtil {
       String priorNode = nodes[i - 1];
       TFLayer tfLayer1 = new TFLayer(
           graphModel.getChild(currentNode)
-              .subgraph(new com.simiacryptus.ref.wrappers.RefHashSet<>(
-                  com.simiacryptus.ref.wrappers.RefArrays.asList(priorNode)))
+              .subgraph(new RefHashSet<>(
+                  RefArrays.asList(priorNode)))
               .toByteArray(),
-          new com.simiacryptus.ref.wrappers.RefHashMap<>(), currentNode, priorNode);
+          new RefHashMap<>(), currentNode, priorNode);
       graphs.put(currentNode, tfConverter.convert(tfLayer1));
       tfLayer1.freeRef();
     }
@@ -182,9 +185,9 @@ class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\+ +"))
+        Tensor sampleImage = RefArrays.stream(fileStr.split(" +\\+ +"))
             .map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
-        return com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\+ +"))
+        return RefArrays.stream(fileStr.split(" +\\+ +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
@@ -192,9 +195,9 @@ class ImageArtUtil {
               return r;
             }).get();
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\* +"))
+        Tensor sampleImage = RefArrays.stream(fileStr.split(" +\\* +"))
             .map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
-        return com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\* +"))
+        return RefArrays.stream(fileStr.split(" +\\* +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
@@ -219,9 +222,9 @@ class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\+ +"))
+        Tensor sampleImage = RefArrays.stream(fileStr.split(" +\\+ +"))
             .map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
-        return com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\+ +"))
+        return RefArrays.stream(fileStr.split(" +\\+ +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
@@ -229,9 +232,9 @@ class ImageArtUtil {
               return r;
             }).get();
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\* +"))
+        Tensor sampleImage = RefArrays.stream(fileStr.split(" +\\* +"))
             .map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
-        return com.simiacryptus.ref.wrappers.RefArrays.stream(fileStr.split(" +\\* +"))
+        return RefArrays.stream(fileStr.split(" +\\* +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
@@ -307,8 +310,8 @@ class ImageArtUtil {
     int h = kernelDimensions[1];
     int w = kernelDimensions[0];
     int l = (int) (w * h * b);
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, (int) b).mapToObj(i -> {
-      return com.simiacryptus.ref.wrappers.RefIntStream.range(0, l).map(j -> j + l * i).toArray();
+    return RefIntStream.range(0, (int) b).mapToObj(i -> {
+      return RefIntStream.range(0, l).map(j -> j + l * i).toArray();
     }).toArray(i -> new int[i][]);
   }
 }

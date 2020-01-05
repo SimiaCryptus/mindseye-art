@@ -20,11 +20,14 @@
 package com.simiacryptus.mindseye.art.photo;
 
 import com.simiacryptus.mindseye.art.photo.affinity.ContextAffinity;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefIntStream;
+import com.simiacryptus.ref.wrappers.RefStream;
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.function.Supplier;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class MultivariateFrameOfReference {
   public final SimpleMatrix invCov;
   public final SimpleMatrix means;
@@ -45,11 +48,11 @@ class MultivariateFrameOfReference {
     this.invCov = safeInvert(cov, epsilon);
   }
 
-  public MultivariateFrameOfReference(Supplier<com.simiacryptus.ref.wrappers.RefStream<double[]>> fn, int channels) {
+  public MultivariateFrameOfReference(Supplier<RefStream<double[]>> fn, int channels) {
     this(fn, channels, 1e-4);
   }
 
-  public MultivariateFrameOfReference(Supplier<com.simiacryptus.ref.wrappers.RefStream<double[]>> fn, int channels,
+  public MultivariateFrameOfReference(Supplier<RefStream<double[]>> fn, int channels,
                                       double epsilon) {
     this.dimension = channels;
     means = ContextAffinity.means(fn, this.dimension);
@@ -69,7 +72,7 @@ class MultivariateFrameOfReference {
   }
 
   public double[] adjust(double[] pixel) {
-    return com.simiacryptus.ref.wrappers.RefIntStream.range(0, pixel.length)
+    return RefIntStream.range(0, pixel.length)
         .mapToDouble(c -> ((pixel[c]) - this.means.get(c)) / this.rms.get(c)).toArray();
   }
 

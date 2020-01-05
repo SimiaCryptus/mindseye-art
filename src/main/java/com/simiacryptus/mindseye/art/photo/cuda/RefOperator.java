@@ -19,12 +19,14 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
+import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
   static <T> RefOperator<T> wrap(UnaryOperator<T> inner) {
     return new RefOperatorWrapper<T>(inner);
@@ -34,7 +36,7 @@ interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
   RefOperator[] addRefs(RefOperator[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRef)
         .toArray((x) -> new RefOperator[x]);
   }
 
@@ -42,7 +44,7 @@ interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
   RefOperator[][] addRefs(RefOperator[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRefs)
         .toArray((x) -> new RefOperator[x][]);
   }
 
@@ -54,7 +56,7 @@ interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
 
   public RefOperator<T> addRef();
 
-  @com.simiacryptus.ref.lang.RefAware
+  @RefAware
   class RefOperatorWrapper<T> extends ReferenceCountingBase implements RefOperator<T> {
 
     private UnaryOperator<T> inner;
@@ -67,7 +69,7 @@ interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
     RefOperatorWrapper[] addRefs(RefOperatorWrapper[] array) {
       if (array == null)
         return null;
-      return java.util.Arrays.stream(array).filter((x) -> x != null).map(RefOperatorWrapper::addRef)
+      return Arrays.stream(array).filter((x) -> x != null).map(RefOperatorWrapper::addRef)
           .toArray((x) -> new RefOperatorWrapper[x]);
     }
 

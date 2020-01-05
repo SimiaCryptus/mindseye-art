@@ -20,18 +20,22 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.RefLinkedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public @com.simiacryptus.ref.lang.RefAware
+import java.util.Arrays;
+
+public @RefAware
 class VisionPipeline<T extends VisionPipelineLayer>
     extends ReferenceCountingBase {
   private static final Logger logger = LoggerFactory.getLogger(VisionPipeline.class);
 
   public final String name;
 
-  private final com.simiacryptus.ref.wrappers.RefLinkedHashMap<T, PipelineNetwork> layers = new com.simiacryptus.ref.wrappers.RefLinkedHashMap<>();
+  private final RefLinkedHashMap<T, PipelineNetwork> layers = new RefLinkedHashMap<>();
 
   public VisionPipeline(String name, T... values) {
     this.name = name;
@@ -43,15 +47,15 @@ class VisionPipeline<T extends VisionPipelineLayer>
     pipelineNetwork.freeRef();
   }
 
-  public com.simiacryptus.ref.wrappers.RefLinkedHashMap<T, PipelineNetwork> getLayers() {
-    return new com.simiacryptus.ref.wrappers.RefLinkedHashMap<>(layers);
+  public RefLinkedHashMap<T, PipelineNetwork> getLayers() {
+    return new RefLinkedHashMap<>(layers);
   }
 
   public static @SuppressWarnings("unused")
   VisionPipeline[] addRefs(VisionPipeline[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRef)
         .toArray((x) -> new VisionPipeline[x]);
   }
 
@@ -59,7 +63,7 @@ class VisionPipeline<T extends VisionPipelineLayer>
   VisionPipeline[][] addRefs(VisionPipeline[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRefs)
         .toArray((x) -> new VisionPipeline[x][]);
   }
 

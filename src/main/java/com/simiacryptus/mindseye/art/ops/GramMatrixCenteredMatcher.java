@@ -30,13 +30,15 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefArrays;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class GramMatrixCenteredMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixCenteredMatcher.class);
   private final Precision precision = Precision.Float;
@@ -82,9 +84,9 @@ class GramMatrixCenteredMatcher implements VisualModifier {
   }
 
   public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, Tensor... image) {
-    return com.simiacryptus.ref.wrappers.RefArrays.stream(image).flatMap(img -> {
+    return RefArrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
-      return com.simiacryptus.ref.wrappers.RefArrays
+      return RefArrays
           .stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, false))
           .map(selector -> {
             //log.info(selector.toString());
@@ -129,7 +131,7 @@ class GramMatrixCenteredMatcher implements VisualModifier {
   public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor cov, Tensor... image) {
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
     network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
-    int pixels = com.simiacryptus.ref.wrappers.RefArrays.stream(image).mapToInt(x -> {
+    int pixels = RefArrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum();

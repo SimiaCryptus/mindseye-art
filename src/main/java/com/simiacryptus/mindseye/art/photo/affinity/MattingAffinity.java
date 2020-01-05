@@ -22,7 +22,10 @@ package com.simiacryptus.mindseye.art.photo.affinity;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
 import org.ejml.simple.SimpleMatrix;
+
+import java.util.Arrays;
 
 /**
  * Implements Matting Affinity
@@ -31,7 +34,7 @@ import org.ejml.simple.SimpleMatrix;
  * http://cs.brown.edu/courses/cs129/results/final/valayshah/Matting-Levin-Lischinski-Weiss-CVPR06.pdf
  * <p>
  */
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class MattingAffinity extends ContextAffinity {
   private double epsilon = 1e-4;
 
@@ -57,7 +60,7 @@ class MattingAffinity extends ContextAffinity {
   MattingAffinity[] addRefs(MattingAffinity[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRef)
         .toArray((x) -> new MattingAffinity[x]);
   }
 
@@ -65,7 +68,7 @@ class MattingAffinity extends ContextAffinity {
   MattingAffinity[][] addRefs(MattingAffinity[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRefs)
         .toArray((x) -> new MattingAffinity[x][]);
   }
 

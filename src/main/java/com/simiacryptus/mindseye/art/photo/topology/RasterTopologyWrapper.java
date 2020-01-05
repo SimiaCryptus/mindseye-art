@@ -20,8 +20,10 @@
 package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.lang.Singleton;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefList;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class RasterTopologyWrapper implements RasterTopology {
 
   public final RasterTopology inner;
@@ -36,7 +38,7 @@ class RasterTopologyWrapper implements RasterTopology {
   }
 
   @Override
-  public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
+  public RefList<int[]> connectivity() {
     return inner.connectivity();
   }
 
@@ -50,17 +52,17 @@ class RasterTopologyWrapper implements RasterTopology {
     return inner.getCoordsFromIndex(i);
   }
 
-  public static @com.simiacryptus.ref.lang.RefAware
+  public static @RefAware
   class CachedRasterTopology extends RasterTopologyWrapper {
 
-    private final Singleton<com.simiacryptus.ref.wrappers.RefList<int[]>> cache = new Singleton<>();
+    private final Singleton<RefList<int[]>> cache = new Singleton<>();
 
     public CachedRasterTopology(RasterTopology inner) {
       super(inner);
     }
 
     @Override
-    public com.simiacryptus.ref.wrappers.RefList<int[]> connectivity() {
+    public RefList<int[]> connectivity() {
       return cache.getOrInit(() -> super.connectivity());
     }
   }

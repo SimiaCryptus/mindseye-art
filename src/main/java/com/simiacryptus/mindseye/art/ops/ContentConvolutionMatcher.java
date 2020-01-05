@@ -30,8 +30,9 @@ import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class ContentConvolutionMatcher implements VisualModifier {
 
   private int minValue = -1;

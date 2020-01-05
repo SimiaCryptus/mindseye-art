@@ -25,6 +25,8 @@ import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.util.ImageUtil;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.util.FastRandom;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +40,7 @@ import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.adjust
 import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.degree;
 import static java.util.stream.IntStream.range;
 
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class SegmentUtil {
 
   @NotNull
@@ -49,26 +51,26 @@ class SegmentUtil {
   }
 
   public static int[] valueCountArray(int[] ints) {
-    final com.simiacryptus.ref.wrappers.RefMap<Integer, Long> countMap = valueCountMap(ints);
-    return range(0, com.simiacryptus.ref.wrappers.RefArrays.stream(ints).max().getAsInt() + 1)
+    final RefMap<Integer, Long> countMap = valueCountMap(ints);
+    return range(0, RefArrays.stream(ints).max().getAsInt() + 1)
         .map((int i) -> (int) (long) countMap.getOrDefault(i, 0l)).toArray();
   }
 
-  public static com.simiacryptus.ref.wrappers.RefMap<Integer, Long> valueCountMap(int[] ints) {
-    return com.simiacryptus.ref.wrappers.RefArrays.stream(ints).mapToObj(x -> x)
-        .collect(com.simiacryptus.ref.wrappers.RefCollectors.groupingBy((Integer x) -> x,
-            com.simiacryptus.ref.wrappers.RefCollectors.counting()));
+  public static RefMap<Integer, Long> valueCountMap(int[] ints) {
+    return RefArrays.stream(ints).mapToObj(x -> x)
+        .collect(RefCollectors.groupingBy((Integer x) -> x,
+            RefCollectors.counting()));
   }
 
   public static void printHistogram(int[] islands) {
-    com.simiacryptus.ref.wrappers.RefArrays.stream(islands).mapToObj(x -> x)
-        .collect(com.simiacryptus.ref.wrappers.RefCollectors.groupingBy(x -> x,
-            com.simiacryptus.ref.wrappers.RefCollectors.counting()))
+    RefArrays.stream(islands).mapToObj(x -> x)
+        .collect(RefCollectors.groupingBy(x -> x,
+            RefCollectors.counting()))
         .values().stream()
-        .collect(com.simiacryptus.ref.wrappers.RefCollectors.groupingBy(x -> x,
-            com.simiacryptus.ref.wrappers.RefCollectors.counting()))
+        .collect(RefCollectors.groupingBy(x -> x,
+            RefCollectors.counting()))
         .entrySet().stream()
-        .sorted(com.simiacryptus.ref.wrappers.RefComparator.comparing(x -> -x.getValue() * x.getKey()))
+        .sorted(RefComparator.comparing(x -> -x.getValue() * x.getKey()))
         .map(x -> String.format("%d regions of size %s", x.getValue(), x.getKey())).forEach(System.out::println);
   }
 
@@ -78,9 +80,9 @@ class SegmentUtil {
     AtomicInteger islandNumber = new AtomicInteger(0);
     int[] dimensions = topology.getDimensions();
     range(0, dimensions[0]).parallel().mapToObj(x -> x)
-        .sorted(com.simiacryptus.ref.wrappers.RefComparator.comparing(x -> x.hashCode())).mapToInt(x -> x)
+        .sorted(RefComparator.comparing(x -> x.hashCode())).mapToInt(x -> x)
         .forEach(x -> range(0, dimensions[1]).mapToObj(y -> y)
-            .sorted(com.simiacryptus.ref.wrappers.RefComparator.comparing(y -> y.hashCode())).mapToInt(y -> y)
+            .sorted(RefComparator.comparing(y -> y.hashCode())).mapToInt(y -> y)
             .forEach(y -> {
               int row = topology.getIndexFromCoords(x, y);
               if (marks[row] == 0) {
@@ -100,17 +102,17 @@ class SegmentUtil {
     return removeTinyInclusions(valueCountMap(pixelMap), graph, smallSize, largeSize);
   }
 
-  public static int[] removeTinyInclusions(com.simiacryptus.ref.wrappers.RefMap<Integer, Long> islandSizes,
+  public static int[] removeTinyInclusions(RefMap<Integer, Long> islandSizes,
                                            SparseMatrixFloat graph, int sizeThreshold) {
     return removeTinyInclusions(islandSizes, graph, sizeThreshold, sizeThreshold);
   }
 
-  public static int[] removeTinyInclusions(com.simiacryptus.ref.wrappers.RefMap<Integer, Long> islandSizes,
+  public static int[] removeTinyInclusions(RefMap<Integer, Long> islandSizes,
                                            SparseMatrixFloat graph, int smallSize, int largeSize) {
     return range(0, graph.rows).map(row -> {
       final int[] cols = graph.getCols(row);
       if (islandSizes.getOrDefault(row, 0l) < smallSize) {
-        final int[] largeNeighbors = com.simiacryptus.ref.wrappers.RefArrays.stream(cols).filter(j -> {
+        final int[] largeNeighbors = RefArrays.stream(cols).filter(j -> {
           return islandSizes.getOrDefault(j, 0l) >= largeSize;
         }).toArray();
         if (largeNeighbors.length == 1) {
@@ -155,9 +157,9 @@ class SegmentUtil {
     final int row = topology.getIndexFromCoords(coords[0], coords[1]);
     assert 0 < indexNumber;
     final T rowColor = extract.apply(coords);
-    final com.simiacryptus.ref.wrappers.RefList<int[]> connectivity = topology.connectivity();
+    final RefList<int[]> connectivity = topology.connectivity();
     if (maxRecursion > 0) {
-      com.simiacryptus.ref.wrappers.RefArrays.stream(connectivity.get(row)).forEach(col -> {
+      RefArrays.stream(connectivity.get(row)).forEach(col -> {
         if (0 == marks[col]) {
           final int[] toCoords = topology.getCoordsFromIndex(col);
           if (test.test(rowColor, extract.apply(toCoords))) {
@@ -171,19 +173,19 @@ class SegmentUtil {
     }
   }
 
-  private static com.simiacryptus.ref.wrappers.RefMap<Integer, double[]> randomColors(SparseMatrixFloat graph,
-                                                                                      int iterations) {
-    return randomColors(graph, x -> com.simiacryptus.ref.wrappers.RefDoubleStream
+  private static RefMap<Integer, double[]> randomColors(SparseMatrixFloat graph,
+                                                        int iterations) {
+    return randomColors(graph, x -> RefDoubleStream
             .generate(() -> FastRandom.INSTANCE.random() * 255).limit(3).toArray(),
-        new com.simiacryptus.ref.wrappers.RefConcurrentHashMap<>(), iterations);
+        new RefConcurrentHashMap<>(), iterations);
   }
 
-  private static com.simiacryptus.ref.wrappers.RefMap<Integer, double[]> randomColors(SparseMatrixFloat graph,
-                                                                                      Function<Integer, double[]> seedColor, com.simiacryptus.ref.wrappers.RefMap<Integer, double[]> colors, int n) {
+  private static RefMap<Integer, double[]> randomColors(SparseMatrixFloat graph,
+                                                        Function<Integer, double[]> seedColor, RefMap<Integer, double[]> colors, int n) {
     if (n <= 0) {
       if (colors.isEmpty()) {
-        return com.simiacryptus.ref.wrappers.RefArrays.stream(graph.activeRows()).mapToObj(x -> x)
-            .collect(com.simiacryptus.ref.wrappers.RefCollectors.toMap(x -> x, seedColor));
+        return RefArrays.stream(graph.activeRows()).mapToObj(x -> x)
+            .collect(RefCollectors.toMap(x -> x, seedColor));
       } else {
         return colors;
       }
@@ -191,23 +193,23 @@ class SegmentUtil {
     return randomColors(graph, seedColor, iterateColors(graph, seedColor, colors), n - 1);
   }
 
-  private static com.simiacryptus.ref.wrappers.RefMap<Integer, double[]> iterateColors(SparseMatrixFloat graph,
-                                                                                       Function<Integer, double[]> seedColor, com.simiacryptus.ref.wrappers.RefMap<Integer, double[]> colors) {
-    return com.simiacryptus.ref.wrappers.RefArrays.stream(graph.activeRows()).parallel().mapToObj(x -> x)
-        .collect(com.simiacryptus.ref.wrappers.RefCollectors.toMap(key -> key, key -> {
+  private static RefMap<Integer, double[]> iterateColors(SparseMatrixFloat graph,
+                                                         Function<Integer, double[]> seedColor, RefMap<Integer, double[]> colors) {
+    return RefArrays.stream(graph.activeRows()).parallel().mapToObj(x -> x)
+        .collect(RefCollectors.toMap(key -> key, key -> {
           final int[] cols = graph.getCols(key);
           final float[] vals = graph.getVals(key);
-          final com.simiacryptus.ref.wrappers.RefList<double[]> neighborColors = range(0, cols.length)
-              .mapToObj(ni -> com.simiacryptus.ref.wrappers.RefArrays
+          final RefList<double[]> neighborColors = range(0, cols.length)
+              .mapToObj(ni -> RefArrays
                   .stream(colors.computeIfAbsent(cols[ni], seedColor)).map(x -> x / vals[ni]).toArray())
-              .collect(com.simiacryptus.ref.wrappers.RefCollectors.toList());
+              .collect(RefCollectors.toList());
           if (neighborColors.isEmpty())
             return colors.computeIfAbsent(key, seedColor);
           final double[] average = range(0, 3)
               .mapToDouble(i -> -neighborColors.stream().mapToDouble(j -> j[i] - 127).average().orElse(0.0)).toArray();
           final double rms = Math
-              .sqrt(com.simiacryptus.ref.wrappers.RefArrays.stream(average).map(x -> x * x).average().getAsDouble());
-          return com.simiacryptus.ref.wrappers.RefArrays.stream(average)
+              .sqrt(RefArrays.stream(average).map(x -> x * x).average().getAsDouble());
+          return RefArrays.stream(average)
               .map(x -> Math.min(Math.max((x / rms) * 64 + 127, 0), 255)).toArray();
         }));
   }

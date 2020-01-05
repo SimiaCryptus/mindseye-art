@@ -19,7 +19,10 @@
 
 package com.simiacryptus.mindseye.art.photo.affinity;
 
-public abstract @com.simiacryptus.ref.lang.RefAware
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefList;
+
+public abstract @RefAware
 class AffinityWrapper implements RasterAffinity {
 
   RasterAffinity inner;
@@ -29,7 +32,7 @@ class AffinityWrapper implements RasterAffinity {
   }
 
   @Override
-  public abstract com.simiacryptus.ref.wrappers.RefList<double[]> affinityList(
-      com.simiacryptus.ref.wrappers.RefList<int[]> graphEdges);
+  public abstract RefList<double[]> affinityList(
+      RefList<int[]> graphEdges);
 
 }

@@ -23,13 +23,16 @@ import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
 import org.ejml.simple.SimpleMatrix;
+
+import java.util.Arrays;
 
 /**
  * Implements experimenal pixel affinity based on logistic model and covariance-normalized distance
  * See Also: https://en.wikipedia.org/wiki/Mahalanobis_distance
  */
-public @com.simiacryptus.ref.lang.RefAware
+public @RefAware
 class RelativeAffinity extends ContextAffinity {
   private final double introversion = 8.0;
   private double epsilon = 1e-5;
@@ -70,7 +73,7 @@ class RelativeAffinity extends ContextAffinity {
   RelativeAffinity[] addRefs(RelativeAffinity[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRef)
         .toArray((x) -> new RelativeAffinity[x]);
   }
 
@@ -78,7 +81,7 @@ class RelativeAffinity extends ContextAffinity {
   RelativeAffinity[][] addRefs(RelativeAffinity[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRefs)
         .toArray((x) -> new RelativeAffinity[x][]);
   }
 

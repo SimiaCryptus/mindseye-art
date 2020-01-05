@@ -19,9 +19,13 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.RefArrays;
 
-@com.simiacryptus.ref.lang.RefAware
+import java.util.Arrays;
+
+@RefAware
 class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<double[][]> {
   private final RefOperator<double[][]> unaryOperator;
 
@@ -33,7 +37,7 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
   SingleChannelWrapper[] addRefs(SingleChannelWrapper[] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRef)
+    return Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRef)
         .toArray((x) -> new SingleChannelWrapper[x]);
   }
 
@@ -41,13 +45,13 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
   SingleChannelWrapper[][] addRefs(SingleChannelWrapper[][] array) {
     if (array == null)
       return null;
-    return java.util.Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRefs)
+    return Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRefs)
         .toArray((x) -> new SingleChannelWrapper[x][]);
   }
 
   @Override
   public double[][] apply(double[][] img) {
-    return com.simiacryptus.ref.wrappers.RefArrays.stream(img).map(x -> unaryOperator.apply(new double[][]{x})[0])
+    return RefArrays.stream(img).map(x -> unaryOperator.apply(new double[][]{x})[0])
         .toArray(i -> new double[i][]);
   }
 

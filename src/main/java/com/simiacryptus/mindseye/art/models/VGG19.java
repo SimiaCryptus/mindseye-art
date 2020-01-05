@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.ReferenceCounting;
+import com.simiacryptus.ref.wrappers.RefConsumer;
 
 import java.util.UUID;
 
@@ -39,9 +40,9 @@ public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
 
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
   private static VGG19_HDF5 VGG19_hdf5 = null;
-  private final com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn;
+  private final RefConsumer<PipelineNetwork> fn;
 
-  VGG19(com.simiacryptus.ref.wrappers.RefConsumer<PipelineNetwork> fn) {
+  VGG19(RefConsumer<PipelineNetwork> fn) {
     this.fn = fn;
   }
 
