@@ -32,7 +32,6 @@ import com.simiacryptus.mindseye.lang.ZipSerializable;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.RefHashMap;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
