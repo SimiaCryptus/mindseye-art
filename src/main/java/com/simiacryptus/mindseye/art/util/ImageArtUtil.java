@@ -259,7 +259,7 @@ class ImageArtUtil {
     if (fileStr.trim().toLowerCase().startsWith("upload:")) {
       String key = fileStr.substring("upload:".length());
       MarkdownNotebookOutput markdownLog = (MarkdownNotebookOutput) log;
-      return (Tensor) markdownLog.uploadCache.computeIfAbsent(key, k -> {
+      return (Tensor) MarkdownNotebookOutput.uploadCache.computeIfAbsent(key, k -> {
         try {
           UploadImageQuery uploadImageQuery = new UploadImageQuery(k, log);
           return Tensor.fromRGB(ImageIO.read(uploadImageQuery.print().get()));

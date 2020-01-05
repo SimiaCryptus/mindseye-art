@@ -342,7 +342,7 @@ class Hdf5Archive {
             for (int i2 = 0; i2 < dims[1]; i2++)
               for (int i3 = 0; i3 < dims[2]; i3++)
                 for (int i4 = 0; i4 < dims[3]; i4++)
-                  data.set(i1, i2, i3, i4, (double) dataBuffer[j++]);
+                  data.set(i1, i2, i3, i4, dataBuffer[j++]);
           break;
         case 3:
           dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2])];
