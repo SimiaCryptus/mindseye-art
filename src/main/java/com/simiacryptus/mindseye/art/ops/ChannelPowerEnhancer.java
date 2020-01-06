@@ -28,6 +28,7 @@ import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefString;
 
 public @RefAware
 class ChannelPowerEnhancer implements VisualModifier {
@@ -61,7 +62,7 @@ class ChannelPowerEnhancer implements VisualModifier {
     final Layer[] layers = new Layer[]{new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
         new LinearActivationLayer().setScale(-Math.pow(mag, -2))};
-    network.add(PipelineNetwork.build(1, layers).setName(String.format("-RMS / %.0E", mag))).freeRef();
+    network.add(PipelineNetwork.build(1, layers).setName(RefString.format("-RMS / %.0E", mag))).freeRef();
     final PipelineNetwork freeze = (PipelineNetwork) network.freeze();
     visualModifierParameters.freeRef();
     return freeze;

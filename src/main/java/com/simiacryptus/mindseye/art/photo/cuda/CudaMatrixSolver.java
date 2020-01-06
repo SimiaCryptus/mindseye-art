@@ -109,7 +109,7 @@ class CudaMatrixSolver extends ReferenceCountingBase
         singularityRowArray);
     gpuCopy.freeRef();
     if (singularityRowArray[0] != -1)
-      System.err.println("Singular pixel: " + singularityRowArray[0]);
+      com.simiacryptus.ref.wrappers.RefSystem.err.println("Singular pixel: " + singularityRowArray[0]);
     cudaFree(input);
 
     final float[] floats = new float[channels * pixels];

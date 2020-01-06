@@ -25,6 +25,7 @@ import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.UnaryOperator;
@@ -56,7 +57,7 @@ interface VisualModifier {
 
       @Override
       public String toString() {
-        return String.format("(%s+%s)", left.toString(), right);
+        return RefString.format("(%s+%s)", left.toString(), right);
       }
 
       @Override
@@ -76,7 +77,7 @@ interface VisualModifier {
 
       @Override
       public String toString() {
-        return String.format("(%s*%s)", left.toString(), scale);
+        return RefString.format("(%s*%s)", left.toString(), scale);
       }
 
       @Override
@@ -97,7 +98,7 @@ interface VisualModifier {
 
       @Override
       public String toString() {
-        return String.format("(%s^%s)", left.toString(), power);
+        return RefString.format("(%s^%s)", left.toString(), power);
       }
 
       @Override

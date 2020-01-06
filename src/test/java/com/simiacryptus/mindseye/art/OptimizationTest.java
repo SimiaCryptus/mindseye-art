@@ -63,7 +63,7 @@ class OptimizationTest {
 
       @Override
       public void log(String msg) {
-        System.out.println(msg);
+        com.simiacryptus.ref.wrappers.RefSystem.out.println(msg);
         super.log(msg);
       }
 

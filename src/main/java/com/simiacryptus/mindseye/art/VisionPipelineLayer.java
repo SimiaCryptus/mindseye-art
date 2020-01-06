@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -71,12 +72,12 @@ interface VisionPipelineLayer {
 
   @NotNull
   default VisionPipelineLayer prependPool(int radius, PoolingLayer.PoolingMode mode) {
-    return prepend(getPoolingLayer(radius, mode, String.format("prepend(%s)", this)));
+    return prepend(getPoolingLayer(radius, mode, RefString.format("prepend(%s)", this)));
   }
 
   @NotNull
   default VisionPipelineLayer appendPool(int radius, PoolingLayer.PoolingMode mode) {
-    return append(getPoolingLayer(radius, mode, String.format("append(%s)", this)));
+    return append(getPoolingLayer(radius, mode, RefString.format("append(%s)", this)));
   }
 
   @NotNull

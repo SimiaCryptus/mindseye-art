@@ -111,22 +111,22 @@ class ImageArtUtil {
               SimpleDateFormat dateFormat = new SimpleDateFormat("dd_HH_mm_ss");
               String date = dateFormat.format(new Date());
               try {
-                String caption = String.format("Log at %s", date);
-                String filename = String.format("%s_cuda.log", date);
+                String caption = RefString.format("Log at %s", date);
+                String filename = RefString.format("%s_cuda.log", date);
                 out = new PrintWriter(sublog.file(filename));
                 sublog.p("[%s](etc/%s)", caption, filename);
                 sublog.write();
               } catch (Throwable e) {
                 throw new RuntimeException(e);
               }
-              killAt = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
+              killAt = com.simiacryptus.ref.wrappers.RefSystem.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
               remainingOut = 10L * 1024 * 1024;
             }
             out.println(formattedMessage);
             out.flush();
             int length = formattedMessage.length();
             remainingOut -= length;
-            if (remainingOut < 0 || killAt < System.currentTimeMillis()) {
+            if (remainingOut < 0 || killAt < com.simiacryptus.ref.wrappers.RefSystem.currentTimeMillis()) {
               out.close();
               out = null;
             }

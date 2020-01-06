@@ -31,6 +31,7 @@ import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefString;
 
 public @RefAware
 class ContentConvolutionMatcher implements VisualModifier {
@@ -123,7 +124,7 @@ class ContentConvolutionMatcher implements VisualModifier {
     final Layer[] layers = new Layer[]{
         new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
-    network.add(PipelineNetwork.build(1, layers).setName(String.format("-RMS / %.0E", mag))).freeRef();
+    network.add(PipelineNetwork.build(1, layers).setName(RefString.format("-RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 }

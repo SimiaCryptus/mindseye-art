@@ -32,6 +32,7 @@ import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +79,7 @@ class GramMatrixMatcher implements VisualModifier {
     final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(),
         averaging ? new AvgReducerLayer() : new SumReducerLayer(),
         new LinearActivationLayer().setScale(Math.pow(mag, -2))};
-    Layer layer = PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", mag));
+    Layer layer = PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", mag));
     result.freeRef();
     return layer;
   }

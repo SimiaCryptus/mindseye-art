@@ -95,7 +95,7 @@ class ContentTopology extends ReferenceCountingBase
   public abstract RefList<int[]> connectivity();
 
   public void log(RefList<int[]> graph) {
-    log(graph, System.out);
+    log(graph, com.simiacryptus.ref.wrappers.RefSystem.out);
   }
 
   public void log(RefList<int[]> graph, PrintStream out) {

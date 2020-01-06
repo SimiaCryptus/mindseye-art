@@ -36,6 +36,7 @@ import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
+import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,9 +134,9 @@ class ContentPCAMatcher implements VisualModifier {
     final Layer[] layers = new Layer[]{new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
         new LinearActivationLayer().setScale(Math.pow(mag, -2))};
-    signalProjection.add(PipelineNetwork.build(1, layers).setName(String.format("RMS / %.0E", mag)));
+    signalProjection.add(PipelineNetwork.build(1, layers).setName(RefString.format("RMS / %.0E", mag)));
 
-    network.add(signalProjection.setName(String.format("PCA Content Match"))).freeRef();
+    network.add(signalProjection.setName(RefString.format("PCA Content Match"))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

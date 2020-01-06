@@ -29,6 +29,7 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefString;
 
 public @RefAware
 class ContentMatcher implements VisualModifier {
@@ -80,7 +81,7 @@ class ContentMatcher implements VisualModifier {
     network.add(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
     final Layer[] layers = new Layer[]{new LinearActivationLayer().setScale(0 == mag ? 1 : Math.pow(mag, -1)),
         new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
-    network.add(PipelineNetwork.build(1, layers).setName(String.format("RMS / %.0E", mag))).freeRef();
+    network.add(PipelineNetwork.build(1, layers).setName(RefString.format("RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 }

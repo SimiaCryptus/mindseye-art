@@ -288,7 +288,7 @@ class RegionAssembler
           .flatMap(Region::connections_stream_parallel).filter(connectionFilter).sorted(this).limit(limit)
           .collect(Collectors.toList());
       if (first.isEmpty()) {
-        System.out.println("No connections left");
+        com.simiacryptus.ref.wrappers.RefSystem.out.println("No connections left");
         break;
       } else {
         final HashSet<Region> touched = new HashSet<>();
@@ -346,14 +346,14 @@ class RegionAssembler
         consolidated = this.from;
       }
       if (!regions.remove(toRemove)) {
-        System.out.println("Remove dead connection to Region " + toRemove.minId());
+        com.simiacryptus.ref.wrappers.RefSystem.out.println("Remove dead connection to Region " + toRemove.minId());
         if (!this.from.connections_remove(this)) {
           throw new IllegalStateException();
         } else {
           return;
         }
       } else {
-        //System.out.println("Remove Region " + minId(toRemove));
+        //com.simiacryptus.ref.wrappers.RefSystem.out.println("Remove Region " + minId(toRemove));
       }
       consolidated.union(toRemove);
       toRemove.clear();

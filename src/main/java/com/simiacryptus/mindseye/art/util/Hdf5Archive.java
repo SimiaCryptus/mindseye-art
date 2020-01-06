@@ -70,12 +70,12 @@ class Hdf5Archive {
     try {
       canonicalPath = filename.getCanonicalPath();
     } catch (IOException e) {
-      throw new RuntimeException(String.format("Error with filename %s", filename), e);
+      throw new RuntimeException(RefString.format("Error with filename %s", filename), e);
     }
     try {
       this.file = new H5File(canonicalPath, H5F_ACC_RDONLY());
     } catch (Exception e) {
-      throw new RuntimeException(String.format("Error opening %s", canonicalPath), e);
+      throw new RuntimeException(RefString.format("Error opening %s", canonicalPath), e);
     }
   }
 
@@ -93,14 +93,14 @@ class Hdf5Archive {
     for (CharSequence datasetName : hdf5.getDataSets(path)) {
       @Nullable
       Tensor tensor = hdf5.readDataSet(datasetName.toString(), path);
-      log.info(String.format("%sDataset %s: %s", prefix, datasetName,
+      log.info(RefString.format("%sDataset %s: %s", prefix, datasetName,
           RefArrays.toString(tensor.getDimensions())));
       if (printData)
-        log.info(String.format("%s%s", prefix, tensor.prettyPrint().replaceAll("\n", "\n" + prefix)));
+        log.info(RefString.format("%s%s", prefix, tensor.prettyPrint().replaceAll("\n", "\n" + prefix)));
       tensor.freeRef();
     }
     hdf5.getAttributes(path).forEach((k, v) -> {
-      log.info((String.format("%sAttribute: %s => %s", prefix, k, v)));
+      log.info((RefString.format("%sAttribute: %s => %s", prefix, k, v)));
     });
     for (String t : hdf5.getGroups(path).stream().map(CharSequence::toString)
         .sorted(new RefComparator<String>() {
@@ -127,14 +127,14 @@ class Hdf5Archive {
   private static String[] concat(@Nonnull CharSequence[] s, String t) {
     @Nonnull
     String[] strings = new String[s.length + 1];
-    System.arraycopy(s, 0, strings, 0, s.length);
+    com.simiacryptus.ref.wrappers.RefSystem.arraycopy(s, 0, strings, 0, s.length);
     strings[s.length] = t;
     return strings;
   }
 
   @Override
   public String toString() {
-    return String.format("Hdf5Archive{%s}", file);
+    return RefString.format("Hdf5Archive{%s}", file);
   }
 
   @Nullable
@@ -213,7 +213,7 @@ class Hdf5Archive {
       if (typeId == 0) {
         attributes.put(name, getI64(attribute));
       } else {
-        System.out.println(name + " type = " + typeId);
+        com.simiacryptus.ref.wrappers.RefSystem.out.println(name + " type = " + typeId);
         attributes.put(name, getString(attribute));
       }
       attribute.deallocate();

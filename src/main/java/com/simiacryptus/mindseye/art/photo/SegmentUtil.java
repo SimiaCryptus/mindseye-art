@@ -71,7 +71,7 @@ class SegmentUtil {
             RefCollectors.counting()))
         .entrySet().stream()
         .sorted(RefComparator.comparing(x -> -x.getValue() * x.getKey()))
-        .map(x -> String.format("%d regions of size %s", x.getValue(), x.getKey())).forEach(System.out::println);
+        .map(x -> RefString.format("%d regions of size %s", x.getValue(), x.getKey())).forEach(com.simiacryptus.ref.wrappers.RefSystem.out::println);
   }
 
   public static <T> int[] markIslands(RasterTopology topology, Function<int[], T> extract, BiPredicate<T, T> test,

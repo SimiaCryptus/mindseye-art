@@ -190,7 +190,7 @@ class SegmentTest extends NotebookReportBase {
       final RefMap<float[], Float> eigensystem = log
           .eval(() -> this.graph.dense_graph_eigensys());
       log.run(() -> {
-        System.out.println("Sorted Eigenvalues: " + RefArrays
+        com.simiacryptus.ref.wrappers.RefSystem.out.println("Sorted Eigenvalues: " + RefArrays
             .toString(eigensystem.values().stream().mapToDouble(Float::doubleValue).toArray()));
       });
       final int sampleEigenvectors = 20;
@@ -232,7 +232,7 @@ class SegmentTest extends NotebookReportBase {
         final Map.Entry<float[], Float> secondLowest = eigensystem.entrySet().stream()
             .sorted(RefComparator.comparing(x -> x.getValue())).limit(sampleEigenvectors)
             .collect(RefCollectors.toList()).get(1);
-        System.out.println(
+        com.simiacryptus.ref.wrappers.RefSystem.out.println(
             "Second Smallest Eigenvector " + RefArrays.toString(secondLowest.getKey()));
         return RefArrays.stream(SparseMatrixFloat.toDouble(secondLowest.getKey()))
             .mapToInt(x -> x < 0 ? 0 : 1).toArray();
@@ -255,7 +255,7 @@ class SegmentTest extends NotebookReportBase {
 
     public void display(NotebookOutput log, int[] pixelMap, SparseMatrixFloat graph) {
       log.eval(() -> {
-        System.out.println(String.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
+        com.simiacryptus.ref.wrappers.RefSystem.out.println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
         return paintWithRandomColors(topology, pixelMap, graph);
       });
@@ -311,7 +311,7 @@ class SegmentTest extends NotebookReportBase {
 
     public void display(NotebookOutput log) {
       log.eval(() -> {
-        System.out.println(String.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
+        com.simiacryptus.ref.wrappers.RefSystem.out.println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
         return paintWithRandomColors(topology, pixelMap, graph);
       });

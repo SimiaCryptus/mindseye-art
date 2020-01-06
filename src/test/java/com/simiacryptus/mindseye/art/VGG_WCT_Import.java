@@ -658,7 +658,7 @@ class VGG_WCT_Import {
 
   private static PipelineNetwork convolutionLayer(Tensor bias1, Tensor weight1, int inBands, int outBands) {
     return convolutionLayer(
-        (PipelineNetwork) new PipelineNetwork(1).setName(String.format("Conv(%s/%s)", inBands, outBands)), bias1,
+        (PipelineNetwork) new PipelineNetwork(1).setName(RefString.format("Conv(%s/%s)", inBands, outBands)), bias1,
         weight1, inBands, outBands);
   }
 

@@ -35,6 +35,7 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +101,7 @@ class GramMatrixEnhancer implements VisualModifier {
   @NotNull
   public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
     PipelineNetwork rmsNetwork = new PipelineNetwork(1);
-    rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
+    rmsNetwork.setName(RefString.format("-RMS[x*C] / %.0E", mag));
     final Layer nextHead = new LinearActivationLayer().setScale(-Math.pow(mag, -2));
     final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
     rmsNetwork
@@ -151,7 +152,7 @@ class GramMatrixEnhancer implements VisualModifier {
     @NotNull
     public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
       PipelineNetwork rmsNetwork = new PipelineNetwork(1);
-      rmsNetwork.setName(String.format("-RMS[x*C] / %.0E", mag));
+      rmsNetwork.setName(RefString.format("-RMS[x*C] / %.0E", mag));
       final Layer nextHead = new LinearActivationLayer().setScale(-Math.pow(mag, -2));
       final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
       rmsNetwork.add(nextHead1, rmsNetwork.add(new BoundedActivationLayer().setMinValue(getMin()).setMaxValue(getMax()),

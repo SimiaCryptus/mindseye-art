@@ -37,6 +37,7 @@ import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
+import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,7 +136,7 @@ class PatternPCAMatcher implements VisualModifier {
     final Layer nextHead = isAveraging() ? new AvgReducerLayer() : new SumReducerLayer();
     signalProjection.add(nextHead);
 
-    network.add(signalProjection.setName(String.format("PCA Match"))).freeRef();
+    network.add(signalProjection.setName(RefString.format("PCA Match"))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 

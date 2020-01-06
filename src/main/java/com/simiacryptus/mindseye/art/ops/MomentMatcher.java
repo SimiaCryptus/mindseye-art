@@ -37,6 +37,7 @@ import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefStream;
+import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +107,7 @@ class MomentMatcher implements VisualModifier {
     final Layer[] layers = new Layer[]{new LinearActivationLayer().setScale(0 == rms ? 1 : Math.pow(rms, -1)),
         new ImgBandBiasLayer(bias).setPrecision(precision), new SquareActivationLayer().setPrecision(precision),
         new AvgReducerLayer().setPrecision(precision)};
-    return PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", 0 == rms ? 1 : rms));
+    return PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", 0 == rms ? 1 : rms));
   }
 
   @NotNull
@@ -212,7 +213,7 @@ class MomentMatcher implements VisualModifier {
     Tensor evalRoot = avg(network, getPixels(visualModifierParameters.style), visualModifierParameters.style);
     double sumSq = evalRoot.sumSq();
     evalRoot.freeRef();
-    log.info(String.format("Adjust for %s : %s", network.getName(), sumSq));
+    log.info(RefString.format("Adjust for %s : %s", network.getName(), sumSq));
     final Layer nextHead = new ScaleLayer(0 == sumSq ? 1 : 1.0 / sumSq);
     network.add(nextHead).freeRef();
 

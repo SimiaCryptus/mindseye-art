@@ -43,6 +43,7 @@ import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefString;
 import com.simiacryptus.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -334,7 +335,7 @@ class WCTTest extends NotebookReportBase {
 
     for (boolean selfRef : new boolean[]{true, false}) {
       for (boolean sqrt : new boolean[]{true, false}) {
-        log.h1(String.format("SelfRef: %s, Sqrt: %s", selfRef, sqrt));
+        log.h1(RefString.format("SelfRef: %s, Sqrt: %s", selfRef, sqrt));
 
         log.h3("RadiusRasterTopology - MattingAffinity");
         test(log, log.eval(() -> {
@@ -402,7 +403,7 @@ class WCTTest extends NotebookReportBase {
 
     for (boolean selfRef : new boolean[]{true, false}) {
       for (boolean sqrt : new boolean[]{true, false}) {
-        log.h1(String.format("SelfRef: %s, Sqrt: %s", selfRef, sqrt));
+        log.h1(RefString.format("SelfRef: %s, Sqrt: %s", selfRef, sqrt));
 
         //        log.h3("RadiusRasterTopology - MattingAffinity");
         //        test(log, log.eval(() -> {
@@ -475,7 +476,7 @@ class WCTTest extends NotebookReportBase {
       smoothingTransform.freeRef();
     } catch (Throwable e) {
       e.printStackTrace();
-      System.gc();
+      com.simiacryptus.ref.wrappers.RefSystem.gc();
     }
   }
 
@@ -532,8 +533,8 @@ class WCTTest extends NotebookReportBase {
     }
 
     log.h2("Result Images");
-    System.setProperty("spark.master", "local[*]");
-    System.setProperty("spark.app.name", getClass().getSimpleName());
+    com.simiacryptus.ref.wrappers.RefSystem.setProperty("spark.master", "local[*]");
+    com.simiacryptus.ref.wrappers.RefSystem.setProperty("spark.app.name", getClass().getSimpleName());
     if (getNetwork(decoder).inputHandles.size() == 2) {
       final Tensor restyled = log.eval(() -> {
         return decoder.eval(restyledFeatures, contentImage).getData().get(0);

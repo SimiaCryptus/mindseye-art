@@ -28,6 +28,7 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
 
 public @RefAware
@@ -83,7 +84,7 @@ class ChannelMeanMatcher implements VisualModifier {
     final Layer[] layers = new Layer[]{new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)), new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
         new LinearActivationLayer().setScale(Math.pow(mag, -2))};
-    network.add(PipelineNetwork.build(1, layers).setName(String.format("RMS[x-C] / %.0E", mag))).freeRef();
+    network.add(PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }
 }

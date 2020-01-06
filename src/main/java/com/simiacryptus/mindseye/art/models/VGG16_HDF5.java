@@ -28,6 +28,7 @@ import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefString;
 import com.simiacryptus.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,10 +78,10 @@ class VGG16_HDF5 {
       Layer explode = ((Explodable) layer).explode();
       try {
         if (explode instanceof DAGNetwork) {
-          logger.info(String.format("Exploded %s to %s (%s nodes)", layer.getName(), explode.getClass().getSimpleName(),
+          logger.info(RefString.format("Exploded %s to %s (%s nodes)", layer.getName(), explode.getClass().getSimpleName(),
               ((DAGNetwork) explode).getNodes().size()));
         } else {
-          logger.info(String.format("Exploded %s to %s (%s nodes)", layer.getName(), explode.getClass().getSimpleName(),
+          logger.info(RefString.format("Exploded %s to %s (%s nodes)", layer.getName(), explode.getClass().getSimpleName(),
               explode.getName()));
         }
         return add(explode, model);
