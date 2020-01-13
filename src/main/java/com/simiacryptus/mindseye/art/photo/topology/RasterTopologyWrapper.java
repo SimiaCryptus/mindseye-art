@@ -23,8 +23,7 @@ import com.simiacryptus.mindseye.lang.Singleton;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefList;
 
-public @RefAware
-class RasterTopologyWrapper implements RasterTopology {
+public class RasterTopologyWrapper implements RasterTopology {
 
   public final RasterTopology inner;
 
@@ -52,8 +51,7 @@ class RasterTopologyWrapper implements RasterTopology {
     return inner.getCoordsFromIndex(i);
   }
 
-  public static @RefAware
-  class CachedRasterTopology extends RasterTopologyWrapper {
+  public static class CachedRasterTopology extends RasterTopologyWrapper {
 
     private final Singleton<RefList<int[]>> cache = new Singleton<>();
 

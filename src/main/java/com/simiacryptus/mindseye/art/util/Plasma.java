@@ -29,8 +29,7 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 
-public @RefAware
-class Plasma {
+public class Plasma {
   private int bands;
   private double[] noiseAmplitude;
   private double noisePower;
@@ -88,8 +87,7 @@ class Plasma {
     image.addRef();
     while (image.getDimensions()[0] < Math.max(width, height)) {
       final double factor = Math.pow(image.getDimensions()[0], noisePower);
-      Tensor newImage = expandPlasma(image,
-          RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
+      Tensor newImage = expandPlasma(image, RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
       image.freeRef();
       image = newImage;
     }

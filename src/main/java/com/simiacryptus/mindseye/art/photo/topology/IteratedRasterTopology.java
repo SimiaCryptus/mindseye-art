@@ -25,8 +25,7 @@ import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
 
-public @RefAware
-class IteratedRasterTopology implements RasterTopology {
+public class IteratedRasterTopology implements RasterTopology {
   private final RasterTopology inner;
   private int iterations = 2;
 
@@ -49,17 +48,15 @@ class IteratedRasterTopology implements RasterTopology {
     return this;
   }
 
-  public static RefList<int[]> iterate(RefList<int[]> edges,
-                                       int pow) {
+  public static RefList<int[]> iterate(RefList<int[]> edges, int pow) {
     assert pow > 0;
     if (1 == pow) {
       return edges;
     } else {
       final RefList<int[]> prev = iterate(edges, pow - 1);
-      return RefIntStream.range(0, prev.size()).parallel()
-          .mapToObj(j -> RefArrays.stream(prev.get(j))
-              .flatMap(i -> RefArrays.stream(prev.get(i))).filter(i -> i != j).distinct()
-              .toArray())
+      return RefIntStream
+          .range(0, prev.size()).parallel().mapToObj(j -> RefArrays.stream(prev.get(j))
+              .flatMap(i -> RefArrays.stream(prev.get(i))).filter(i -> i != j).distinct().toArray())
           .collect(RefCollectors.toList());
     }
   }

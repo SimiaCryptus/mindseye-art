@@ -29,16 +29,12 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public @RefAware
-interface RasterAffinity {
-  static RefList<double[]> normalize(
-      RefList<int[]> graphEdges,
-      RefList<double[]> affinityList) {
+public interface RasterAffinity {
+  static RefList<double[]> normalize(RefList<int[]> graphEdges, RefList<double[]> affinityList) {
     return adjust(graphEdges, affinityList, degree(affinityList), 0.5);
   }
 
-  static RefList<double[]> adjust(List<int[]> graphEdges,
-                                  List<double[]> affinityList, double[] degree, double power) {
+  static RefList<double[]> adjust(List<int[]> graphEdges, List<double[]> affinityList, double[] degree, double power) {
     return RefIntStream.range(0, graphEdges.size()).mapToObj(i2 -> {
       final double deg_i = degree[i2];
       final int[] edges = graphEdges.get(i2);
@@ -55,27 +51,22 @@ interface RasterAffinity {
   }
 
   static double[] degree(List<double[]> affinityList) {
-    return affinityList.stream().parallel().mapToDouble(x -> RefArrays.stream(x).sum())
-        .toArray();
+    return affinityList.stream().parallel().mapToDouble(x -> RefArrays.stream(x).sum()).toArray();
   }
 
-  default AffinityWrapper wrap(
-      BiFunction<RefList<int[]>, RefList<double[]>, RefList<double[]>> fn) {
+  default AffinityWrapper wrap(BiFunction<RefList<int[]>, RefList<double[]>, RefList<double[]>> fn) {
     return new AffinityWrapper(this) {
       @Override
-      public RefList<double[]> affinityList(
-          RefList<int[]> graphEdges) {
+      public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
         return fn.apply(graphEdges, inner.affinityList(graphEdges));
       }
     };
   }
 
-  default AffinityWrapper wrap(
-      Function<RefList<int[]>, RefList<double[]>> fn) {
+  default AffinityWrapper wrap(Function<RefList<int[]>, RefList<double[]>> fn) {
     return new AffinityWrapper(this) {
       @Override
-      public RefList<double[]> affinityList(
-          RefList<int[]> graphEdges) {
+      public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
         return fn.apply(graphEdges);
       }
     };

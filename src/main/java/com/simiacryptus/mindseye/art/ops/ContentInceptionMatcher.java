@@ -31,8 +31,7 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefString;
 
-public @RefAware
-class ContentInceptionMatcher implements VisualModifier {
+public class ContentInceptionMatcher implements VisualModifier {
 
   private int minValue = -1;
   private int maxValue = 1;
@@ -94,9 +93,9 @@ class ContentInceptionMatcher implements VisualModifier {
     network.add(colorProjection);
     network.add(new ConvolutionLayer(contentDimensions[0], contentDimensions[1], 1, 1)
         .set(spacialPattern.scaleInPlace(Math.pow(spacialPattern.rms(), -2))).explode()).freeRef();
-    final Layer[] layers = new Layer[]{
+    final Layer[] layers = new Layer[] {
         new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer() };
     network.add(PipelineNetwork.build(1, layers).setName(RefString.format("-RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }

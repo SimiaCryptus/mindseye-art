@@ -34,8 +34,7 @@ import java.util.function.DoubleBinaryOperator;
 
 import static java.util.Arrays.binarySearch;
 
-public @RefAware
-class SparseMatrixFloat {
+public class SparseMatrixFloat {
   public final int[] rowIndices;
   public final int[] colIndices;
   public final float[] values;
@@ -43,8 +42,7 @@ class SparseMatrixFloat {
   public final int cols;
 
   public SparseMatrixFloat(int[] rowIndices, int[] colIndices, float[] values) {
-    this(rowIndices, colIndices, values,
-        RefArrays.stream(rowIndices).max().getAsInt() + 1,
+    this(rowIndices, colIndices, values, RefArrays.stream(rowIndices).max().getAsInt() + 1,
         RefArrays.stream(colIndices).max().getAsInt() + 1);
   }
 
@@ -61,9 +59,8 @@ class SparseMatrixFloat {
   }
 
   public int[] getDenseProjection() {
-    final RefMap<Integer, Long> rowCounts = RefArrays
-        .stream(rowIndices).mapToObj(x -> x).collect(RefCollectors.groupingBy(x -> x,
-            RefCollectors.counting()));
+    final RefMap<Integer, Long> rowCounts = RefArrays.stream(rowIndices).mapToObj(x -> x)
+        .collect(RefCollectors.groupingBy(x -> x, RefCollectors.counting()));
     final int[] activeRows = rowCounts.entrySet().stream().filter(x -> x.getValue() > 1).mapToInt(x -> x.getKey())
         .sorted().toArray();
     return RefIntStream.range(0, rows).map(x -> {
@@ -122,8 +119,8 @@ class SparseMatrixFloat {
   }
 
   public static int[] index(long[] data) {
-    return RefIntStream.range(0, data.length).mapToObj(x -> x)
-        .sorted(RefComparator.comparing(i -> data[i])).mapToInt(x -> x).toArray();
+    return RefIntStream.range(0, data.length).mapToObj(x -> x).sorted(RefComparator.comparing(i -> data[i]))
+        .mapToInt(x -> x).toArray();
   }
 
   public static int[] index(int[] data) {
@@ -131,8 +128,7 @@ class SparseMatrixFloat {
   }
 
   public static int[] index(int[] data, RefComparator<Integer> comparator) {
-    return RefIntStream.range(0, data.length).mapToObj(x -> x).sorted(comparator)
-        .mapToInt(x -> x).toArray();
+    return RefIntStream.range(0, data.length).mapToObj(x -> x).sorted(comparator).mapToInt(x -> x).toArray();
   }
 
   public static int[] filterValues(int[] base, int[] filter) {
@@ -144,31 +140,30 @@ class SparseMatrixFloat {
   }
 
   public static int[] zeros(float[] values, double tol) {
-    return RefIntStream.range(0, values.length).filter(i -> Math.abs(values[i]) < tol)
-        .sorted().toArray();
+    return RefIntStream.range(0, values.length).filter(i -> Math.abs(values[i]) < tol).sorted().toArray();
   }
 
   public static SparseMatrixFloat identity(int size) {
     final float[] values = new float[size];
     RefArrays.fill(values, 1.0f);
-    return new SparseMatrixFloat(RefIntStream.range(0, size).toArray(),
-        RefIntStream.range(0, size).toArray(), values, size, size).sortAndPrune();
+    return new SparseMatrixFloat(RefIntStream.range(0, size).toArray(), RefIntStream.range(0, size).toArray(), values,
+        size, size).sortAndPrune();
   }
 
   public static int binarySearch_first(int[] ints, int row) {
     final int search = binarySearch(ints, row);
     if (search <= 0)
       return search;
-    return RefIntStream.iterate(search - 1, x -> x - 1).limit(search)
-        .filter(r -> r >= 0 && ints[r] != row).findFirst().orElse(-1) + 1;
+    return RefIntStream.iterate(search - 1, x -> x - 1).limit(search).filter(r -> r >= 0 && ints[r] != row).findFirst()
+        .orElse(-1) + 1;
   }
 
   public static int binarySearch_first(long[] ints, long row) {
     final int search = binarySearch(ints, row);
     if (search <= 0)
       return search;
-    return RefIntStream.iterate(search - 1, x -> x - 1).limit(search)
-        .filter(r -> r >= 0 && ints[r] != row).findFirst().orElse(-1) + 1;
+    return RefIntStream.iterate(search - 1, x -> x - 1).limit(search).filter(r -> r >= 0 && ints[r] != row).findFirst()
+        .orElse(-1) + 1;
   }
 
   public static int[] project(int[] assignments, int[] projection) {
@@ -176,18 +171,15 @@ class SparseMatrixFloat {
   }
 
   public SparseMatrixFloat recalculateConnectionWeights(RasterTopology topology, Tensor content, int[] pixelMap,
-                                                        double scale, double mixing, double minValue) {
+      double scale, double mixing, double minValue) {
     final MultivariateFrameOfReference globalFOR = new MultivariateFrameOfReference(() -> content.getPixelStream(), 3);
-    final RefMap<Integer, MultivariateFrameOfReference> islandDistributions = RefIntStream
-        .range(0, pixelMap.length).mapToObj(x -> x)
-        .collect(RefCollectors.groupingBy(x -> pixelMap[x],
-            RefCollectors.toList()))
-        .entrySet().stream().collect(RefCollectors.toMap(Map.Entry::getKey,
-            (Map.Entry<Integer, RefList<Integer>> entry) -> {
-              final MultivariateFrameOfReference localFOR = new MultivariateFrameOfReference(() -> entry.getValue()
-                  .stream().map(pixelIndex -> content.getPixel(topology.getCoordsFromIndex(pixelIndex))), 3);
-              return new MultivariateFrameOfReference(globalFOR, localFOR, mixing);
-            }));
+    final RefMap<Integer, MultivariateFrameOfReference> islandDistributions = RefIntStream.range(0, pixelMap.length)
+        .mapToObj(x -> x).collect(RefCollectors.groupingBy(x -> pixelMap[x], RefCollectors.toList())).entrySet()
+        .stream().collect(RefCollectors.toMap(Map.Entry::getKey, (Map.Entry<Integer, RefList<Integer>> entry) -> {
+          final MultivariateFrameOfReference localFOR = new MultivariateFrameOfReference(() -> entry.getValue().stream()
+              .map(pixelIndex -> content.getPixel(topology.getCoordsFromIndex(pixelIndex))), 3);
+          return new MultivariateFrameOfReference(globalFOR, localFOR, mixing);
+        }));
     return new SparseMatrixFloat(this.rowIndices, this.colIndices,
         toFloat(RefIntStream.range(0, this.rowIndices.length).mapToDouble(i -> {
           final MultivariateFrameOfReference a = islandDistributions.get(this.rowIndices[i]);
@@ -216,8 +208,8 @@ class SparseMatrixFloat {
     final FloatMatrix matrix_A = matrix_D.sub(matrix_W);
     final FloatMatrix[] eigensys = Eigen.symmetricGeneralizedEigenvectors(matrix_A, matrix_D);
     final float[] realEigenvalues = eigensys[1].data;
-    return RefIntStream.range(0, realEigenvalues.length).mapToObj(i -> i).collect(
-        RefCollectors.toMap(i -> eigensys[0].getColumn(i).data, i -> realEigenvalues[i]));
+    return RefIntStream.range(0, realEigenvalues.length).mapToObj(i -> i)
+        .collect(RefCollectors.toMap(i -> eigensys[0].getColumn(i).data, i -> realEigenvalues[i]));
   }
 
   public FloatMatrix toJBLAS() {
@@ -230,15 +222,14 @@ class SparseMatrixFloat {
 
   public SparseMatrixFloat degreeMatrix() {
     assert null != assertSymmetric();
-    return new SparseMatrixFloat(RefIntStream.range(0, rows).toArray(),
-        RefIntStream.range(0, rows).toArray(), toFloat(degree()), rows, cols);
+    return new SparseMatrixFloat(RefIntStream.range(0, rows).toArray(), RefIntStream.range(0, rows).toArray(),
+        toFloat(degree()), rows, cols);
   }
 
   public SparseMatrixFloat project(int[] projection) {
     final int[] rowIndices = project(this.rowIndices, projection);
     final int[] colIndices = project(this.colIndices, projection);
-    return new SparseMatrixFloat(rowIndices, colIndices, values,
-        RefArrays.stream(rowIndices).max().getAsInt() + 1,
+    return new SparseMatrixFloat(rowIndices, colIndices, values, RefArrays.stream(rowIndices).max().getAsInt() + 1,
         RefArrays.stream(colIndices).max().getAsInt() + 1).sortAndPrune().aggregate();
   }
 
@@ -247,22 +238,20 @@ class SparseMatrixFloat {
   }
 
   public SparseMatrixFloat select(int[] projection) {
-    final RefMap<Integer, Integer> reverseIndex = RefIntStream
-        .range(0, projection.length).mapToObj(x -> x)
+    final RefMap<Integer, Integer> reverseIndex = RefIntStream.range(0, projection.length).mapToObj(x -> x)
         .collect(RefCollectors.toMap(x -> projection[x], x -> x));
     final int[] indices = RefIntStream.range(0, this.rowIndices.length)
         .filter(i -> reverseIndex.containsKey(this.rowIndices[i]) && reverseIndex.containsKey(this.colIndices[i]))
         .toArray();
-    final int[] rowIndices = RefArrays.stream(indices).map(i -> this.rowIndices[i])
-        .map(i -> reverseIndex.get(i)).toArray();
-    final int[] colIndices = RefArrays.stream(indices).map(i -> this.colIndices[i])
-        .map(i -> reverseIndex.get(i)).toArray();
+    final int[] rowIndices = RefArrays.stream(indices).map(i -> this.rowIndices[i]).map(i -> reverseIndex.get(i))
+        .toArray();
+    final int[] colIndices = RefArrays.stream(indices).map(i -> this.colIndices[i]).map(i -> reverseIndex.get(i))
+        .toArray();
     final float[] floats = new float[indices.length];
     for (int i = 0; i < floats.length; i++) {
       floats[i] = values[indices[i]];
     }
-    return new SparseMatrixFloat(rowIndices, colIndices, floats,
-        RefArrays.stream(rowIndices).max().getAsInt() + 1,
+    return new SparseMatrixFloat(rowIndices, colIndices, floats, RefArrays.stream(rowIndices).max().getAsInt() + 1,
         RefArrays.stream(colIndices).max().getAsInt() + 1).sortAndPrune().aggregate();
   }
 
@@ -271,8 +260,8 @@ class SparseMatrixFloat {
     assert rowIndices.length == values.length;
     assert RefArrays.stream(rowIndices).allMatch(x -> x >= 0 && x < rows);
     assert RefArrays.stream(colIndices).allMatch(x -> x >= 0 && x < cols);
-    final RefComparator<Integer> comparator = RefComparator
-        .comparingInt((Integer i) -> rowIndices[i]).thenComparingInt(i -> colIndices[i]);
+    final RefComparator<Integer> comparator = RefComparator.comparingInt((Integer i) -> rowIndices[i])
+        .thenComparingInt(i -> colIndices[i]);
     final int[] sortedAndFiltered = filterValues(index(rowIndices, comparator), zeros(values));
     return new SparseMatrixFloat(reorder(rowIndices, sortedAndFiltered), reorder(colIndices, sortedAndFiltered),
         reorder(values, sortedAndFiltered), rows, cols);
@@ -315,14 +304,12 @@ class SparseMatrixFloat {
     indices_right = reorder(indices_right, index_right);
     final float[] sortedValues_right = reorder(right.values, index_right);
 
-    final long[] finalIndices = RefLongStream
-        .concat(RefArrays.stream(indices_left),
-            RefArrays.stream(indices_right))
+    final long[] finalIndices = RefLongStream.concat(RefArrays.stream(indices_left), RefArrays.stream(indices_right))
         .distinct().toArray();
     long[] finalIndices_left = indices_left;
     long[] finalIndices_right = indices_right;
-    return new SparseMatrixFloat(RefIntStream.range(0, finalIndices.length)
-        .mapToLong(i -> finalIndices[i]).mapToInt(elementIndex -> {
+    return new SparseMatrixFloat(
+        RefIntStream.range(0, finalIndices.length).mapToLong(i -> finalIndices[i]).mapToInt(elementIndex -> {
           final int i1 = (int) (elementIndex / cols);
           assert 0 <= i1 : i1;
           assert rows > i1 : i1;
@@ -330,30 +317,28 @@ class SparseMatrixFloat {
         }).toArray(),
         RefIntStream.range(0, finalIndices.length).mapToLong(i -> finalIndices[i])
             .mapToInt(elementIndex -> (int) (elementIndex % cols)).toArray(),
-        toFloat(RefIntStream.range(0, finalIndices.length).mapToLong(i -> finalIndices[i])
-            .mapToDouble(elementIndex -> {
-              final int idx_left = binarySearch_first(finalIndices_left, elementIndex);
-              final int idx_right = binarySearch_first(finalIndices_right, elementIndex);
-              final float value_right = idx_right < 0 || finalIndices_right[idx_right] != elementIndex ? 0
-                  : sortedValues_right[idx_right];
-              final float value_left = idx_left < 0 || finalIndices_left[idx_left] != elementIndex ? 0
-                  : sortedValues_left[idx_left];
-              return fn.applyAsDouble(value_left, value_right);
-            }).toArray()),
-        rows, cols).sortAndPrune();
+        toFloat(RefIntStream.range(0, finalIndices.length).mapToLong(i -> finalIndices[i]).mapToDouble(elementIndex -> {
+          final int idx_left = binarySearch_first(finalIndices_left, elementIndex);
+          final int idx_right = binarySearch_first(finalIndices_right, elementIndex);
+          final float value_right = idx_right < 0 || finalIndices_right[idx_right] != elementIndex ? 0
+              : sortedValues_right[idx_right];
+          final float value_left = idx_left < 0 || finalIndices_left[idx_left] != elementIndex ? 0
+              : sortedValues_left[idx_left];
+          return fn.applyAsDouble(value_left, value_right);
+        }).toArray()), rows, cols).sortAndPrune();
   }
 
   public int[] getCols(int row) {
     final int begin = rowStart(row);
     if (begin < 0)
-      return new int[]{};
+      return new int[] {};
     int end = getEnd(row, begin);
     return RefArrays.copyOfRange(colIndices, begin, end);
   }
 
   public int getEnd(int row, int begin) {
-    return RefIntStream.range(begin, rowIndices.length).filter(r -> rowIndices[r] != row)
-        .findFirst().orElse(rowIndices.length);
+    return RefIntStream.range(begin, rowIndices.length).filter(r -> rowIndices[r] != row).findFirst()
+        .orElse(rowIndices.length);
   }
 
   public int rowStart(int row) {
@@ -364,7 +349,7 @@ class SparseMatrixFloat {
   public float[] getVals(int row) {
     final int begin = rowStart(row);
     if (begin < 0)
-      return new float[]{};
+      return new float[] {};
     int end = getEnd(row, begin);
     return RefArrays.copyOfRange(values, begin, end);
   }
@@ -376,17 +361,13 @@ class SparseMatrixFloat {
       return 0;
     final int nnz = this.rowIndices.length;
     assert begin < nnz;
-    int end = RefIntStream.range(begin, nnz).filter(i -> this.rowIndices[i] != row)
-        .findFirst().orElse(nnz);
-    return RefIntStream.range(begin, end).filter(i -> colIndices[i] != row)
-        .mapToDouble(i -> values[i]).sum();
+    int end = RefIntStream.range(begin, nnz).filter(i -> this.rowIndices[i] != row).findFirst().orElse(nnz);
+    return RefIntStream.range(begin, end).filter(i -> colIndices[i] != row).mapToDouble(i -> values[i]).sum();
   }
 
   public SparseMatrixFloat assertSymmetric() {
-    assert RefArrays.stream(this.activeRows()).map(x -> this.getCols(x).length)
-        .sum() == this.getNumNonZeros();
-    assert RefArrays.stream(this.activeRows()).map(x -> this.getVals(x).length)
-        .sum() == this.getNumNonZeros();
+    assert RefArrays.stream(this.activeRows()).map(x -> this.getCols(x).length).sum() == this.getNumNonZeros();
+    assert RefArrays.stream(this.activeRows()).map(x -> this.getVals(x).length).sum() == this.getNumNonZeros();
     assert transpose().equals(sortAndPrune(), 1e-4);
     return this;
   }
@@ -419,8 +400,7 @@ class SparseMatrixFloat {
       }
       sourceIndex++;
     }
-    return new SparseMatrixFloat(RefArrays.copyOf(rowIndices, targetIndex),
-        RefArrays.copyOf(colIndices, targetIndex),
+    return new SparseMatrixFloat(RefArrays.copyOf(rowIndices, targetIndex), RefArrays.copyOf(colIndices, targetIndex),
         RefArrays.copyOf(values, targetIndex), rows, cols);
   }
 
@@ -439,8 +419,7 @@ class SparseMatrixFloat {
       }
       sourceIndex++;
     }
-    return new SparseMatrixFloat(RefArrays.copyOf(rowIndices, targetIndex),
-        RefArrays.copyOf(colIndices, targetIndex),
+    return new SparseMatrixFloat(RefArrays.copyOf(rowIndices, targetIndex), RefArrays.copyOf(colIndices, targetIndex),
         RefArrays.copyOf(values, targetIndex), rows, cols);
   }
 
@@ -472,8 +451,7 @@ class SparseMatrixFloat {
       }
     }
     return new SparseMatrixFloat(RefArrays.copyOfRange(rowIndices_copy, 0, j),
-        RefArrays.copyOfRange(colIndices_copy, 0, j),
-        RefArrays.copyOfRange(values_copy, 0, j), rows, cols);
+        RefArrays.copyOfRange(colIndices_copy, 0, j), RefArrays.copyOfRange(values_copy, 0, j), rows, cols);
   }
 
   private boolean equals(SparseMatrixFloat other, double tolerance) {

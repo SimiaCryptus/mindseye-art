@@ -29,23 +29,19 @@ import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
 import org.jetbrains.annotations.NotNull;
 
-public @RefAware
-class SmoothSolver_Cuda implements SmoothSolver {
+public class SmoothSolver_Cuda implements SmoothSolver {
 
   public static @NotNull CudaSparseMatrix laplacian(RasterAffinity affinity, RasterTopology topology) {
     return laplacian(topology.connectivity(), affinity.affinityList(topology.connectivity()));
   }
 
-  public static @NotNull CudaSparseMatrix laplacian(RefList<int[]> graphEdges,
-                                                    RefList<double[]> affinityList) {
+  public static @NotNull CudaSparseMatrix laplacian(RefList<int[]> graphEdges, RefList<double[]> affinityList) {
     final int pixels = graphEdges.size();
     final double[] doubles = RasterAffinity.normalize(graphEdges, affinityList).stream()
         .flatMapToDouble(x -> RefArrays.stream(x)).toArray();
     return new CudaSparseMatrix(new SparseMatrixFloat(
-        RefIntStream.range(0, pixels)
-            .flatMap(i1 -> RefArrays.stream(graphEdges.get(i1))).toArray(),
-        RefIntStream.range(0, pixels)
-            .flatMap(i -> RefArrays.stream(graphEdges.get(i)).map(j -> i)).toArray(),
+        RefIntStream.range(0, pixels).flatMap(i1 -> RefArrays.stream(graphEdges.get(i1))).toArray(),
+        RefIntStream.range(0, pixels).flatMap(i -> RefArrays.stream(graphEdges.get(i)).map(j -> i)).toArray(),
         SparseMatrixFloat.toFloat(doubles), pixels, pixels).sortAndPrune().assertSymmetric());
   }
 

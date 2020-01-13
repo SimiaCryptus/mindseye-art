@@ -42,9 +42,7 @@ import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
-public @RefAware
-class EigenvectorSolver_Cuda extends ReferenceCountingBase
-    implements RefOperator<double[][]> {
+public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements RefOperator<double[][]> {
   final CudaSparseMatrix laplacian;
   final int pixels;
   @NotNull
@@ -68,7 +66,7 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
   }
 
   public static int[] get2D(int[] dimensions) {
-    return new int[]{dimensions[0], dimensions[1]};
+    return new int[] { dimensions[0], dimensions[1] };
   }
 
   public static Tensor remaining(RefCollection<Tensor> eigenVectors, int... dimensions) {
@@ -81,16 +79,14 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
     return seed.unit();
   }
 
-  public static @SuppressWarnings("unused")
-  EigenvectorSolver_Cuda[] addRefs(EigenvectorSolver_Cuda[] array) {
+  public static @SuppressWarnings("unused") EigenvectorSolver_Cuda[] addRefs(EigenvectorSolver_Cuda[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(EigenvectorSolver_Cuda::addRef)
         .toArray((x) -> new EigenvectorSolver_Cuda[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  EigenvectorSolver_Cuda[][] addRefs(EigenvectorSolver_Cuda[][] array) {
+  public static @SuppressWarnings("unused") EigenvectorSolver_Cuda[][] addRefs(EigenvectorSolver_Cuda[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(EigenvectorSolver_Cuda::addRefs)
@@ -120,8 +116,7 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
 
   public double[][] apply(double[][] img) {
     final int channels = img.length;
-    final float[] flattened = new float[RefArrays.stream(img).mapToInt(x -> x.length)
-        .sum()];
+    final float[] flattened = new float[RefArrays.stream(img).mapToInt(x -> x.length).sum()];
     for (int i = 0; i < flattened.length; i++) {
       flattened[i] = (float) img[i / pixels][i % pixels];
     }
@@ -129,7 +124,7 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
     cudaMalloc(gpuResult, Sizeof.FLOAT * flattened.length);
     final Pointer input = CudaSparseMatrix.toDevice(flattened);
     final CudaSparseMatrix.GpuCopy laplacian_gpu = laplacian.get();
-    final float[] mu = {mu0};
+    final float[] mu = { mu0 };
     final Pointer mu_out = CudaSparseMatrix.toDevice(mu);
     cusolverSpScsreigvsi(solverHandle, pixels, laplacian.matrix.getNumNonZeros(),
         CudaSparseMatrix.descriptor(CUSPARSE_MATRIX_TYPE_GENERAL, CUSPARSE_INDEX_BASE_ZERO), laplacian_gpu.values,
@@ -143,14 +138,11 @@ class EigenvectorSolver_Cuda extends ReferenceCountingBase
     cudaMemcpy(Pointer.to(floats), gpuResult, (long) channels * Sizeof.FLOAT * pixels, cudaMemcpyDeviceToHost);
     cudaFree(gpuResult);
     return RefIntStream.range(0, channels)
-        .mapToObj(c -> RefIntStream.range(0, pixels)
-            .mapToDouble(i -> floats[c * pixels + i] * mu[0]).toArray())
+        .mapToObj(c -> RefIntStream.range(0, pixels).mapToDouble(i -> floats[c * pixels + i] * mu[0]).toArray())
         .toArray(i -> new double[i][]);
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  EigenvectorSolver_Cuda addRef() {
+  public @Override @SuppressWarnings("unused") EigenvectorSolver_Cuda addRef() {
     return (EigenvectorSolver_Cuda) super.addRef();
   }
 }

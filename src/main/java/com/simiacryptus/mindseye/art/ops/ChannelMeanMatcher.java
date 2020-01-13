@@ -27,12 +27,12 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
 
-public @RefAware
-class ChannelMeanMatcher implements VisualModifier {
+public class ChannelMeanMatcher implements VisualModifier {
 
   private boolean balanced = true;
   private boolean averaging = true;
@@ -72,18 +72,17 @@ class ChannelMeanMatcher implements VisualModifier {
     if (meanSignal == null) {
       final PipelineNetwork meanNetwork = PipelineNetwork.build(1,
           new ImgTileSubnetLayer(network.addRef(), tileSize, tileSize), new BandAvgReducerLayer());
-      meanSignal = RefArrays.stream(image)
-          .map(tensor -> meanNetwork.eval(tensor).getData().get(0)).reduce((a, b) -> {
-            Tensor c = a.addAndFree(b);
-            b.freeRef();
-            return c;
-          }).get().scaleInPlace(1.0 / image.length);
+      meanSignal = RefUtil.get(RefArrays.stream(image).map(tensor -> meanNetwork.eval(tensor).getData().get(0)).reduce((a, b) -> {
+        Tensor c = a.addAndFree(b);
+        b.freeRef();
+        return c;
+      })).scaleInPlace(1.0 / image.length);
       meanNetwork.freeRef();
     }
     double mag = isBalanced() ? meanSignal.rms() : 1;
-    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)), new SquareActivationLayer(),
+    final Layer[] layers = new Layer[] { new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)), new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))};
+        new LinearActivationLayer().setScale(Math.pow(mag, -2)) };
     network.add(PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }

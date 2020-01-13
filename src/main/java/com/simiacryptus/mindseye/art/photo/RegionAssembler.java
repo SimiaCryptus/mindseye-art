@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.lang.RefUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -35,54 +36,47 @@ import java.util.stream.Stream;
 
 import static java.lang.Math.log;
 
-public abstract @RefAware
-class RegionAssembler
-    implements Comparator<RegionAssembler.Connection> {
+public abstract class RegionAssembler implements Comparator<RegionAssembler.Connection> {
 
   public final HashSet<Region> regions = new HashSet<>();
   private final int pixels;
   private final int regionCount;
   private final Predicate<Connection> connectionFilter;
 
-  public RegionAssembler(SparseMatrixFloat graph, int[] pixelMap,
-                         Map<Integer, Integer> assignments, IntFunction<double[]> pixelFunction,
-                         IntFunction<double[]> coordFunction, Predicate<Connection> connectionFilter) {
+  public RegionAssembler(SparseMatrixFloat graph, int[] pixelMap, Map<Integer, Integer> assignments,
+      IntFunction<double[]> pixelFunction, IntFunction<double[]> coordFunction,
+      Predicate<Connection> connectionFilter) {
     graph.assertSymmetric();
     this.regionCount = graph.rows;
     this.pixels = pixelMap.length;
     this.connectionFilter = connectionFilter;
-    final Region[] rawRegions = IntStream.range(0, graph.rows)
-        .mapToObj(row -> new Region(row)).toArray(i -> new Region[i]);
-    final Map<Integer, List<Integer>> pixelAssignmentMap = IntStream
-        .range(0, pixelMap.length).mapToObj(x -> x).collect(Collectors
-            .groupingBy(x -> pixelMap[x], Collectors.toList()));
-    final List<Region> collect = Arrays
-        .stream(graph.activeRows()).parallel().mapToObj(row -> {
-          assert this.regionCount > row;
-          final int[] cols = graph.getCols(row);
-          final float[] vals = graph.getVals(row);
-          assert cols.length == vals.length;
-          final Region region = rawRegions[row];
-          final Integer assignment = assignments.get(row);
-          if (null != assignment)
-            region.marks.add(assignment);
-          if (cols.length != 0) {
-            region.connections_addAll(IntStream.range(0, cols.length)
-                .filter(x -> Double.isFinite(vals[x]) && vals[x] != 0)
-                .mapToObj(x -> new Connection(region, rawRegions[cols[x]], vals[x])).filter(x -> x.to != x.from)
-                .collect(Collectors.toList()));
-          }
-          final List<Integer> pixels = pixelAssignmentMap.get(row);
-          if (pixels != null) {
-            pixels.stream().map(pixelFunction::apply).collect(Collectors.toList())
-                .forEach(region.colorStats::accept);
-            pixels.stream().map(coordFunction::apply).collect(Collectors.toList())
-                .forEach(region.spacialStats::accept);
-            region.pixels.addAll(pixels);
-          }
-          region.original_regions.add(row);
-          return region;
-        }).collect(Collectors.toList());
+    final Region[] rawRegions = IntStream.range(0, graph.rows).mapToObj(row -> new Region(row))
+        .toArray(i -> new Region[i]);
+    final Map<Integer, List<Integer>> pixelAssignmentMap = IntStream.range(0, pixelMap.length).mapToObj(x -> x)
+        .collect(Collectors.groupingBy(x -> pixelMap[x], Collectors.toList()));
+    final List<Region> collect = Arrays.stream(graph.activeRows()).parallel().mapToObj(row -> {
+      assert this.regionCount > row;
+      final int[] cols = graph.getCols(row);
+      final float[] vals = graph.getVals(row);
+      assert cols.length == vals.length;
+      final Region region = rawRegions[row];
+      final Integer assignment = assignments.get(row);
+      if (null != assignment)
+        region.marks.add(assignment);
+      if (cols.length != 0) {
+        region.connections_addAll(IntStream.range(0, cols.length).filter(x -> Double.isFinite(vals[x]) && vals[x] != 0)
+            .mapToObj(x -> new Connection(region, rawRegions[cols[x]], vals[x])).filter(x -> x.to != x.from)
+            .collect(Collectors.toList()));
+      }
+      final List<Integer> pixels = pixelAssignmentMap.get(row);
+      if (pixels != null) {
+        pixels.stream().map(pixelFunction::apply).collect(Collectors.toList()).forEach(region.colorStats::accept);
+        pixels.stream().map(coordFunction::apply).collect(Collectors.toList()).forEach(region.spacialStats::accept);
+        region.pixels.addAll(pixels);
+      }
+      region.original_regions.add(row);
+      return region;
+    }).collect(Collectors.toList());
     this.regions.addAll(collect);
     assert this.regions.stream().flatMap(x -> x.connections.values().stream()).allMatch(connection -> {
       final Connection reciprical = connection.reciprical();
@@ -116,11 +110,10 @@ class RegionAssembler
 
   @NotNull
   public static RegionAssembler wrap(SparseMatrixFloat graph, int[] pixelMap, Function<Connection, Double> extractor,
-                                     final Tensor content, final RasterTopology topology,
-                                     final Map<Integer, Integer> assignments) {
+      final Tensor content, final RasterTopology topology, final Map<Integer, Integer> assignments) {
     final IntFunction<double[]> pixelFunction = p -> content.getPixel(topology.getCoordsFromIndex(p));
-    final IntFunction<double[]> coordFunction = p -> Arrays
-        .stream(topology.getCoordsFromIndex(p)).mapToDouble(x -> x).toArray();
+    final IntFunction<double[]> coordFunction = p -> Arrays.stream(topology.getCoordsFromIndex(p)).mapToDouble(x -> x)
+        .toArray();
     final Predicate<Connection> connectionFilter = connection -> connection.to != connection.from
         && extractor.apply(connection) < Double.POSITIVE_INFINITY;
     return new RegionAssembler(graph, pixelMap, assignments, pixelFunction, coordFunction, connectionFilter) {
@@ -131,9 +124,8 @@ class RegionAssembler
     };
   }
 
-  public @NotNull
-  static RegionAssembler volumeEntropy(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
-                                       RasterTopology topology) {
+  public @NotNull static RegionAssembler volumeEntropy(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
+      RasterTopology topology) {
     return wrap(graph, pixelMap, new Function<Connection, Double>() {
       @Override
       public Double apply(Connection entry) {
@@ -155,9 +147,8 @@ class RegionAssembler
     }, content, topology, new HashMap<Integer, Integer>());
   }
 
-  public @NotNull
-  static RegionAssembler simpleEntropy(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
-                                       RasterTopology topology) {
+  public @NotNull static RegionAssembler simpleEntropy(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
+      RasterTopology topology) {
     return wrap(graph, pixelMap, new Function<Connection, Double>() {
       @Override
       public Double apply(Connection entry) {
@@ -178,9 +169,8 @@ class RegionAssembler
     }, content, topology, new HashMap<Integer, Integer>());
   }
 
-  public @NotNull
-  static RegionAssembler epidemic(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
-                                  RasterTopology topology, Map<Integer, Integer> assignments) {
+  public @NotNull static RegionAssembler epidemic(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
+      RasterTopology topology, Map<Integer, Integer> assignments) {
     return wrap(graph, pixelMap, new Function<Connection, Double>() {
       @Override
       public Double apply(Connection entry) {
@@ -214,9 +204,8 @@ class RegionAssembler
     }, content, topology, assignments);
   }
 
-  public @NotNull
-  static RegionAssembler volume5D(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
-                                  RasterTopology topology) {
+  public @NotNull static RegionAssembler volume5D(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
+      RasterTopology topology) {
     final double minVol = 5e-1;
     final double color_coeff = 1e3;
     return wrap(graph, pixelMap, new Function<Connection, Double>() {
@@ -242,8 +231,7 @@ class RegionAssembler
       }
 
       public double volumeExtrema(double minVol, DoubleVectorStatistics union) {
-        return Arrays.stream(union.firstOrder)
-            .mapToDouble(statistics -> statistics.getMax() - statistics.getMin())
+        return Arrays.stream(union.firstOrder).mapToDouble(statistics -> statistics.getMax() - statistics.getMin())
             .map(x -> Math.abs(x) < minVol ? minVol : x).reduce((a, b) -> a * b).orElse(0);
       }
 
@@ -267,11 +255,10 @@ class RegionAssembler
   }
 
   public static int[] reduce(SparseMatrixFloat graph, int targetCount, final int[] sizes, Tensor content,
-                             RasterTopology topology) {
+      RasterTopology topology) {
     return wrap(graph, sizes, (Connection entry) -> {
       return null == entry ? Double.POSITIVE_INFINITY : entry.value;
-    }, content, topology, new HashMap<Integer, Integer>()).reduceTo(targetCount)
-        .getProjection();
+    }, content, topology, new HashMap<Integer, Integer>()).reduceTo(targetCount).getProjection();
   }
 
   private static void assertEmpty(List<?> collect) {
@@ -284,9 +271,8 @@ class RegionAssembler
     while (regions.parallelStream().map(Region::connections_stream)
         .filter(stream -> stream.filter(connectionFilter).count() > 0).limit(count + 1).count() > count) {
       final int limit = Math.max(1, (regions.size() - count) / 100);
-      List<Connection> first = regions.parallelStream()
-          .flatMap(Region::connections_stream_parallel).filter(connectionFilter).sorted(this).limit(limit)
-          .collect(Collectors.toList());
+      List<Connection> first = regions.parallelStream().flatMap(Region::connections_stream_parallel)
+          .filter(connectionFilter).sorted(this).limit(limit).collect(Collectors.toList());
       if (first.isEmpty()) {
         com.simiacryptus.ref.wrappers.RefSystem.out.println("No connections left");
         break;
@@ -299,25 +285,22 @@ class RegionAssembler
     return this;
   }
 
-  public static @RefAware
-  class RegionTree {
+  public static class RegionTree {
     public final int[] regions;
     public final RegionTree[] children;
 
     public RegionTree(int... regions) {
       this.regions = regions;
-      children = new RegionTree[]{};
+      children = new RegionTree[] {};
     }
 
     public RegionTree(RegionTree... children) {
-      this.regions = Arrays.stream(children)
-          .flatMapToInt(x -> Arrays.stream(x.regions)).toArray();
+      this.regions = Arrays.stream(children).flatMapToInt(x -> Arrays.stream(x.regions)).toArray();
       this.children = children;
     }
   }
 
-  public @RefAware
-  class Connection {
+  public class Connection {
     public final Region from;
     public final Region to;
     public final float value;
@@ -360,8 +343,7 @@ class RegionAssembler
     }
   }
 
-  public @RefAware
-  class Region {
+  public class Region {
     public final HashMap<Region, Connection> connections = new HashMap<>();
     public final HashSet<Integer> pixels = new HashSet<>();
     public final HashSet<Integer> marks = new HashSet<>();
@@ -418,16 +400,14 @@ class RegionAssembler
     }
 
     private void union(Region other) {
-      final List<Connection> newConnections = Stream
-          .concat(other.connections_stream(), connections_stream()).filter(k -> k.to != other && k.to != this)
-          .collect(Collectors.groupingBy(k -> k.to,
-              Collectors.reducing((a, b) -> {
-                assert a.from == this || a.from == other;
-                assert b.from == this || b.from == other;
-                assert a.to == b.to;
-                return new Connection(a.from, a.to, a.value + b.value);
-              })))
-          .values().stream().map(Optional::get).map(c -> new Connection(this, c.to, c.value))
+      final List<Connection> newConnections = Stream.concat(other.connections_stream(), connections_stream())
+          .filter(k -> k.to != other && k.to != this)
+          .collect(Collectors.groupingBy(k -> k.to, Collectors.reducing((a, b) -> {
+            assert a.from == this || a.from == other;
+            assert b.from == this || b.from == other;
+            assert a.to == b.to;
+            return new Connection(a.from, a.to, a.value + b.value);
+          }))).values().stream().map(RefUtil::get).map(c -> new Connection(this, c.to, c.value))
           .collect(Collectors.toList());
 
       this.colorStats.combine(other.colorStats);
@@ -444,8 +424,8 @@ class RegionAssembler
         final List<Connection> connectionsToRemove = thirdNode.connections_stream()
             .filter(x -> x.to == other || x.to == this).collect(Collectors.toList());
         //assert Math.abs(connectionsToRemove.stream().mapToDouble(x -> x.value).sum() - v.value) < 1e-3;
-        assertEmpty(connectionsToRemove.stream().filter(o -> !thirdNode.connections_remove(o))
-            .collect(Collectors.toList()));
+        assertEmpty(
+            connectionsToRemove.stream().filter(o -> !thirdNode.connections_remove(o)).collect(Collectors.toList()));
         thirdNode.connections_add(new Connection(thirdNode, v.from, v.value));
         return true;
       });

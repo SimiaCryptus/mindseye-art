@@ -32,8 +32,7 @@ import java.util.Arrays;
  * Implements experimenal pixel affinity based on logistic model and covariance-normalized distance
  * See Also: https://en.wikipedia.org/wiki/Mahalanobis_distance
  */
-public @RefAware
-class RelativeAffinity extends ContextAffinity {
+public class RelativeAffinity extends ContextAffinity {
   private final double introversion = 8.0;
   private double epsilon = 1e-5;
   private double contrast = 5e0;
@@ -69,35 +68,30 @@ class RelativeAffinity extends ContextAffinity {
     return introversion;
   }
 
-  public static @SuppressWarnings("unused")
-  RelativeAffinity[] addRefs(RelativeAffinity[] array) {
+  public static @SuppressWarnings("unused") RelativeAffinity[] addRefs(RelativeAffinity[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRef)
         .toArray((x) -> new RelativeAffinity[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  RelativeAffinity[][] addRefs(RelativeAffinity[][] array) {
+  public static @SuppressWarnings("unused") RelativeAffinity[][] addRefs(RelativeAffinity[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRefs)
         .toArray((x) -> new RelativeAffinity[x][]);
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  RelativeAffinity addRef() {
+  public @Override @SuppressWarnings("unused") RelativeAffinity addRef() {
     return (RelativeAffinity) super.addRef();
   }
 
   @Override
   protected double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize,
-                        int globalSize) {
+      int globalSize) {
     assert neighborhoodSize > 0;
     final SimpleMatrix invert = MultivariateFrameOfReference.safeInvert(cov, getEpsilon() / neighborhoodSize);
     final SimpleMatrix vect = vector_i.minus(vector_j);

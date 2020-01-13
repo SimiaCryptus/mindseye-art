@@ -27,9 +27,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
-public @RefAware
-class StaticVisionPipelineLayer extends ReferenceCountingBase
-    implements VisionPipelineLayer {
+public class StaticVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
   public final AtomicReference<VisionPipeline<?>> reference = new AtomicReference<>();
 
   private final Layer layer;
@@ -55,16 +53,14 @@ class StaticVisionPipelineLayer extends ReferenceCountingBase
     return pipelineName;
   }
 
-  public static @SuppressWarnings("unused")
-  StaticVisionPipelineLayer[] addRefs(StaticVisionPipelineLayer[] array) {
+  public static @SuppressWarnings("unused") StaticVisionPipelineLayer[] addRefs(StaticVisionPipelineLayer[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(StaticVisionPipelineLayer::addRef)
         .toArray((x) -> new StaticVisionPipelineLayer[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  StaticVisionPipelineLayer[][] addRefs(StaticVisionPipelineLayer[][] array) {
+  public static @SuppressWarnings("unused") StaticVisionPipelineLayer[][] addRefs(StaticVisionPipelineLayer[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(StaticVisionPipelineLayer::addRefs)
@@ -95,13 +91,10 @@ class StaticVisionPipelineLayer extends ReferenceCountingBase
     return getPipelineName().hashCode() ^ name().hashCode();
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  StaticVisionPipelineLayer addRef() {
+  public @Override @SuppressWarnings("unused") StaticVisionPipelineLayer addRef() {
     return (StaticVisionPipelineLayer) super.addRef();
   }
 

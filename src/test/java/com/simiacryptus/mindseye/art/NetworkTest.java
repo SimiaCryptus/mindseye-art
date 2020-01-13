@@ -40,8 +40,7 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Random;
 
-public @RefAware
-class NetworkTest extends LayerTestBase {
+public class NetworkTest extends LayerTestBase {
   private static final Logger log = LoggerFactory.getLogger(NetworkTest.class);
   private static final BufferedImage styleImage = ImageArtUtil.load(new NullNotebookOutput(),
       "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200);
@@ -58,20 +57,16 @@ class NetworkTest extends LayerTestBase {
     testingBatchSize = 1;
   }
 
-  public static @SuppressWarnings("unused")
-  NetworkTest[] addRefs(NetworkTest[] array) {
+  public static @SuppressWarnings("unused") NetworkTest[] addRefs(NetworkTest[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRef)
-        .toArray((x) -> new NetworkTest[x]);
+    return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRef).toArray((x) -> new NetworkTest[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  NetworkTest[][] addRefs(NetworkTest[][] array) {
+  public static @SuppressWarnings("unused") NetworkTest[][] addRefs(NetworkTest[][] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRefs)
-        .toArray((x) -> new NetworkTest[x][]);
+    return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRefs).toArray((x) -> new NetworkTest[x][]);
   }
 
   private static DAGNetwork build() {
@@ -88,7 +83,7 @@ class NetworkTest extends LayerTestBase {
 
   @Override
   public int[][] getSmallDims(Random random) {
-    return new int[][]{{contentImage.getWidth(), contentImage.getHeight(), 3}};
+    return new int[][] { { contentImage.getWidth(), contentImage.getHeight(), 3 } };
   }
 
   @Override
@@ -96,13 +91,10 @@ class NetworkTest extends LayerTestBase {
     return layer.copy();
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  NetworkTest addRef() {
+  public @Override @SuppressWarnings("unused") NetworkTest addRef() {
     return (NetworkTest) super.addRef();
   }
 }

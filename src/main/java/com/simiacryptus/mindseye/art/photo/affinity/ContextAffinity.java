@@ -32,9 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
-public abstract @RefAware
-class ContextAffinity extends ReferenceCountingBase
-    implements RasterAffinity {
+public abstract class ContextAffinity extends ReferenceCountingBase implements RasterAffinity {
   protected final Tensor content;
   protected final int[] dimensions;
   private RasterTopology topology;
@@ -94,8 +92,8 @@ class ContextAffinity extends ReferenceCountingBase
   }
 
   @NotNull
-  public static SimpleMatrix covariance(SimpleMatrix means, SimpleMatrix rms,
-                                        Supplier<RefStream<double[]>> stream, int size) {
+  public static SimpleMatrix covariance(SimpleMatrix means, SimpleMatrix rms, Supplier<RefStream<double[]>> stream,
+      int size) {
     final SimpleMatrix cov = new SimpleMatrix(size, size);
     RefIntStream.range(0, size).parallel().forEach(c1 -> {
       final double mean1 = means.get(c1);
@@ -112,8 +110,7 @@ class ContextAffinity extends ReferenceCountingBase
   }
 
   @NotNull
-  public static SimpleMatrix magnitude(SimpleMatrix means,
-                                       Supplier<RefStream<double[]>> stream, int size) {
+  public static SimpleMatrix magnitude(SimpleMatrix means, Supplier<RefStream<double[]>> stream, int size) {
     final SimpleMatrix rms = new SimpleMatrix(size, 1);
     RefIntStream.range(0, size).forEach(c -> rms.set(c, 0,
         //        256
@@ -125,30 +122,25 @@ class ContextAffinity extends ReferenceCountingBase
   @NotNull
   public static SimpleMatrix means(Supplier<RefStream<double[]>> stream, int size) {
     final SimpleMatrix means = new SimpleMatrix(size, 1);
-    RefIntStream.range(0, size)
-        .forEach(c -> means.set(c, 0, stream.get().mapToDouble(p -> p[c]).average().orElse(0)));
+    RefIntStream.range(0, size).forEach(c -> means.set(c, 0, stream.get().mapToDouble(p -> p[c]).average().orElse(0)));
     return means;
   }
 
-  public static @SuppressWarnings("unused")
-  ContextAffinity[] addRefs(ContextAffinity[] array) {
+  public static @SuppressWarnings("unused") ContextAffinity[] addRefs(ContextAffinity[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(ContextAffinity::addRef)
         .toArray((x) -> new ContextAffinity[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  ContextAffinity[][] addRefs(ContextAffinity[][] array) {
+  public static @SuppressWarnings("unused") ContextAffinity[][] addRefs(ContextAffinity[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(ContextAffinity::addRefs)
         .toArray((x) -> new ContextAffinity[x][]);
   }
 
-  private static RefIntStream expand(
-      RefList<int[]> graphEdges, RefIntStream stream,
-      int iterations) {
+  private static RefIntStream expand(RefList<int[]> graphEdges, RefIntStream stream, int iterations) {
     if (iterations <= 0) {
       return stream;
     } else if (iterations == 1) {
@@ -158,55 +150,46 @@ class ContextAffinity extends ReferenceCountingBase
     }
   }
 
-  private static RefIntStream expand(
-      RefList<int[]> graphEdges, RefIntStream intStream) {
+  private static RefIntStream expand(RefList<int[]> graphEdges, RefIntStream intStream) {
     return intStream.mapToObj(graphEdges::get).flatMapToInt(RefArrays::stream).distinct();
   }
 
   @Override
-  public RefList<double[]> affinityList(
-      RefList<int[]> graphEdges) {
+  public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
     final int channels = dimensions[2];
     final int pixels = dimensions[0] * dimensions[1];
-    final RefList<int[]> iteratedGraph = IteratedRasterTopology.iterate(graphEdges,
-        getGraphPower1());
+    final RefList<int[]> iteratedGraph = IteratedRasterTopology.iterate(graphEdges, getGraphPower1());
     MultivariateFrameOfReference region_global = new MultivariateFrameOfReference(
         () -> content.getPixelStream().parallel(), channels);
-    return RefIntStream.range(0, pixels).parallel()
-        .mapToObj(i -> RefArrays.stream(graphEdges.get(i)).mapToDouble(j -> {
-          if (i == j) {
-            return 1;
-          } else {
-            final RefList<double[]> neighborhood = expand(iteratedGraph,
-                RefIntStream.of(i, j), getGraphPower2()).mapToObj(this::pixel)
-                .collect(RefCollectors.toList());
-            if (neighborhood.isEmpty())
-              return 1;
-            MultivariateFrameOfReference mix = new MultivariateFrameOfReference(region_global,
-                new MultivariateFrameOfReference(() -> neighborhood.stream(), channels), getMixing());
-            return dist(toMatrix(mix.adjust(pixel(i))), toMatrix(mix.adjust(pixel(j))), mix.cov, neighborhood.size(),
-                pixels);
-          }
-        }).toArray()).collect(RefCollectors.toList());
+    return RefIntStream.range(0, pixels).parallel().mapToObj(i -> RefArrays.stream(graphEdges.get(i)).mapToDouble(j -> {
+      if (i == j) {
+        return 1;
+      } else {
+        final RefList<double[]> neighborhood = expand(iteratedGraph, RefIntStream.of(i, j), getGraphPower2())
+            .mapToObj(this::pixel).collect(RefCollectors.toList());
+        if (neighborhood.isEmpty())
+          return 1;
+        MultivariateFrameOfReference mix = new MultivariateFrameOfReference(region_global,
+            new MultivariateFrameOfReference(() -> neighborhood.stream(), channels), getMixing());
+        return dist(toMatrix(mix.adjust(pixel(i))), toMatrix(mix.adjust(pixel(j))), mix.cov, neighborhood.size(),
+            pixels);
+      }
+    }).toArray()).collect(RefCollectors.toList());
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  ContextAffinity addRef() {
+  public @Override @SuppressWarnings("unused") ContextAffinity addRef() {
     return (ContextAffinity) super.addRef();
   }
 
   protected double[] adjust(double[] pixel_i, SimpleMatrix means, SimpleMatrix rms) {
-    return RefIntStream.range(0, dimensions[2])
-        .mapToDouble(c -> ((pixel_i[c]) - means.get(c)) / rms.get(c)).toArray();
+    return RefIntStream.range(0, dimensions[2]).mapToDouble(c -> ((pixel_i[c]) - means.get(c)) / rms.get(c)).toArray();
   }
 
   protected abstract double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize,
-                                 int globalSize);
+      int globalSize);
 
   protected double[] pixel(int i) {
     final int[] coords = getTopology().getCoordsFromIndex(i);

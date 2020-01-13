@@ -34,6 +34,7 @@ import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefStream;
@@ -45,8 +46,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.UUID;
 
-public @RefAware
-class MomentMatcher implements VisualModifier {
+public class MomentMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(MomentMatcher.class);
   private static int padding = 8;
   private Precision precision = Precision.Float;
@@ -104,9 +104,9 @@ class MomentMatcher implements VisualModifier {
   public static Layer lossSq(Precision precision, Tensor target) {
     double rms = target.rms();
     final Tensor bias = target.scale(0 == rms ? 1 : -Math.pow(rms, -1));
-    final Layer[] layers = new Layer[]{new LinearActivationLayer().setScale(0 == rms ? 1 : Math.pow(rms, -1)),
+    final Layer[] layers = new Layer[] { new LinearActivationLayer().setScale(0 == rms ? 1 : Math.pow(rms, -1)),
         new ImgBandBiasLayer(bias).setPrecision(precision), new SquareActivationLayer().setPrecision(precision),
-        new AvgReducerLayer().setPrecision(precision)};
+        new AvgReducerLayer().setPrecision(precision) };
     return PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", 0 == rms ? 1 : rms));
   }
 
@@ -163,8 +163,7 @@ class MomentMatcher implements VisualModifier {
 
   public static boolean test(PipelineNetwork network, Tensor... images) {
     if (images.length > 1)
-      return RefArrays.stream(images).map(x -> test(network, x)).reduce((a, b) -> a && b)
-          .get();
+      return RefUtil.get(RefArrays.stream(images).map(x -> test(network, x)).reduce((a, b) -> a && b));
     try {
       network.eval(images[0]).getData().freeRef();
       return true;
@@ -220,8 +219,7 @@ class MomentMatcher implements VisualModifier {
     if (null != visualModifierParameters.mask) {
       final Tensor boolMask = toMask(transform(network, visualModifierParameters.mask, getPrecision()));
       log.info("Mask: " + RefArrays.toString(boolMask.getDimensions()));
-      final double maskFactor = RefArrays.stream(boolMask.getData()).average()
-          .getAsDouble();
+      final double maskFactor = RefArrays.stream(boolMask.getData()).average().getAsDouble();
       PipelineNetwork maskedNetwork = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
       assert test(maskedNetwork, visualModifierParameters.mask);
       final MomentParams params = getMomentParams(network, maskFactor, visualModifierParameters.style);
@@ -314,8 +312,7 @@ class MomentMatcher implements VisualModifier {
     return evalRoot;
   }
 
-  private static @RefAware
-  class MomentParams extends ReferenceCountingBase {
+  private static class MomentParams extends ReferenceCountingBase {
     private final InnerNode avgNode;
     private final Tensor avgValue;
     private final InnerNode rmsNode;
@@ -325,7 +322,7 @@ class MomentMatcher implements VisualModifier {
     private final MomentMatcher parent;
 
     private MomentParams(InnerNode avgNode, Tensor avgValue, InnerNode rmsNode, Tensor rmsValue, InnerNode covNode,
-                         Tensor covValue, MomentMatcher parent) {
+        Tensor covValue, MomentMatcher parent) {
       this.parent = parent;
       this.avgNode = avgNode;
       this.avgValue = avgValue;
@@ -335,8 +332,7 @@ class MomentMatcher implements VisualModifier {
       this.covValue = covValue;
     }
 
-    public static @SuppressWarnings("unused")
-    MomentParams[] addRefs(MomentParams[] array) {
+    public static @SuppressWarnings("unused") MomentParams[] addRefs(MomentParams[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(MomentParams::addRef)
@@ -371,9 +367,7 @@ class MomentMatcher implements VisualModifier {
       return wrap;
     }
 
-    public @Override
-    @SuppressWarnings("unused")
-    MomentParams addRef() {
+    public @Override @SuppressWarnings("unused") MomentParams addRef() {
       return (MomentParams) super.addRef();
     }
 

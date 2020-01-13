@@ -27,8 +27,7 @@ import org.ejml.simple.SimpleMatrix;
 
 import java.util.function.Supplier;
 
-public @RefAware
-class MultivariateFrameOfReference {
+public class MultivariateFrameOfReference {
   public final SimpleMatrix invCov;
   public final SimpleMatrix means;
   public final SimpleMatrix rms;
@@ -40,7 +39,7 @@ class MultivariateFrameOfReference {
   }
 
   public MultivariateFrameOfReference(MultivariateFrameOfReference a, MultivariateFrameOfReference b, double mixing,
-                                      double epsilon) {
+      double epsilon) {
     means = ContextAffinity.mix(b.means, a.means, mixing);
     rms = ContextAffinity.mix(b.rms, a.rms, mixing);
     cov = ContextAffinity.mix(b.cov, a.cov, mixing);
@@ -52,8 +51,7 @@ class MultivariateFrameOfReference {
     this(fn, channels, 1e-4);
   }
 
-  public MultivariateFrameOfReference(Supplier<RefStream<double[]>> fn, int channels,
-                                      double epsilon) {
+  public MultivariateFrameOfReference(Supplier<RefStream<double[]>> fn, int channels, double epsilon) {
     this.dimension = channels;
     means = ContextAffinity.means(fn, this.dimension);
     rms = ContextAffinity.magnitude(means, fn, channels);
@@ -72,8 +70,8 @@ class MultivariateFrameOfReference {
   }
 
   public double[] adjust(double[] pixel) {
-    return RefIntStream.range(0, pixel.length)
-        .mapToDouble(c -> ((pixel[c]) - this.means.get(c)) / this.rms.get(c)).toArray();
+    return RefIntStream.range(0, pixel.length).mapToDouble(c -> ((pixel[c]) - this.means.get(c)) / this.rms.get(c))
+        .toArray();
   }
 
   public double dist(double[] vector) {

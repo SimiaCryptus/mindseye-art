@@ -27,9 +27,7 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import java.util.Arrays;
 import java.util.Objects;
 
-public @RefAware
-class AppendVisionPipelineLayer extends ReferenceCountingBase
-    implements VisionPipelineLayer {
+public class AppendVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
 
   private final VisionPipelineLayer inner;
   private final Layer layer;
@@ -66,16 +64,14 @@ class AppendVisionPipelineLayer extends ReferenceCountingBase
     return inner.getPipelineName();
   }
 
-  public static @SuppressWarnings("unused")
-  AppendVisionPipelineLayer[] addRefs(AppendVisionPipelineLayer[] array) {
+  public static @SuppressWarnings("unused") AppendVisionPipelineLayer[] addRefs(AppendVisionPipelineLayer[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRef)
         .toArray((x) -> new AppendVisionPipelineLayer[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  AppendVisionPipelineLayer[][] addRefs(AppendVisionPipelineLayer[][] array) {
+  public static @SuppressWarnings("unused") AppendVisionPipelineLayer[][] addRefs(AppendVisionPipelineLayer[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRefs)
@@ -106,13 +102,10 @@ class AppendVisionPipelineLayer extends ReferenceCountingBase
     return getPipelineName().hashCode() ^ name().hashCode();
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  AppendVisionPipelineLayer addRef() {
+  public @Override @SuppressWarnings("unused") AppendVisionPipelineLayer addRef() {
     return (AppendVisionPipelineLayer) super.addRef();
   }
 }

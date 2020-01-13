@@ -42,8 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-public @RefAware
-class GramMatrixEnhancer implements VisualModifier {
+public class GramMatrixEnhancer implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixEnhancer.class);
   private final Precision precision = Precision.Float;
   private double min = -1;
@@ -147,8 +146,7 @@ class GramMatrixEnhancer implements VisualModifier {
     return this;
   }
 
-  public static @RefAware
-  class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
+  public static class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
     @NotNull
     public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
       PipelineNetwork rmsNetwork = new PipelineNetwork(1);

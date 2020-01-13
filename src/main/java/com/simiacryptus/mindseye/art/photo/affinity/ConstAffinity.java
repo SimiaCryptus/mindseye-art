@@ -24,13 +24,10 @@ import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefList;
 
-public @RefAware
-class ConstAffinity implements RasterAffinity {
+public class ConstAffinity implements RasterAffinity {
   @Override
-  public RefList<double[]> affinityList(
-      RefList<int[]> graphEdges) {
-    return graphEdges.stream()
-        .map(x -> RefArrays.stream(x).mapToDouble(i -> 1.0).toArray())
+  public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
+    return graphEdges.stream().map(x -> RefArrays.stream(x).mapToDouble(i -> 1.0).toArray())
         .collect(RefCollectors.toList());
   }
 }

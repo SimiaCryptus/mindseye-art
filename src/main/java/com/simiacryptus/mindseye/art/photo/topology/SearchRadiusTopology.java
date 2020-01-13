@@ -26,8 +26,7 @@ import com.simiacryptus.ref.wrappers.*;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public @RefAware
-class SearchRadiusTopology extends ContentTopology {
+public class SearchRadiusTopology extends ContentTopology {
   private int neighborhoodSize = 4;
   private double maxChromaDist = 0.2;
   private double maxSpatialDist = 8;
@@ -113,24 +112,21 @@ class SearchRadiusTopology extends ContentTopology {
       final int[] pos = c.getCoords();
       final double[] neighbors = RefIntStream
           .range(Math.max(0, pos[0] - window), Math.min(dimensions[0], pos[0] + window + 1))
-          .mapToObj(x -> RefIntStream
-              .range(Math.max(0, pos[1] - window), Math.min(dimensions[1], pos[1] + window + 1))
+          .mapToObj(x -> RefIntStream.range(Math.max(0, pos[1] - window), Math.min(dimensions[1], pos[1] + window + 1))
               .mapToDouble(y -> content.get(x, y, pos[2])).toArray())
           .flatMapToDouble(x -> RefArrays.stream(x)).sorted().toArray();
       return neighbors[neighbors.length / 2];
     });
   }
 
-  public static @SuppressWarnings("unused")
-  SearchRadiusTopology[] addRefs(SearchRadiusTopology[] array) {
+  public static @SuppressWarnings("unused") SearchRadiusTopology[] addRefs(SearchRadiusTopology[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SearchRadiusTopology::addRef)
         .toArray((x) -> new SearchRadiusTopology[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  SearchRadiusTopology[][] addRefs(SearchRadiusTopology[][] array) {
+  public static @SuppressWarnings("unused") SearchRadiusTopology[][] addRefs(SearchRadiusTopology[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SearchRadiusTopology::addRefs)
@@ -190,20 +186,16 @@ class SearchRadiusTopology extends ContentTopology {
     return symmetric;
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  SearchRadiusTopology addRef() {
+  public @Override @SuppressWarnings("unused") SearchRadiusTopology addRef() {
     return (SearchRadiusTopology) super.addRef();
   }
 
-  private void collectSpacialNeighbors(int[] pos, RefArrayList<int[]> neighbors,
-                                       int[] matchingGlobal) {
-    final RefMap<Long, RefList<Integer>> collect = RefArrays
-        .stream(matchingGlobal).mapToObj(x -> x).collect(RefCollectors.groupingBy((Integer x) -> {
+  private void collectSpacialNeighbors(int[] pos, RefArrayList<int[]> neighbors, int[] matchingGlobal) {
+    final RefMap<Long, RefList<Integer>> collect = RefArrays.stream(matchingGlobal).mapToObj(x -> x)
+        .collect(RefCollectors.groupingBy((Integer x) -> {
           final int[] coords = getCoordsFromIndex(x);
           int dx = coords[0] - pos[0];
           int dy = coords[1] - pos[1];
@@ -211,18 +203,15 @@ class SearchRadiusTopology extends ContentTopology {
         }, RefCollectors.toList()));
     final long[] globalRadii = collect.keySet().stream().mapToLong(x -> x).sorted().toArray();
     for (int ring = 0; ring < globalRadii.length; ring++) {
-      if (neighbors.stream().flatMapToInt(RefArrays::stream).distinct()
-          .count() >= getNeighborhoodSize())
+      if (neighbors.stream().flatMapToInt(RefArrays::stream).distinct().count() >= getNeighborhoodSize())
         break;
       neighbors.add(collect.get(globalRadii[ring]).stream().mapToInt(x -> x).toArray());
     }
   }
 
-  private void collectChromaNeighbors(double[] fromPixel, RefArrayList<int[]> neighbors,
-                                      int[] matchingGlobal) {
+  private void collectChromaNeighbors(double[] fromPixel, RefArrayList<int[]> neighbors, int[] matchingGlobal) {
     neighbors.add(RefArrays.stream(matchingGlobal).mapToObj(x -> x)
-        .sorted(RefComparator.comparing(x -> chromaDistance(pixel(x), fromPixel)))
-        .mapToInt(x -> x).distinct().limit(getNeighborhoodSize() - neighbors.stream().mapToInt(x -> x.length).sum())
-        .toArray());
+        .sorted(RefComparator.comparing(x -> chromaDistance(pixel(x), fromPixel))).mapToInt(x -> x).distinct()
+        .limit(getNeighborhoodSize() - neighbors.stream().mapToInt(x -> x.length).sum()).toArray());
   }
 }

@@ -28,8 +28,7 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
 import org.jetbrains.annotations.NotNull;
 
-public @RefAware
-class WCTUtil {
+public class WCTUtil {
 
   public static PipelineNetwork applicator(Tensor encodedStyle, double contentDensity, double styleDensity) {
     return PipelineNetwork.build(1, normalizer(contentDensity), renormalizer(encodedStyle, styleDensity));

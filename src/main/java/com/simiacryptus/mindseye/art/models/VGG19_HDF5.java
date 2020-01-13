@@ -39,15 +39,14 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-@RefAware
 class VGG19_HDF5 {
 
   public static final Logger log = LoggerFactory.getLogger(VGG19_HDF5.class);
   public final Hdf5Archive hdf5;
   @Nonnull
-  int[] convolutionOrder = {3, 2, 0, 1};
+  int[] convolutionOrder = { 3, 2, 0, 1 };
   @Nonnull
-  int[] fullyconnectedOrder = {1, 0};
+  int[] fullyconnectedOrder = { 1, 0 };
 
   public VGG19_HDF5(Hdf5Archive hdf5) {
     this.hdf5 = hdf5;
@@ -197,7 +196,7 @@ class VGG19_HDF5 {
   }
 
   public void addConvolutionLayer(final int radius, final int inputBands, final int outputBands,
-                                  final ActivationLayer.Mode activationMode, final String hdf_group, PipelineNetwork pipeline) {
+      final ActivationLayer.Mode activationMode, final String hdf_group, PipelineNetwork pipeline) {
     add(new ConvolutionLayer(radius, radius, inputBands, outputBands).setPaddingXY(0, 0)
         .set(hdf5.readDataSet("param_0", hdf_group).permuteDimensions(convolutionOrder)), pipeline);
     add(new ImgBandBiasLayer(outputBands).set((hdf5.readDataSet("param_1", hdf_group))), pipeline);

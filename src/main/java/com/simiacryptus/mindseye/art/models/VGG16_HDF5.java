@@ -39,16 +39,15 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-@RefAware
 class VGG16_HDF5 {
 
   public static final Logger log = LoggerFactory.getLogger(VGG16_HDF5.class);
   protected static final Logger logger = LoggerFactory.getLogger(VGG16_HDF5.class);
   public final Hdf5Archive hdf5;
   @Nonnull
-  int[] convolutionOrder = {3, 2, 0, 1};
+  int[] convolutionOrder = { 3, 2, 0, 1 };
   @Nonnull
-  int[] fullyconnectedOrder = {1, 0};
+  int[] fullyconnectedOrder = { 1, 0 };
 
   public VGG16_HDF5(Hdf5Archive hdf5) {
     this.hdf5 = hdf5;
@@ -78,11 +77,11 @@ class VGG16_HDF5 {
       Layer explode = ((Explodable) layer).explode();
       try {
         if (explode instanceof DAGNetwork) {
-          logger.info(RefString.format("Exploded %s to %s (%s nodes)", layer.getName(), explode.getClass().getSimpleName(),
-              ((DAGNetwork) explode).getNodes().size()));
+          logger.info(RefString.format("Exploded %s to %s (%s nodes)", layer.getName(),
+              explode.getClass().getSimpleName(), ((DAGNetwork) explode).getNodes().size()));
         } else {
-          logger.info(RefString.format("Exploded %s to %s (%s nodes)", layer.getName(), explode.getClass().getSimpleName(),
-              explode.getName()));
+          logger.info(RefString.format("Exploded %s to %s (%s nodes)", layer.getName(),
+              explode.getClass().getSimpleName(), explode.getName()));
         }
         return add(explode, model);
       } finally {
@@ -180,7 +179,7 @@ class VGG16_HDF5 {
   }
 
   public void addConvolutionLayer(final int radius, final int inputBands, final int outputBands,
-                                  final ActivationLayer.Mode activationMode, final String hdf_group, PipelineNetwork pipeline) {
+      final ActivationLayer.Mode activationMode, final String hdf_group, PipelineNetwork pipeline) {
     add(new ConvolutionLayer(radius, radius, inputBands, outputBands).setPaddingXY(0, 0)
         .set(hdf5.readDataSet("param_0", hdf_group).permuteDimensions(convolutionOrder)), pipeline);
     add(new ImgBandBiasLayer(outputBands).set((hdf5.readDataSet("param_1", hdf_group))), pipeline);

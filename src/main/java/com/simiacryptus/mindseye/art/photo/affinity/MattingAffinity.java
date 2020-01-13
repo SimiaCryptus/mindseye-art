@@ -34,8 +34,7 @@ import java.util.Arrays;
  * http://cs.brown.edu/courses/cs129/results/final/valayshah/Matting-Levin-Lischinski-Weiss-CVPR06.pdf
  * <p>
  */
-public @RefAware
-class MattingAffinity extends ContextAffinity {
+public class MattingAffinity extends ContextAffinity {
   private double epsilon = 1e-4;
 
   public MattingAffinity(Tensor content) {
@@ -56,35 +55,30 @@ class MattingAffinity extends ContextAffinity {
     return this;
   }
 
-  public static @SuppressWarnings("unused")
-  MattingAffinity[] addRefs(MattingAffinity[] array) {
+  public static @SuppressWarnings("unused") MattingAffinity[] addRefs(MattingAffinity[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRef)
         .toArray((x) -> new MattingAffinity[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  MattingAffinity[][] addRefs(MattingAffinity[][] array) {
+  public static @SuppressWarnings("unused") MattingAffinity[][] addRefs(MattingAffinity[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRefs)
         .toArray((x) -> new MattingAffinity[x][]);
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  MattingAffinity addRef() {
+  public @Override @SuppressWarnings("unused") MattingAffinity addRef() {
     return (MattingAffinity) super.addRef();
   }
 
   @Override
   protected double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize,
-                        int globalSize) {
+      int globalSize) {
     int bands = dimensions[2];
     assert neighborhoodSize > 0;
     final SimpleMatrix invert = cov.plus(SimpleMatrix.identity(bands).scale(getEpsilon() / neighborhoodSize)).invert();

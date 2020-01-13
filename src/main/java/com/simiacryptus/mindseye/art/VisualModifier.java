@@ -30,8 +30,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.UnaryOperator;
 
-public @RefAware
-interface VisualModifier {
+public interface VisualModifier {
 
   default boolean isLocalized() {
     return false;
@@ -40,7 +39,7 @@ interface VisualModifier {
   PipelineNetwork build(VisualModifierParameters visualModifierParameters);
 
   default PipelineNetwork build(VisionPipelineLayer layer, int[] contentDims, UnaryOperator<Tensor> viewLayer,
-                                Tensor... image) {
+      Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
     network.assertAlive();
     PipelineNetwork pipelineNetwork = build(new VisualModifierParameters(network, contentDims, viewLayer, null, image));

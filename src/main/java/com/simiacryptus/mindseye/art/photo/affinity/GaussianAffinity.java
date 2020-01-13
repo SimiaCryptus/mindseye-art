@@ -31,9 +31,7 @@ import com.simiacryptus.ref.wrappers.RefList;
 
 import java.util.Arrays;
 
-public @RefAware
-class GaussianAffinity extends ReferenceCountingBase
-    implements RasterAffinity {
+public class GaussianAffinity extends ReferenceCountingBase implements RasterAffinity {
   protected final Tensor content;
   private final double sigma;
   private final int[] dimensions;
@@ -59,16 +57,14 @@ class GaussianAffinity extends ReferenceCountingBase
     return this;
   }
 
-  public static @SuppressWarnings("unused")
-  GaussianAffinity[] addRefs(GaussianAffinity[] array) {
+  public static @SuppressWarnings("unused") GaussianAffinity[] addRefs(GaussianAffinity[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(GaussianAffinity::addRef)
         .toArray((x) -> new GaussianAffinity[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  GaussianAffinity[][] addRefs(GaussianAffinity[][] array) {
+  public static @SuppressWarnings("unused") GaussianAffinity[][] addRefs(GaussianAffinity[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(GaussianAffinity::addRefs)
@@ -76,29 +72,25 @@ class GaussianAffinity extends ReferenceCountingBase
   }
 
   @Override
-  public RefList<double[]> affinityList(
-      RefList<int[]> graphEdges) {
-    return RefIntStream
-        .range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> RefArrays
-            .stream(graphEdges.get(i)).mapToDouble(j -> affinity(i, j)).toArray())
+  public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
+    return RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel()
+        .mapToObj(i -> RefArrays.stream(graphEdges.get(i)).mapToDouble(j -> affinity(i, j)).toArray())
         .collect(RefCollectors.toList());
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  GaussianAffinity addRef() {
+  public @Override @SuppressWarnings("unused") GaussianAffinity addRef() {
     return (GaussianAffinity) super.addRef();
   }
 
   protected double affinity(int i, int j) {
     final double[] pixel_i = pixel(i);
     final double[] pixel_j = pixel(j);
-    return Math.exp(-RefIntStream.range(0, pixel_i.length)
-        .mapToDouble(idx -> pixel_i[idx] - pixel_j[idx]).map(x -> x * x).sum() / (sigma * sigma));
+    return Math.exp(
+        -RefIntStream.range(0, pixel_i.length).mapToDouble(idx -> pixel_i[idx] - pixel_j[idx]).map(x -> x * x).sum()
+            / (sigma * sigma));
   }
 
   private double[] pixel(int i) {

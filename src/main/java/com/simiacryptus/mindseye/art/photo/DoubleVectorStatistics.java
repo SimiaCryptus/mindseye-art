@@ -29,18 +29,16 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-public @RefAware
-class DoubleVectorStatistics
-    implements RefConsumer<double[]> {
+public class DoubleVectorStatistics implements RefConsumer<double[]> {
 
   final DoubleSummaryStatistics[] firstOrder;
   final DoubleSummaryStatistics[] secondOrder;
 
   public DoubleVectorStatistics(int length) {
-    firstOrder = RefIntStream.range(0, length)
-        .mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);
-    secondOrder = RefIntStream.range(0, length)
-        .mapToObj(i -> new DoubleSummaryStatistics()).toArray(i -> new DoubleSummaryStatistics[i]);
+    firstOrder = RefIntStream.range(0, length).mapToObj(i -> new DoubleSummaryStatistics())
+        .toArray(i -> new DoubleSummaryStatistics[i]);
+    secondOrder = RefIntStream.range(0, length).mapToObj(i -> new DoubleSummaryStatistics())
+        .toArray(i -> new DoubleSummaryStatistics[i]);
   }
 
   public static Collector<double[], DoubleVectorStatistics, DoubleVectorStatistics> collector(int dims) {
@@ -72,8 +70,7 @@ class DoubleVectorStatistics
 
       @Override
       public RefSet<Characteristics> characteristics() {
-        return RefStream.of(Characteristics.UNORDERED)
-            .collect(RefCollectors.toSet());
+        return RefStream.of(Characteristics.UNORDERED).collect(RefCollectors.toSet());
       }
     };
   }
@@ -82,15 +79,12 @@ class DoubleVectorStatistics
   public void accept(double[] doubles) {
     assert firstOrder.length == doubles.length;
     RefIntStream.range(0, doubles.length).forEach(i -> firstOrder[i].accept(doubles[i]));
-    RefIntStream.range(0, doubles.length)
-        .forEach(i -> secondOrder[i].accept(doubles[i] * doubles[i]));
+    RefIntStream.range(0, doubles.length).forEach(i -> secondOrder[i].accept(doubles[i] * doubles[i]));
   }
 
   public void combine(DoubleVectorStatistics colorStats) {
     assert firstOrder.length == colorStats.firstOrder.length;
-    RefIntStream.range(0, firstOrder.length)
-        .forEach(i -> firstOrder[i].combine(colorStats.firstOrder[i]));
-    RefIntStream.range(0, secondOrder.length)
-        .forEach(i -> secondOrder[i].combine(colorStats.secondOrder[i]));
+    RefIntStream.range(0, firstOrder.length).forEach(i -> firstOrder[i].combine(colorStats.firstOrder[i]));
+    RefIntStream.range(0, secondOrder.length).forEach(i -> secondOrder[i].combine(colorStats.secondOrder[i]));
   }
 }

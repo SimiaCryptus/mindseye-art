@@ -28,10 +28,9 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
-public @RefAware
-class TextUtil {
+public class TextUtil {
   public static BufferedImage draw(final String text, final int resolution, final int padding, final String fontName,
-                                   final int style) {
+      final int style) {
     return draw(text, resolution, padding, fitWidth(text, resolution, padding, fontName, style));
   }
 
@@ -49,9 +48,8 @@ class TextUtil {
     return draw(text, (int) (resolution / aspect_ratio), resolution, padding, font, bounds);
   }
 
-  public @NotNull
-  static BufferedImage draw(String text, int width, int height, int padding, Font font,
-                            Rectangle2D bounds) {
+  public @NotNull static BufferedImage draw(String text, int width, int height, int padding, Font font,
+      Rectangle2D bounds) {
     BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     Graphics2D graphics = (Graphics2D) image.getGraphics();
     graphics.setColor(Color.WHITE);
@@ -87,7 +85,7 @@ class TextUtil {
 
   @Nonnull
   public static Font fitWidth(final String text, final int resolution, final int padding, final String fontName,
-                              final int style) {
+      final int style) {
     final Font font;
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
     double width = 0;
@@ -105,7 +103,7 @@ class TextUtil {
 
   @Nonnull
   public static Font fitHeight(final String text, final int resolution, final int padding, final String fontName,
-                               final int style) {
+      final int style) {
     final Font font;
     double height = 0;
     int size = 12;
@@ -120,7 +118,7 @@ class TextUtil {
 
   @Nonnull
   public static Font fit(final String text, final int max_width, final int max_height, final int padding,
-                         final String fontName, final int style) {
+      final String fontName, final int style) {
     final Font font;
     double height = 0;
     double width = 0;

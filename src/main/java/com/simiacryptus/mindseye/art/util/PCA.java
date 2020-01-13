@@ -28,6 +28,7 @@ import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RecycleBin;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
@@ -35,8 +36,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 
-public @RefAware
-class PCA {
+public class PCA {
   private boolean recenter;
   private boolean rescale;
   private double eigenvaluePower;
@@ -78,9 +78,9 @@ class PCA {
     return this;
   }
 
-  public static double[] bandCovariance(final RefStream<double[]> pixelStream,
-                                        final int pixels, final double[] mean, final double[] rms) {
-    return RefArrays.stream(pixelStream.map(pixel -> {
+  public static double[] bandCovariance(final RefStream<double[]> pixelStream, final int pixels, final double[] mean,
+      final double[] rms) {
+    return RefArrays.stream(RefUtil.get(pixelStream.map(pixel -> {
       double[] crossproduct = RecycleBin.DOUBLES.obtain(pixel.length * pixel.length);
       int k = 0;
       for (int j = 0; j < pixel.length; j++) {
@@ -97,7 +97,7 @@ class PCA {
       }
       RecycleBin.DOUBLES.recycle(b, b.length);
       return a;
-    }).get()).map(x -> x / pixels).toArray();
+    }))).map(x -> x / pixels).toArray();
   }
 
   public static int countPixels(final Tensor featureImage) {
@@ -107,15 +107,14 @@ class PCA {
     return width * height;
   }
 
-  public static RefList<Tensor> pca(final double[] bandCovariance,
-                                    final double eigenPower) {
-    @Nonnull final EigenDecomposition decomposition = new EigenDecomposition(toMatrix(bandCovariance));
-    return RefIntStream.range(0, (int) Math.sqrt(bandCovariance.length))
-        .mapToObj(vectorIndex -> {
-          double[] data = decomposition.getEigenvector(vectorIndex).toArray();
-          return new Tensor(data, 1, 1, data.length).unit()
-              .scaleInPlace(Math.pow(decomposition.getRealEigenvalue(vectorIndex), eigenPower));
-        }).collect(RefCollectors.toList());
+  public static RefList<Tensor> pca(final double[] bandCovariance, final double eigenPower) {
+    @Nonnull
+    final EigenDecomposition decomposition = new EigenDecomposition(toMatrix(bandCovariance));
+    return RefIntStream.range(0, (int) Math.sqrt(bandCovariance.length)).mapToObj(vectorIndex -> {
+      double[] data = decomposition.getEigenvector(vectorIndex).toArray();
+      return new Tensor(data, 1, 1, data.length).unit()
+          .scaleInPlace(Math.pow(decomposition.getRealEigenvalue(vectorIndex), eigenPower));
+    }).collect(RefCollectors.toList());
   }
 
   @Nonnull
@@ -138,8 +137,7 @@ class PCA {
         scaled.getData());
     meanTensor.freeRef();
     scaled.freeRef();
-    return pca(bandCovariance, getEigenvaluePower()).stream()
-        .collect(RefCollectors.toList());
+    return pca(bandCovariance, getEigenvaluePower()).stream().collect(RefCollectors.toList());
   }
 
   public Tensor getChannelRms(Tensor image, int bands, Tensor meanTensor) {

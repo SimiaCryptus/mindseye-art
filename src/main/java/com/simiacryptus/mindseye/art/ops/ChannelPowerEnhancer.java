@@ -30,8 +30,7 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefString;
 
-public @RefAware
-class ChannelPowerEnhancer implements VisualModifier {
+public class ChannelPowerEnhancer implements VisualModifier {
 
   private boolean averaging = true;
   private boolean balanced = true;
@@ -59,9 +58,9 @@ class ChannelPowerEnhancer implements VisualModifier {
     PipelineNetwork network = visualModifierParameters.network;
     network = network.copyPipeline();
     double mag = balanced ? network.eval(visualModifierParameters.style).getData().get(0).rms() : 1;
-    final Layer[] layers = new Layer[]{new SquareActivationLayer(),
+    final Layer[] layers = new Layer[] { new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(-Math.pow(mag, -2))};
+        new LinearActivationLayer().setScale(-Math.pow(mag, -2)) };
     network.add(PipelineNetwork.build(1, layers).setName(RefString.format("-RMS / %.0E", mag))).freeRef();
     final PipelineNetwork freeze = (PipelineNetwork) network.freeze();
     visualModifierParameters.freeRef();

@@ -42,8 +42,7 @@ import java.util.regex.Pattern;
 
 import static org.bytedeco.javacpp.hdf5.*;
 
-public @RefAware
-class Hdf5Archive {
+public class Hdf5Archive {
   private static final Logger log = LoggerFactory.getLogger(Hdf5Archive.class);
 
   static {
@@ -89,12 +88,11 @@ class Hdf5Archive {
   }
 
   private static void printTree(@Nonnull Hdf5Archive hdf5, CharSequence prefix, boolean printData, @Nonnull Logger log,
-                                @Nonnull String... path) {
+      @Nonnull String... path) {
     for (CharSequence datasetName : hdf5.getDataSets(path)) {
       @Nullable
       Tensor tensor = hdf5.readDataSet(datasetName.toString(), path);
-      log.info(RefString.format("%sDataset %s: %s", prefix, datasetName,
-          RefArrays.toString(tensor.getDimensions())));
+      log.info(RefString.format("%sDataset %s: %s", prefix, datasetName, RefArrays.toString(tensor.getDimensions())));
       if (printData)
         log.info(RefString.format("%s%s", prefix, tensor.prettyPrint().replaceAll("\n", "\n" + prefix)));
       tensor.freeRef();
@@ -102,22 +100,21 @@ class Hdf5Archive {
     hdf5.getAttributes(path).forEach((k, v) -> {
       log.info((RefString.format("%sAttribute: %s => %s", prefix, k, v)));
     });
-    for (String t : hdf5.getGroups(path).stream().map(CharSequence::toString)
-        .sorted(new RefComparator<String>() {
-          @Override
-          public int compare(@Nonnull String o1, @Nonnull String o2) {
-            @Nonnull
-            String prefix = "layer_";
-            @Nonnull
-            Pattern digit = Pattern.compile("^\\d+$");
-            if (digit.matcher(o1).matches() && digit.matcher(o2).matches())
-              return Integer.compare(Integer.parseInt(o1), Integer.parseInt(o2));
-            if (o1.startsWith(prefix) && o2.startsWith(prefix))
-              return compare(o1.substring(prefix.length()), o2.substring(prefix.length()));
-            else
-              return o1.compareTo(o2);
-          }
-        }).collect(RefCollectors.toList())) {
+    for (String t : hdf5.getGroups(path).stream().map(CharSequence::toString).sorted(new RefComparator<String>() {
+      @Override
+      public int compare(@Nonnull String o1, @Nonnull String o2) {
+        @Nonnull
+        String prefix = "layer_";
+        @Nonnull
+        Pattern digit = Pattern.compile("^\\d+$");
+        if (digit.matcher(o1).matches() && digit.matcher(o2).matches())
+          return Integer.compare(Integer.parseInt(o1), Integer.parseInt(o2));
+        if (o1.startsWith(prefix) && o2.startsWith(prefix))
+          return compare(o1.substring(prefix.length()), o2.substring(prefix.length()));
+        else
+          return o1.compareTo(o2);
+      }
+    }).collect(RefCollectors.toList())) {
       log.info(prefix + t);
       printTree(hdf5, prefix + "\t", printData, log, concat(path, t));
     }
@@ -229,8 +226,7 @@ class Hdf5Archive {
     @Nonnull
     Group[] groupArray = openGroups(groups);
     @Nonnull
-    RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1],
-        H5O_TYPE_DATASET);
+    RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1], H5O_TYPE_DATASET);
     closeGroups(groupArray);
     return ls;
   }
@@ -243,8 +239,7 @@ class Hdf5Archive {
     @Nonnull
     Group[] groupArray = openGroups(groups);
     @Nonnull
-    RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1],
-        H5O_TYPE_GROUP);
+    RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1], H5O_TYPE_GROUP);
     closeGroups(groupArray);
     return ls;
   }
@@ -331,54 +326,54 @@ class Hdf5Archive {
       @Nullable
       Tensor data = null;
       switch (nbDims) {
-        case 4: /* 2D Convolution weights */
-          dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2] * dims[3])];
-          fp = new FloatPointer(dataBuffer);
-          dataset.read(fp, dataType);
-          fp.get(dataBuffer);
-          data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2], (int) dims[3]);
-          j = 0;
-          for (int i1 = 0; i1 < dims[0]; i1++)
-            for (int i2 = 0; i2 < dims[1]; i2++)
-              for (int i3 = 0; i3 < dims[2]; i3++)
-                for (int i4 = 0; i4 < dims[3]; i4++)
-                  data.set(i1, i2, i3, i4, dataBuffer[j++]);
-          break;
-        case 3:
-          dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2])];
-          fp = new FloatPointer(dataBuffer);
-          dataset.read(fp, dataType);
-          fp.get(dataBuffer);
-          data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2]);
-          j = 0;
-          for (int i1 = 0; i1 < dims[0]; i1++)
-            for (int i2 = 0; i2 < dims[1]; i2++)
-              for (int i3 = 0; i3 < dims[2]; i3++)
-                data.set(i1, i2, i3, dataBuffer[j++]);
-          break;
-        case 2: /* Dense and Recurrent weights */
-          dataBuffer = new float[(int) (dims[0] * dims[1])];
-          fp = new FloatPointer(dataBuffer);
-          dataset.read(fp, dataType);
-          fp.get(dataBuffer);
-          data = new Tensor((int) dims[0], (int) dims[1]);
-          j = 0;
-          for (int i1 = 0; i1 < dims[0]; i1++)
-            for (int i2 = 0; i2 < dims[1]; i2++)
-              data.set(i1, i2, dataBuffer[j++]);
-          break;
-        case 1: /* Bias */
-          dataBuffer = new float[(int) dims[0]];
-          fp = new FloatPointer(dataBuffer);
-          dataset.read(fp, dataType);
-          fp.get(dataBuffer);
-          data = new Tensor((int) dims[0]);
-          j = 0;
-          for (int i1 = 0; i1 < dims[0]; i1++)
-            data.set(i1, dataBuffer[j++]);
-          break;
-        default:
-          throw new RuntimeException("Cannot import weights apply rank " + nbDims);
+      case 4: /* 2D Convolution weights */
+        dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2] * dims[3])];
+        fp = new FloatPointer(dataBuffer);
+        dataset.read(fp, dataType);
+        fp.get(dataBuffer);
+        data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2], (int) dims[3]);
+        j = 0;
+        for (int i1 = 0; i1 < dims[0]; i1++)
+          for (int i2 = 0; i2 < dims[1]; i2++)
+            for (int i3 = 0; i3 < dims[2]; i3++)
+              for (int i4 = 0; i4 < dims[3]; i4++)
+                data.set(i1, i2, i3, i4, dataBuffer[j++]);
+        break;
+      case 3:
+        dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2])];
+        fp = new FloatPointer(dataBuffer);
+        dataset.read(fp, dataType);
+        fp.get(dataBuffer);
+        data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2]);
+        j = 0;
+        for (int i1 = 0; i1 < dims[0]; i1++)
+          for (int i2 = 0; i2 < dims[1]; i2++)
+            for (int i3 = 0; i3 < dims[2]; i3++)
+              data.set(i1, i2, i3, dataBuffer[j++]);
+        break;
+      case 2: /* Dense and Recurrent weights */
+        dataBuffer = new float[(int) (dims[0] * dims[1])];
+        fp = new FloatPointer(dataBuffer);
+        dataset.read(fp, dataType);
+        fp.get(dataBuffer);
+        data = new Tensor((int) dims[0], (int) dims[1]);
+        j = 0;
+        for (int i1 = 0; i1 < dims[0]; i1++)
+          for (int i2 = 0; i2 < dims[1]; i2++)
+            data.set(i1, i2, dataBuffer[j++]);
+        break;
+      case 1: /* Bias */
+        dataBuffer = new float[(int) dims[0]];
+        fp = new FloatPointer(dataBuffer);
+        dataset.read(fp, dataType);
+        fp.get(dataBuffer);
+        data = new Tensor((int) dims[0]);
+        j = 0;
+        for (int i1 = 0; i1 < dims[0]; i1++)
+          data.set(i1, dataBuffer[j++]);
+        break;
+      default:
+        throw new RuntimeException("Cannot import weights apply rank " + nbDims);
       }
       return data;
     } finally {

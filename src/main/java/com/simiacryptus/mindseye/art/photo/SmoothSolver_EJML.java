@@ -36,8 +36,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.UnaryOperator;
 
-public @RefAware
-class SmoothSolver_EJML implements SmoothSolver {
+public class SmoothSolver_EJML implements SmoothSolver {
 
   public static UnaryOperator<SimpleMatrix> solve(DMatrixSparseCSC affinity, double lambda) {
     final double alpha = 1.0 / (1.0 + lambda);
@@ -62,8 +61,8 @@ class SmoothSolver_EJML implements SmoothSolver {
     final int[] dimensions = topology.getDimensions();
     return tensor -> {
       if (!RefArrays.equals(dimensions, tensor.getDimensions()))
-        throw new IllegalArgumentException(RefArrays.toString(dimensions) + " != "
-            + RefArrays.toString(tensor.getDimensions()));
+        throw new IllegalArgumentException(
+            RefArrays.toString(dimensions) + " != " + RefArrays.toString(tensor.getDimensions()));
       final SimpleMatrix imageMatrix = new SimpleMatrix(dimensions[0] * dimensions[1], dimensions[2]);
       for (int x = 0; x < dimensions[0]; x++) {
         for (int y = 0; y < dimensions[1]; y++) {
@@ -80,8 +79,7 @@ class SmoothSolver_EJML implements SmoothSolver {
     };
   }
 
-  public static @NotNull DMatrixSparseCSC laplacian(RefList<int[]> graphEdges,
-                                                    RefList<double[]> affinityList) {
+  public static @NotNull DMatrixSparseCSC laplacian(RefList<int[]> graphEdges, RefList<double[]> affinityList) {
     final int pixels = graphEdges.size();
     final DMatrixSparseCSC adjacency = new DMatrixSparseCSC(pixels, pixels);
     for (int i = 0; i < pixels; i++) {
@@ -94,8 +92,7 @@ class SmoothSolver_EJML implements SmoothSolver {
           adjacency.set(i, edges[j], affinity);
       }
     }
-    final double[] degree = affinityList.stream()
-        .mapToDouble(x -> RefArrays.stream(x).sum()).toArray();
+    final double[] degree = affinityList.stream().mapToDouble(x -> RefArrays.stream(x).sum()).toArray();
     // Calclulate normalized laplacian
     final DMatrixSparseCSC rescaled = new DMatrixSparseCSC(pixels, pixels);
     for (int i = 0; i < pixels; i++) {

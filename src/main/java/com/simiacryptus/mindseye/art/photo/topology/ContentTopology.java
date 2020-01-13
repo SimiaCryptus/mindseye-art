@@ -31,9 +31,7 @@ import java.util.Arrays;
 
 import static java.util.stream.Collectors.toList;
 
-public abstract @RefAware
-class ContentTopology extends ReferenceCountingBase
-    implements RasterTopology {
+public abstract class ContentTopology extends ReferenceCountingBase implements RasterTopology {
   protected final int[] dimensions;
   protected final MultivariateFrameOfReference contentRegion;
   protected final Tensor content;
@@ -45,8 +43,8 @@ class ContentTopology extends ReferenceCountingBase
     this.contentRegion = new MultivariateFrameOfReference(() -> content.getPixelStream().parallel(), dimensions[2]);
     pixels = RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final int[] coords = getCoordsFromIndex(i);
-      return contentRegion.adjust(RefIntStream.range(0, dimensions[2])
-          .mapToDouble(c -> content.get(coords[0], coords[1], c)).toArray());
+      return contentRegion.adjust(
+          RefIntStream.range(0, dimensions[2]).mapToDouble(c -> content.get(coords[0], coords[1], c)).toArray());
     }).collect(RefCollectors.toList());
   }
 
@@ -55,36 +53,29 @@ class ContentTopology extends ReferenceCountingBase
     return dimensions;
   }
 
-  public static RefList<int[]> dual(
-      RefList<int[]> asymmetric, int[] dimensions) {
+  public static RefList<int[]> dual(RefList<int[]> asymmetric, int[] dimensions) {
     final int[] rows = RefIntStream.range(0, asymmetric.size())
         .flatMap(i -> RefArrays.stream(asymmetric.get(i)).map(x -> i)).toArray();
-    final int[] cols = RefIntStream.range(0, asymmetric.size())
-        .flatMap(i -> RefArrays.stream(asymmetric.get(i))).toArray();
-    final RefMap<Integer, int[]> transposed = RefIntStream
-        .range(0, cols.length).mapToObj(x -> x)
-        .collect(RefCollectors.groupingBy(x -> cols[x],
-            RefCollectors.toList()))
-        .entrySet().stream()
+    final int[] cols = RefIntStream.range(0, asymmetric.size()).flatMap(i -> RefArrays.stream(asymmetric.get(i)))
+        .toArray();
+    final RefMap<Integer, int[]> transposed = RefIntStream.range(0, cols.length).mapToObj(x -> x)
+        .collect(RefCollectors.groupingBy(x -> cols[x], RefCollectors.toList())).entrySet().stream()
         .collect(RefCollectors.toMap(x -> x.getKey(), x -> x.getValue().stream().mapToInt(xx -> rows[xx]).toArray()));
     return RefIntStream.range(0, dimensions[0] * dimensions[1])
         .mapToObj(i -> RefIntStream
-            .concat(RefArrays.stream(asymmetric.get(i)),
-                RefArrays.stream(transposed.getOrDefault(i, new int[]{})))
+            .concat(RefArrays.stream(asymmetric.get(i)), RefArrays.stream(transposed.getOrDefault(i, new int[] {})))
             .distinct().sorted().toArray())
         .collect(RefCollectors.toList());
   }
 
-  public static @SuppressWarnings("unused")
-  ContentTopology[] addRefs(ContentTopology[] array) {
+  public static @SuppressWarnings("unused") ContentTopology[] addRefs(ContentTopology[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(ContentTopology::addRef)
         .toArray((x) -> new ContentTopology[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  ContentTopology[][] addRefs(ContentTopology[][] array) {
+  public static @SuppressWarnings("unused") ContentTopology[][] addRefs(ContentTopology[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(ContentTopology::addRefs)
@@ -100,32 +91,28 @@ class ContentTopology extends ReferenceCountingBase
 
   public void log(RefList<int[]> graph, PrintStream out) {
     out.println("Connectivity Statistics: " + graph.stream().mapToInt(x -> x.length).summaryStatistics());
-    out.println(
-        "Connectivity Histogram: " + JsonUtil.toJson(graph.stream().collect(RefCollectors
-            .groupingBy(x -> x.length, RefCollectors.counting()))));
-    out.println("Spatial Distance Statistics: "
-        + RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+    out.println("Connectivity Histogram: "
+        + JsonUtil.toJson(graph.stream().collect(RefCollectors.groupingBy(x -> x.length, RefCollectors.counting()))));
+    out.println("Spatial Distance Statistics: " + RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final int[] pos = getCoordsFromIndex(i);
       return RefArrays.stream(graph.get(i)).mapToObj(j -> getCoordsFromIndex(j))
-          .mapToDouble(posJ -> RefIntStream.range(0, pos.length)
-              .mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
+          .mapToDouble(
+              posJ -> RefIntStream.range(0, pos.length).mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
           .map(Math::sqrt).toArray();
     }).flatMapToDouble(RefArrays::stream).summaryStatistics());
-    out.println("Spatial Distance Histogram: " + JsonUtil
-        .toJson(RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+    out.println("Spatial Distance Histogram: "
+        + JsonUtil.toJson(RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
           final int[] pos = getCoordsFromIndex(i);
           return RefArrays.stream(graph.get(i)).mapToObj(j -> getCoordsFromIndex(j))
-              .mapToDouble(posJ -> RefIntStream.range(0, pos.length)
-                  .mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
+              .mapToDouble(
+                  posJ -> RefIntStream.range(0, pos.length).mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
               .map(Math::sqrt).map(Math::round).mapToInt(x -> (int) x).toArray();
         }).flatMapToInt(RefArrays::stream).mapToObj(x -> x)
-            .collect(RefCollectors.groupingBy(x -> x,
-                RefCollectors.counting()))));
-    out.println("Color Distance Statistics: "
-        + RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+            .collect(RefCollectors.groupingBy(x -> x, RefCollectors.counting()))));
+    out.println("Color Distance Statistics: " + RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final double[] pixel = pixel(i);
-      return RefArrays.stream(graph.get(i)).mapToObj(this::pixel).collect(toList())
-          .stream().mapToDouble(p -> chromaDistance(p, pixel)).toArray();
+      return RefArrays.stream(graph.get(i)).mapToObj(this::pixel).collect(toList()).stream()
+          .mapToDouble(p -> chromaDistance(p, pixel)).toArray();
     }).flatMapToDouble(RefArrays::stream).summaryStatistics());
   }
 
@@ -142,16 +129,13 @@ class ContentTopology extends ReferenceCountingBase
   public int[] getCoordsFromIndex(int i) {
     final int x = i % dimensions[0];
     final int y = (i - x) / dimensions[0];
-    return new int[]{x, y};
+    return new int[] { x, y };
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  ContentTopology addRef() {
+  public @Override @SuppressWarnings("unused") ContentTopology addRef() {
     return (ContentTopology) super.addRef();
   }
 
@@ -160,7 +144,6 @@ class ContentTopology extends ReferenceCountingBase
   }
 
   protected double chromaDistance(double[] a, double[] b) {
-    return contentRegion
-        .dist(RefIntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i]).toArray());
+    return contentRegion.dist(RefIntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i]).toArray());
   }
 }

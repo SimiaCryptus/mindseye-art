@@ -27,9 +27,7 @@ import com.simiacryptus.ref.wrappers.RefStream;
 import java.util.Arrays;
 import java.util.Objects;
 
-public @RefAware
-class PrependVisionPipelineLayer extends ReferenceCountingBase
-    implements VisionPipelineLayer {
+public class PrependVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
 
   private final VisionPipelineLayer inner;
   private final Layer layer;
@@ -51,8 +49,7 @@ class PrependVisionPipelineLayer extends ReferenceCountingBase
     VisionPipeline<VisionPipelineLayer> visionPipeline = new VisionPipeline<>(getPipelineName(),
         RefStream
             .concat(RefStream.of(staticVisionPipelineLayer),
-                innerPipeline.getLayers().keySet().stream()
-                    .map(x -> new PrependVisionPipelineLayer(x, layer)))
+                innerPipeline.getLayers().keySet().stream().map(x -> new PrependVisionPipelineLayer(x, layer)))
             .toArray(i -> new VisionPipelineLayer[i]));
     staticVisionPipelineLayer.reference.set(visionPipeline);
     innerPipeline.freeRef();
@@ -64,16 +61,14 @@ class PrependVisionPipelineLayer extends ReferenceCountingBase
     return inner.getPipelineName() + "/prepend=" + layer.getName();
   }
 
-  public static @SuppressWarnings("unused")
-  PrependVisionPipelineLayer[] addRefs(PrependVisionPipelineLayer[] array) {
+  public static @SuppressWarnings("unused") PrependVisionPipelineLayer[] addRefs(PrependVisionPipelineLayer[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(PrependVisionPipelineLayer::addRef)
         .toArray((x) -> new PrependVisionPipelineLayer[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  PrependVisionPipelineLayer[][] addRefs(
+  public static @SuppressWarnings("unused") PrependVisionPipelineLayer[][] addRefs(
       PrependVisionPipelineLayer[][] array) {
     if (array == null)
       return null;
@@ -105,13 +100,10 @@ class PrependVisionPipelineLayer extends ReferenceCountingBase
     return getPipelineName().hashCode() ^ name().hashCode();
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  PrependVisionPipelineLayer addRef() {
+  public @Override @SuppressWarnings("unused") PrependVisionPipelineLayer addRef() {
     return (PrependVisionPipelineLayer) super.addRef();
   }
 

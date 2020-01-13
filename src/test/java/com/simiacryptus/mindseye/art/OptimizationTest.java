@@ -49,8 +49,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public @RefAware
-class OptimizationTest {
+public class OptimizationTest {
   private static final Logger log = LoggerFactory.getLogger(OptimizationTest.class);
 
   @NotNull
@@ -77,18 +76,17 @@ class OptimizationTest {
   public static void train(Tensor image, PipelineNetwork network, int maxIterations, LineSearchStrategy lineSearch) {
     ImageUtil.monitorImage(image, false, 5, false);
     new IterativeTrainer(
-        new ArrayTrainable(new Tensor[][]{{image}}, MultiPrecision.setPrecision(network, Precision.Float))
+        new ArrayTrainable(new Tensor[][] { { image } }, MultiPrecision.setPrecision(network, Precision.Float))
             .setMask(true)).setOrientation(new TrustRegionStrategy(new GradientDescent()) {
-      @Override
-      public TrustRegion getRegionPolicy(final Layer layer1) {
-        return new RangeConstraint().setMin(0e-2).setMax(256);
-      }
+              @Override
+              public TrustRegion getRegionPolicy(final Layer layer1) {
+                return new RangeConstraint().setMin(0e-2).setMax(256);
+              }
 
-      public @SuppressWarnings("unused")
-      void _free() {
-      }
-    }).setMonitor(getTrainingMonitor()).setMaxIterations(maxIterations).setLineSearchFactory(name -> lineSearch)
-        .setTerminateThreshold(Double.NEGATIVE_INFINITY).run();
+              public @SuppressWarnings("unused") void _free() {
+              }
+            }).setMonitor(getTrainingMonitor()).setMaxIterations(maxIterations).setLineSearchFactory(name -> lineSearch)
+                .setTerminateThreshold(Double.NEGATIVE_INFINITY).run();
   }
 
   @Test
@@ -115,7 +113,7 @@ class OptimizationTest {
                 new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleImage),
                 new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleImage),
                 new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, contentImage)
-                //.andThenWrap(new LinearActivationLayer().setScale(1e0).freeze())
+            //.andThenWrap(new LinearActivationLayer().setScale(1e0).freeze())
             ), Precision.Float), 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4));
     Thread.sleep(100000);
   }

@@ -53,9 +53,7 @@ import static com.simiacryptus.util.JsonUtil.toJson;
  * A Closed-form Solution to Photorealistic Image Stylization
  * https://arxiv.org/pdf/1802.06474.pdf
  */
-public @RefAware
-class FastPhotoStyleTransfer extends ReferenceCountingBase
-    implements Function<Tensor, UnaryOperator<Tensor>> {
+public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Function<Tensor, UnaryOperator<Tensor>> {
 
   public final Layer encode_1;
   public final Layer decode_1;
@@ -71,7 +69,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
   private double epsilon = 1e-7;
 
   public FastPhotoStyleTransfer(Layer decode_1, Layer encode_1, @NotNull Layer decode_2, Layer encode_2,
-                                @NotNull Layer decode_3, Layer encode_3, @NotNull Layer decode_4, Layer encode_4) {
+      @NotNull Layer decode_3, Layer encode_3, @NotNull Layer decode_4, Layer encode_4) {
     this.encode_4 = encode_4;
     this.decode_4 = decode_4;
     this.encode_3 = encode_3;
@@ -133,7 +131,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
   }
 
   public static Tensor transfer(Tensor contentImage, Tensor styleImage, Layer encode, Layer decode,
-                                double contentDensity, double styleDensity) {
+      double contentDensity, double styleDensity) {
     final Tensor encodedContent = encode.eval(contentImage).getData().get(0);
     final Tensor encodedStyle = encode.eval(styleImage).getData().get(0);
     final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, contentDensity, styleDensity);
@@ -146,16 +144,14 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
     return tensor;
   }
 
-  public static @SuppressWarnings("unused")
-  FastPhotoStyleTransfer[] addRefs(FastPhotoStyleTransfer[] array) {
+  public static @SuppressWarnings("unused") FastPhotoStyleTransfer[] addRefs(FastPhotoStyleTransfer[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(FastPhotoStyleTransfer::addRef)
         .toArray((x) -> new FastPhotoStyleTransfer[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  FastPhotoStyleTransfer[][] addRefs(FastPhotoStyleTransfer[][] array) {
+  public static @SuppressWarnings("unused") FastPhotoStyleTransfer[][] addRefs(FastPhotoStyleTransfer[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(FastPhotoStyleTransfer::addRefs)
@@ -176,7 +172,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
 
   public void writeZip(@Nonnull File out, SerialPrecision precision) {
     try (@Nonnull
-         ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(out))) {
+    ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(out))) {
       final HashMap<CharSequence, byte[]> resources = new HashMap<>();
       decode_1.writeZip(zipOutputStream, precision, resources, "decode_1.json");
       encode_1.writeZip(zipOutputStream, precision, resources, "encode_1.json");
@@ -266,17 +262,12 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
       return new NullOperator();
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  FastPhotoStyleTransfer addRef() {
+  public @Override @SuppressWarnings("unused") FastPhotoStyleTransfer addRef() {
     return (FastPhotoStyleTransfer) super.addRef();
   }
 
-  private static @RefAware
-  class NullOperator<T> extends ReferenceCountingBase
-      implements RefOperator<T> {
-    public static @SuppressWarnings("unused")
-    NullOperator[] addRefs(NullOperator[] array) {
+  private static class NullOperator<T> extends ReferenceCountingBase implements RefOperator<T> {
+    public static @SuppressWarnings("unused") NullOperator[] addRefs(NullOperator[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(NullOperator::addRef)
@@ -288,20 +279,15 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
       return tensor;
     }
 
-    public @SuppressWarnings("unused")
-    void _free() {
+    public @SuppressWarnings("unused") void _free() {
     }
 
-    public @Override
-    @SuppressWarnings("unused")
-    NullOperator<T> addRef() {
+    public @Override @SuppressWarnings("unused") NullOperator<T> addRef() {
       return (NullOperator<T>) super.addRef();
     }
   }
 
-  private static @RefAware
-  class StyleOperator extends ReferenceCountingBase
-      implements RefOperator<Tensor> {
+  private static class StyleOperator extends ReferenceCountingBase implements RefOperator<Tensor> {
     final RefOperator<Tensor> photoSmooth;
     private final Tensor contentImage;
     private final FastPhotoStyleTransfer parent;
@@ -312,8 +298,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
       photoSmooth = parent.photoSmooth(contentImage);
     }
 
-    public static @SuppressWarnings("unused")
-    StyleOperator[] addRefs(StyleOperator[] array) {
+    public static @SuppressWarnings("unused") StyleOperator[] addRefs(StyleOperator[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(StyleOperator::addRef)
@@ -334,9 +319,7 @@ class FastPhotoStyleTransfer extends ReferenceCountingBase
       return tensor1;
     }
 
-    public @Override
-    @SuppressWarnings("unused")
-    StyleOperator addRef() {
+    public @Override @SuppressWarnings("unused") StyleOperator addRef() {
       return (StyleOperator) super.addRef();
     }
   }

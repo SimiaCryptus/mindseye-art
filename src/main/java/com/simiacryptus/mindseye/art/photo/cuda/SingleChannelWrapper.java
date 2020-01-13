@@ -25,7 +25,6 @@ import com.simiacryptus.ref.wrappers.RefArrays;
 
 import java.util.Arrays;
 
-@RefAware
 class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<double[][]> {
   private final RefOperator<double[][]> unaryOperator;
 
@@ -33,16 +32,14 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
     this.unaryOperator = unaryOperator;
   }
 
-  public static @SuppressWarnings("unused")
-  SingleChannelWrapper[] addRefs(SingleChannelWrapper[] array) {
+  public static @SuppressWarnings("unused") SingleChannelWrapper[] addRefs(SingleChannelWrapper[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRef)
         .toArray((x) -> new SingleChannelWrapper[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  SingleChannelWrapper[][] addRefs(SingleChannelWrapper[][] array) {
+  public static @SuppressWarnings("unused") SingleChannelWrapper[][] addRefs(SingleChannelWrapper[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRefs)
@@ -51,8 +48,7 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
 
   @Override
   public double[][] apply(double[][] img) {
-    return RefArrays.stream(img).map(x -> unaryOperator.apply(new double[][]{x})[0])
-        .toArray(i -> new double[i][]);
+    return RefArrays.stream(img).map(x -> unaryOperator.apply(new double[][] { x })[0]).toArray(i -> new double[i][]);
   }
 
   public void _free() {
@@ -60,9 +56,7 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
     super._free();
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  SingleChannelWrapper addRef() {
+  public @Override @SuppressWarnings("unused") SingleChannelWrapper addRef() {
     return (SingleChannelWrapper) super.addRef();
   }
 }

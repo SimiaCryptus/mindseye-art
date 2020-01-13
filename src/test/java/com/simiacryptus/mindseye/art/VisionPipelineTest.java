@@ -44,8 +44,7 @@ import static com.simiacryptus.mindseye.art.models.Inception5H.*;
 import static com.simiacryptus.mindseye.art.models.VGG16.*;
 import static com.simiacryptus.mindseye.art.models.VGG19.*;
 
-public abstract @RefAware
-class VisionPipelineTest extends NotebookReportBase {
+public abstract class VisionPipelineTest extends NotebookReportBase {
   private static final Logger log = LoggerFactory.getLogger(VisionPipelineTest.class);
 
   @Nonnull
@@ -61,8 +60,7 @@ class VisionPipelineTest extends NotebookReportBase {
     int[] dimensions = layer.evalDims(inputDims);
     layer.freeRef();
     int[] actuals = dimensions;
-    RefAssert.assertArrayEquals(RefArrays.toString(actuals),
-        expectedOutputDims, actuals);
+    RefAssert.assertArrayEquals(RefArrays.toString(actuals), expectedOutputDims, actuals);
   }
 
   public static int[] testDims(VisionPipelineLayer inceptionVision, int... inputDims) {
@@ -78,16 +76,14 @@ class VisionPipelineTest extends NotebookReportBase {
     return dims;
   }
 
-  public static @SuppressWarnings("unused")
-  VisionPipelineTest[] addRefs(VisionPipelineTest[] array) {
+  public static @SuppressWarnings("unused") VisionPipelineTest[] addRefs(VisionPipelineTest[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRef)
         .toArray((x) -> new VisionPipelineTest[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  VisionPipelineTest[][] addRefs(VisionPipelineTest[][] array) {
+  public static @SuppressWarnings("unused") VisionPipelineTest[][] addRefs(VisionPipelineTest[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRefs)
@@ -137,7 +133,7 @@ class VisionPipelineTest extends NotebookReportBase {
   }
 
   public void layers(NotebookOutput log) {
-    final int[][] dims = {{226, 226, 3}};
+    final int[][] dims = { { 226, 226, 3 } };
     getVisionPipeline().getLayers().keySet().forEach((e) -> {
       log.h1(e.name());
       DAGNetwork layer = (DAGNetwork) e.getLayer();
@@ -165,8 +161,7 @@ class VisionPipelineTest extends NotebookReportBase {
             return layer.copy();
           }
 
-          public @SuppressWarnings("unused")
-          void _free() {
+          public @SuppressWarnings("unused") void _free() {
           }
 
           @Override
@@ -184,18 +179,14 @@ class VisionPipelineTest extends NotebookReportBase {
     });
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  VisionPipelineTest addRef() {
+  public @Override @SuppressWarnings("unused") VisionPipelineTest addRef() {
     return (VisionPipelineTest) super.addRef();
   }
 
-  public static @RefAware
-  class VGG16Test extends VisionPipelineTest {
+  public static class VGG16Test extends VisionPipelineTest {
     @Override
     protected Class<?> getTargetClass() {
       return VGG16.class;
@@ -206,25 +197,23 @@ class VisionPipelineTest extends NotebookReportBase {
       return VGG16.getVisionPipeline();
     }
 
-    public static @SuppressWarnings("unused")
-    VGG16Test[] addRefs(VGG16Test[] array) {
+    public static @SuppressWarnings("unused") VGG16Test[] addRefs(VGG16Test[] array) {
       if (array == null)
         return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(VGG16Test::addRef)
-          .toArray((x) -> new VGG16Test[x]);
+      return Arrays.stream(array).filter((x) -> x != null).map(VGG16Test::addRef).toArray((x) -> new VGG16Test[x]);
     }
 
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
-        testDims(VGG16_0b, new int[]{226, 226, 3}, new int[]{226, 226, 3});
-        testDims(VGG16_1a, new int[]{226, 226, 3}, new int[]{226, 226, 64});
-        testDims(VGG16_1b1, new int[]{226, 226, 64}, new int[]{113, 113, 128});
-        testDims(VGG16_1c1, new int[]{113, 113, 128}, new int[]{57, 57, 256});
-        testDims(VGG16_1d1, new int[]{57, 57, 256}, new int[]{29, 29, 512});
-        testDims(VGG16_1e1, new int[]{29, 29, 512}, new int[]{15, 15, 512});
-        testDims(VGG16_2, new int[]{15, 15, 512}, new int[]{8, 8, 512});
-        testDims(VGG16_3a, new int[]{14, 14, 4096}, new int[]{14, 14, 1000});
-        testDims(VGG16_3b, new int[]{14, 14, 1000}, new int[]{7, 7, 1000});
+        testDims(VGG16_0b, new int[] { 226, 226, 3 }, new int[] { 226, 226, 3 });
+        testDims(VGG16_1a, new int[] { 226, 226, 3 }, new int[] { 226, 226, 64 });
+        testDims(VGG16_1b1, new int[] { 226, 226, 64 }, new int[] { 113, 113, 128 });
+        testDims(VGG16_1c1, new int[] { 113, 113, 128 }, new int[] { 57, 57, 256 });
+        testDims(VGG16_1d1, new int[] { 57, 57, 256 }, new int[] { 29, 29, 512 });
+        testDims(VGG16_1e1, new int[] { 29, 29, 512 }, new int[] { 15, 15, 512 });
+        testDims(VGG16_2, new int[] { 15, 15, 512 }, new int[] { 8, 8, 512 });
+        testDims(VGG16_3a, new int[] { 14, 14, 4096 }, new int[] { 14, 14, 1000 });
+        testDims(VGG16_3b, new int[] { 14, 14, 1000 }, new int[] { 7, 7, 1000 });
       });
     }
 
@@ -232,24 +221,19 @@ class VisionPipelineTest extends NotebookReportBase {
     public void pipelineTest(NotebookOutput log) {
       log.run(() -> {
         int[] outputSize = testDims(226, 226, 3);
-        RefAssert.assertArrayEquals(
-            RefArrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
+        RefAssert.assertArrayEquals(RefArrays.toString(outputSize), outputSize, new int[] { 7, 7, 1000 });
       });
     }
 
-    public @SuppressWarnings("unused")
-    void _free() {
+    public @SuppressWarnings("unused") void _free() {
     }
 
-    public @Override
-    @SuppressWarnings("unused")
-    VGG16Test addRef() {
+    public @Override @SuppressWarnings("unused") VGG16Test addRef() {
       return (VGG16Test) super.addRef();
     }
   }
 
-  public static @RefAware
-  class VGG19Test extends VisionPipelineTest {
+  public static class VGG19Test extends VisionPipelineTest {
     @Override
     protected Class<?> getTargetClass() {
       return VGG19.class;
@@ -260,23 +244,21 @@ class VisionPipelineTest extends NotebookReportBase {
       return VGG19.getVisionPipeline();
     }
 
-    public static @SuppressWarnings("unused")
-    VGG19Test[] addRefs(VGG19Test[] array) {
+    public static @SuppressWarnings("unused") VGG19Test[] addRefs(VGG19Test[] array) {
       if (array == null)
         return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(VGG19Test::addRef)
-          .toArray((x) -> new VGG19Test[x]);
+      return Arrays.stream(array).filter((x) -> x != null).map(VGG19Test::addRef).toArray((x) -> new VGG19Test[x]);
     }
 
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
-        testDims(VGG19_0b, new int[]{226, 226, 3}, new int[]{226, 226, 3});
-        testDims(VGG19_1a, new int[]{226, 226, 3}, new int[]{226, 226, 64});
-        testDims(VGG19_1b1, new int[]{226, 226, 64}, new int[]{113, 113, 128});
-        testDims(VGG19_1c1, new int[]{113, 113, 128}, new int[]{57, 57, 256});
-        testDims(VGG19_1d1, new int[]{57, 57, 256}, new int[]{29, 29, 512});
-        testDims(VGG19_1e1, new int[]{29, 29, 512}, new int[]{15, 15, 512});
-        testDims(VGG19_2, new int[]{8, 8, 512}, new int[]{14, 14, 4096});
+        testDims(VGG19_0b, new int[] { 226, 226, 3 }, new int[] { 226, 226, 3 });
+        testDims(VGG19_1a, new int[] { 226, 226, 3 }, new int[] { 226, 226, 64 });
+        testDims(VGG19_1b1, new int[] { 226, 226, 64 }, new int[] { 113, 113, 128 });
+        testDims(VGG19_1c1, new int[] { 113, 113, 128 }, new int[] { 57, 57, 256 });
+        testDims(VGG19_1d1, new int[] { 57, 57, 256 }, new int[] { 29, 29, 512 });
+        testDims(VGG19_1e1, new int[] { 29, 29, 512 }, new int[] { 15, 15, 512 });
+        testDims(VGG19_2, new int[] { 8, 8, 512 }, new int[] { 14, 14, 4096 });
         //        testDims(VGG19_3a, new int[]{14, 14, 4096}, new int[]{14, 14, 1000});
         //        testDims(VGG19_3b, new int[]{14, 14, 1000}, new int[]{7, 7, 1000});
       });
@@ -286,24 +268,19 @@ class VisionPipelineTest extends NotebookReportBase {
     public void pipelineTest(NotebookOutput log) {
       log.run(() -> {
         int[] outputSize = testDims(226, 226, 3);
-        RefAssert.assertArrayEquals(
-            RefArrays.toString(outputSize), outputSize, new int[]{7, 7, 1000});
+        RefAssert.assertArrayEquals(RefArrays.toString(outputSize), outputSize, new int[] { 7, 7, 1000 });
       });
     }
 
-    public @SuppressWarnings("unused")
-    void _free() {
+    public @SuppressWarnings("unused") void _free() {
     }
 
-    public @Override
-    @SuppressWarnings("unused")
-    VGG19Test addRef() {
+    public @Override @SuppressWarnings("unused") VGG19Test addRef() {
       return (VGG19Test) super.addRef();
     }
   }
 
-  public static @RefAware
-  class Inception5HTest extends VisionPipelineTest {
+  public static class Inception5HTest extends VisionPipelineTest {
     @Override
     protected Class<?> getTargetClass() {
       return Inception5H.class;
@@ -314,8 +291,7 @@ class VisionPipelineTest extends NotebookReportBase {
       return Inception5H.getVisionPipeline();
     }
 
-    public static @SuppressWarnings("unused")
-    Inception5HTest[] addRefs(Inception5HTest[] array) {
+    public static @SuppressWarnings("unused") Inception5HTest[] addRefs(Inception5HTest[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(Inception5HTest::addRef)
@@ -324,42 +300,39 @@ class VisionPipelineTest extends NotebookReportBase {
 
     public void inoutDims(NotebookOutput log) {
       log.run(() -> {
-        testDims(Inc5H_1a, new int[]{320, 240, 3}, new int[]{160, 120, 64});
-        testDims(Inc5H_2a, new int[]{160, 120, 64}, new int[]{80, 60, 192});
-        testDims(Inc5H_3a, new int[]{80, 60, 192}, new int[]{40, 30, 256});
-        testDims(Inc5H_3b, new int[]{40, 30, 256}, new int[]{40, 30, 480});
-        testDims(Inc5H_4a, new int[]{40, 30, 480}, new int[]{20, 15, 508});
-        testDims(Inc5H_4b, new int[]{20, 15, 508}, new int[]{20, 15, 512});
-        testDims(Inc5H_4c, new int[]{20, 15, 512}, new int[]{20, 15, 512});
-        testDims(Inc5H_4d, new int[]{20, 15, 512}, new int[]{20, 15, 528});
-        testDims(Inc5H_4e, new int[]{20, 15, 528}, new int[]{20, 15, 832});
-        testDims(Inc5H_5a, new int[]{20, 15, 832}, new int[]{10, 8, 832});
-        testDims(Inc5H_5b, new int[]{10, 8, 832}, new int[]{10, 8, 1024});
+        testDims(Inc5H_1a, new int[] { 320, 240, 3 }, new int[] { 160, 120, 64 });
+        testDims(Inc5H_2a, new int[] { 160, 120, 64 }, new int[] { 80, 60, 192 });
+        testDims(Inc5H_3a, new int[] { 80, 60, 192 }, new int[] { 40, 30, 256 });
+        testDims(Inc5H_3b, new int[] { 40, 30, 256 }, new int[] { 40, 30, 480 });
+        testDims(Inc5H_4a, new int[] { 40, 30, 480 }, new int[] { 20, 15, 508 });
+        testDims(Inc5H_4b, new int[] { 20, 15, 508 }, new int[] { 20, 15, 512 });
+        testDims(Inc5H_4c, new int[] { 20, 15, 512 }, new int[] { 20, 15, 512 });
+        testDims(Inc5H_4d, new int[] { 20, 15, 512 }, new int[] { 20, 15, 528 });
+        testDims(Inc5H_4e, new int[] { 20, 15, 528 }, new int[] { 20, 15, 832 });
+        testDims(Inc5H_5a, new int[] { 20, 15, 832 }, new int[] { 10, 8, 832 });
+        testDims(Inc5H_5b, new int[] { 10, 8, 832 }, new int[] { 10, 8, 1024 });
       });
     }
 
     public void pipelineTest(NotebookOutput log) {
       log.run(() -> {
-        RefAssert.assertArrayEquals(testDims(320, 320, 3), new int[]{10, 10, 1024});
+        RefAssert.assertArrayEquals(testDims(320, 320, 3), new int[] { 10, 10, 1024 });
       });
       log.run(() -> {
-        RefAssert.assertArrayEquals(testDims(32, 32, 3), new int[]{1, 1, 1024});
+        RefAssert.assertArrayEquals(testDims(32, 32, 3), new int[] { 1, 1, 1024 });
       });
       log.run(() -> {
-        RefAssert.assertArrayEquals(testDims(400, 400, 3), new int[]{13, 13, 1024});
+        RefAssert.assertArrayEquals(testDims(400, 400, 3), new int[] { 13, 13, 1024 });
       });
       log.run(() -> {
-        RefAssert.assertArrayEquals(testDims(40, 40, 3), new int[]{2, 2, 1024});
+        RefAssert.assertArrayEquals(testDims(40, 40, 3), new int[] { 2, 2, 1024 });
       });
     }
 
-    public @SuppressWarnings("unused")
-    void _free() {
+    public @SuppressWarnings("unused") void _free() {
     }
 
-    public @Override
-    @SuppressWarnings("unused")
-    Inception5HTest addRef() {
+    public @Override @SuppressWarnings("unused") Inception5HTest addRef() {
       return (Inception5HTest) super.addRef();
     }
   }

@@ -40,9 +40,7 @@ import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
-public @RefAware
-class CudaMatrixSolver extends ReferenceCountingBase
-    implements RefOperator<double[][]> {
+public class CudaMatrixSolver extends ReferenceCountingBase implements RefOperator<double[][]> {
 
   public static final double TOLERANCE = 1e-8;
   private static final int REORDER = 0;
@@ -69,16 +67,14 @@ class CudaMatrixSolver extends ReferenceCountingBase
     pixels = forwardMatrix.cols;
   }
 
-  public static @SuppressWarnings("unused")
-  CudaMatrixSolver[] addRefs(CudaMatrixSolver[] array) {
+  public static @SuppressWarnings("unused") CudaMatrixSolver[] addRefs(CudaMatrixSolver[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRef)
         .toArray((x) -> new CudaMatrixSolver[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  CudaMatrixSolver[][] addRefs(CudaMatrixSolver[][] array) {
+  public static @SuppressWarnings("unused") CudaMatrixSolver[][] addRefs(CudaMatrixSolver[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRefs)
@@ -93,12 +89,11 @@ class CudaMatrixSolver extends ReferenceCountingBase
   @Override
   public double[][] apply(double[][] img) {
     final int channels = img.length;
-    final float[] flattened = new float[RefArrays.stream(img).mapToInt(x -> x.length)
-        .sum()];
+    final float[] flattened = new float[RefArrays.stream(img).mapToInt(x -> x.length).sum()];
     for (int i = 0; i < flattened.length; i++) {
       flattened[i] = (float) img[i / pixels][i % pixels];
     }
-    int singularityRowArray[] = {-1};
+    int singularityRowArray[] = { -1 };
     Pointer gpuResult = new Pointer();
     cudaMalloc(gpuResult, Sizeof.FLOAT * flattened.length);
     final Pointer input = CudaSparseMatrix.toDevice(flattened);
@@ -117,14 +112,11 @@ class CudaMatrixSolver extends ReferenceCountingBase
     cudaFree(gpuResult);
 
     return RefIntStream.range(0, channels)
-        .mapToObj(c -> RefIntStream.range(0, pixels)
-            .mapToDouble(i -> scaleOutput * floats[c * pixels + i]).toArray())
+        .mapToObj(c -> RefIntStream.range(0, pixels).mapToDouble(i -> scaleOutput * floats[c * pixels + i]).toArray())
         .toArray(i -> new double[i][]);
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  CudaMatrixSolver addRef() {
+  public @Override @SuppressWarnings("unused") CudaMatrixSolver addRef() {
     return (CudaMatrixSolver) super.addRef();
   }
 }

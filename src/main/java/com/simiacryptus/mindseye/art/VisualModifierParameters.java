@@ -29,8 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
-public @RefAware
-class VisualModifierParameters extends ReferenceCountingBase {
+public class VisualModifierParameters extends ReferenceCountingBase {
   public final PipelineNetwork network;
   public final Tensor mask;
   public final UnaryOperator<Tensor> viewLayer;
@@ -38,7 +37,7 @@ class VisualModifierParameters extends ReferenceCountingBase {
   private final int[] contentDims;
 
   public VisualModifierParameters(PipelineNetwork network, int[] contentDims, UnaryOperator<Tensor> viewLayer,
-                                  Tensor mask, Tensor... styleImages) {
+      Tensor mask, Tensor... styleImages) {
     this.network = null == network ? network : network.addRef();
     this.mask = null == mask ? mask : mask.addRef();
     this.contentDims = contentDims;
@@ -50,16 +49,14 @@ class VisualModifierParameters extends ReferenceCountingBase {
     }
   }
 
-  public static @SuppressWarnings("unused")
-  VisualModifierParameters[] addRefs(VisualModifierParameters[] array) {
+  public static @SuppressWarnings("unused") VisualModifierParameters[] addRefs(VisualModifierParameters[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRef)
         .toArray((x) -> new VisualModifierParameters[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  VisualModifierParameters[][] addRefs(VisualModifierParameters[][] array) {
+  public static @SuppressWarnings("unused") VisualModifierParameters[][] addRefs(VisualModifierParameters[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRefs)
@@ -93,9 +90,7 @@ class VisualModifierParameters extends ReferenceCountingBase {
     return visualModifierParameters;
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  VisualModifierParameters addRef() {
+  public @Override @SuppressWarnings("unused") VisualModifierParameters addRef() {
     return (VisualModifierParameters) super.addRef();
   }
 

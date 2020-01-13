@@ -28,9 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
-public @RefAware
-class VisionPipeline<T extends VisionPipelineLayer>
-    extends ReferenceCountingBase {
+public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCountingBase {
   private static final Logger logger = LoggerFactory.getLogger(VisionPipeline.class);
 
   public final String name;
@@ -51,16 +49,14 @@ class VisionPipeline<T extends VisionPipelineLayer>
     return new RefLinkedHashMap<>(layers);
   }
 
-  public static @SuppressWarnings("unused")
-  VisionPipeline[] addRefs(VisionPipeline[] array) {
+  public static @SuppressWarnings("unused") VisionPipeline[] addRefs(VisionPipeline[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRef)
         .toArray((x) -> new VisionPipeline[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  VisionPipeline[][] addRefs(VisionPipeline[][] array) {
+  public static @SuppressWarnings("unused") VisionPipeline[][] addRefs(VisionPipeline[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRefs)
@@ -72,9 +68,7 @@ class VisionPipeline<T extends VisionPipelineLayer>
     super._free();
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  VisionPipeline<T> addRef() {
+  public @Override @SuppressWarnings("unused") VisionPipeline<T> addRef() {
     return (VisionPipeline<T>) super.addRef();
   }
 }

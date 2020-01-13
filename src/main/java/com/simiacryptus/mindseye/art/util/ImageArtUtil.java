@@ -32,6 +32,7 @@ import com.simiacryptus.notebook.MarkdownNotebookOutput;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.notebook.UploadImageQuery;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.tensorflow.GraphModel;
 import com.simiacryptus.util.FastRandom;
@@ -55,8 +56,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-public @RefAware
-class ImageArtUtil {
+public class ImageArtUtil {
 
   @Nonnull
   public static Configuration getHadoopConfig() {
@@ -146,24 +146,20 @@ class ImageArtUtil {
   }
 
   @NotNull
-  public static RefMap<String, PipelineNetwork> convertPipeline(GraphDef graphDef,
-                                                                String... nodes) {
+  public static RefMap<String, PipelineNetwork> convertPipeline(GraphDef graphDef, String... nodes) {
     GraphModel graphModel = new GraphModel(graphDef.toByteArray());
     RefMap<String, PipelineNetwork> graphs = new RefHashMap<>();
     TFConverter tfConverter = new TFConverter();
-    TFLayer tfLayer0 = new TFLayer(graphModel.getChild(nodes[0])
-        .subgraph(new RefHashSet<>(RefArrays.asList()))
-        .toByteArray(), new RefHashMap<>(), nodes[0], "input");
+    TFLayer tfLayer0 = new TFLayer(
+        graphModel.getChild(nodes[0]).subgraph(new RefHashSet<>(RefArrays.asList())).toByteArray(), new RefHashMap<>(),
+        nodes[0], "input");
     graphs.put(nodes[0], tfConverter.convert(tfLayer0));
     tfLayer0.freeRef();
     for (int i = 1; i < nodes.length; i++) {
       String currentNode = nodes[i];
       String priorNode = nodes[i - 1];
       TFLayer tfLayer1 = new TFLayer(
-          graphModel.getChild(currentNode)
-              .subgraph(new RefHashSet<>(
-                  RefArrays.asList(priorNode)))
-              .toByteArray(),
+          graphModel.getChild(currentNode).subgraph(new RefHashSet<>(RefArrays.asList(priorNode))).toByteArray(),
           new RefHashMap<>(), currentNode, priorNode);
       graphs.put(currentNode, tfConverter.convert(tfLayer1));
       tfLayer1.freeRef();
@@ -185,25 +181,25 @@ class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = RefArrays.stream(fileStr.split(" +\\+ +"))
-            .map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
-        return RefArrays.stream(fileStr.split(" +\\+ +"))
+        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width))
+            .filter(x -> x != null).findFirst());
+        return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
               b.freeRef();
               return r;
-            }).get();
+            }));
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = RefArrays.stream(fileStr.split(" +\\* +"))
-            .map(x -> getImageTensor(x, log, width)).filter(x -> x != null).findFirst().get();
-        return RefArrays.stream(fileStr.split(" +\\* +"))
+        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width))
+            .filter(x -> x != null).findFirst());
+        return RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
               b.freeRef();
               return r;
-            }).get();
+            }));
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
         return new Plasma().paint(width, width);
       } else if (fileStr.trim().toLowerCase().equals("noise")) {
@@ -222,25 +218,25 @@ class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = RefArrays.stream(fileStr.split(" +\\+ +"))
-            .map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
-        return RefArrays.stream(fileStr.split(" +\\+ +"))
+        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width, height))
+            .filter(x -> x != null).findFirst());
+        return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
               b.freeRef();
               return r;
-            }).get();
+            }));
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = RefArrays.stream(fileStr.split(" +\\* +"))
-            .map(x -> getImageTensor(x, log, width, height)).filter(x -> x != null).findFirst().get();
-        return RefArrays.stream(fileStr.split(" +\\* +"))
+        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width, height))
+            .filter(x -> x != null).findFirst());
+        return RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
               b.freeRef();
               return r;
-            }).get();
+            }));
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
         return new Plasma().paint(width, height);
       } else if (fileStr.trim().toLowerCase().equals("noise")) {

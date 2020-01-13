@@ -84,13 +84,12 @@ convertInv('conv4_1')
 convertInv('conv5_1')
 ```
  */
-public @RefAware
-class VGG_WCT_Import {
+public class VGG_WCT_Import {
 
   public static final Logger log = LoggerFactory.getLogger(VGG_WCT_Import.class);
   private static final String fileBase = "H:\\SimiaCryptus\\data-science-tools\\FastPhotoStyle\\models\\";
   @Nonnull
-  private static int[] convolutionOrder = {1, 0, 3, 2};
+  private static int[] convolutionOrder = { 1, 0, 3, 2 };
   private static boolean verbose = false;
   private static boolean simple = false;
 
@@ -123,17 +122,15 @@ class VGG_WCT_Import {
       pipeline.add(convolutionLayer(bias2, weight2, 3, 64));
     }
 
-    {
-      final String prefix1 = "vgg_conv2_1_5_";
-      final Tensor weight1 = getWeight(prefix1);
-      final Tensor bias1 = getBias(prefix1);
-      final String prefix2 = "vgg_conv2_1_9_";
-      final Tensor weight2 = getWeight(prefix2);
-      final Tensor bias2 = getBias(prefix2);
-      pipeline.add(convolutionLayer(bias1, weight1, 64, 64));
-      pipeline.add(new PoolingLayer().setMode(PoolingLayer.PoolingMode.Max));
-      pipeline.add(convolutionLayer(bias2, weight2, 64, 128));
-    }
+    final String prefix1 = "vgg_conv2_1_5_";
+    final Tensor weight1 = getWeight(prefix1);
+    final Tensor bias1 = getBias(prefix1);
+    final String prefix2 = "vgg_conv2_1_9_";
+    final Tensor weight2 = getWeight(prefix2);
+    final Tensor bias2 = getBias(prefix2);
+    pipeline.add(convolutionLayer(bias1, weight1, 64, 64));
+    pipeline.add(new PoolingLayer().setMode(PoolingLayer.PoolingMode.Max));
+    pipeline.add(convolutionLayer(bias2, weight2, 64, 128));
 
     return polish(pipeline);
 
@@ -166,18 +163,16 @@ class VGG_WCT_Import {
       pipeline.add(convolutionLayer(bias2, weight2, 64, 128));
     }
 
-    {
-      final String prefix1 = "vgg_conv3_1_12_";
-      final Tensor weight1 = getWeight(prefix1);
-      final Tensor bias1 = getBias(prefix1);
-      final String prefix2 = "vgg_conv3_1_16_";
-      final Tensor weight2 = getWeight(prefix2);
-      final Tensor bias2 = getBias(prefix2);
+    final String prefix1 = "vgg_conv3_1_12_";
+    final Tensor weight1 = getWeight(prefix1);
+    final Tensor bias1 = getBias(prefix1);
+    final String prefix2 = "vgg_conv3_1_16_";
+    final Tensor weight2 = getWeight(prefix2);
+    final Tensor bias2 = getBias(prefix2);
 
-      pipeline.add(convolutionLayer(bias1, weight1, 128, 128));
-      pipeline.add(new PoolingLayer().setMode(PoolingLayer.PoolingMode.Max));
-      pipeline.add(convolutionLayer(bias2, weight2, 128, 256));
-    }
+    pipeline.add(convolutionLayer(bias1, weight1, 128, 128));
+    pipeline.add(new PoolingLayer().setMode(PoolingLayer.PoolingMode.Max));
+    pipeline.add(convolutionLayer(bias2, weight2, 128, 256));
 
     return polish(pipeline);
 
@@ -186,11 +181,9 @@ class VGG_WCT_Import {
   public static Layer encode_4() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
-    {
-      final String prefix1 = "vgg_conv4_1_0_";
-      pipeline.add(new ConvolutionLayer(1, 1, 3, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
-      pipeline.add(new ImgBandBiasLayer(3).set(getBias(prefix1))).freeRef();
-    }
+    final String prefix1 = "vgg_conv4_1_0_";
+    pipeline.add(new ConvolutionLayer(1, 1, 3, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
+    pipeline.add(new ImgBandBiasLayer(3).set(getBias(prefix1))).freeRef();
 
     pipeline.add(convolutionLayer("vgg_conv4_1_2_", 3, 64));
     pipeline.add(convolutionLayer("vgg_conv4_1_5_", 64, 64));
@@ -212,11 +205,9 @@ class VGG_WCT_Import {
   public static Layer encode_5() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
-    {
-      final String prefix1 = "vgg_conv5_1_0_";
-      pipeline.add(new ConvolutionLayer(1, 1, 3, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
-      pipeline.add(new ImgBandBiasLayer(3).set(getBias(prefix1))).freeRef();
-    }
+    final String prefix1 = "vgg_conv5_1_0_";
+    pipeline.add(new ConvolutionLayer(1, 1, 3, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
+    pipeline.add(new ImgBandBiasLayer(3).set(getBias(prefix1))).freeRef();
 
     pipeline.add(convolutionLayer("vgg_conv5_1_2_", 3, 64));
     pipeline.add(convolutionLayer("vgg_conv5_1_5_", 64, 64));
@@ -267,14 +258,12 @@ class VGG_WCT_Import {
       pipeline.add(convolutionLayer(bias2, weight2, 64, 64));
     }
 
-    {
-      final String prefix1 = "inv_conv2_1_8_";
-      final Tensor bias1 = getBias(prefix1);
-      final Tensor weight1 = getWeight(prefix1);
-      pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(weight1)).freeRef();
-      Layer layer = new ImgBandBiasLayer(3).set(bias1);
-      pipeline.add(layer).freeRef();
-    }
+    final String prefix1 = "inv_conv2_1_8_";
+    final Tensor bias1 = getBias(prefix1);
+    final Tensor weight1 = getWeight(prefix1);
+    pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(weight1)).freeRef();
+    Layer layer = new ImgBandBiasLayer(3).set(bias1);
+    pipeline.add(layer).freeRef();
 
     return polish(pipeline);
   }
@@ -306,14 +295,12 @@ class VGG_WCT_Import {
       pipeline.add(convolutionLayer(bias2, weight2, 64, 64));
     }
 
-    {
-      final String prefix1 = "inv_conv3_1_15_";
-      final Tensor bias1 = getBias(prefix1);
-      final Tensor weight1 = getWeight(prefix1);
-      pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(weight1)).freeRef();
-      Layer layer = new ImgBandBiasLayer(3).set(bias1);
-      pipeline.add(layer).freeRef();
-    }
+    final String prefix1 = "inv_conv3_1_15_";
+    final Tensor bias1 = getBias(prefix1);
+    final Tensor weight1 = getWeight(prefix1);
+    pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(weight1)).freeRef();
+    Layer layer = new ImgBandBiasLayer(3).set(bias1);
+    pipeline.add(layer).freeRef();
 
     return polish(pipeline);
   }
@@ -333,12 +320,10 @@ class VGG_WCT_Import {
     pipeline.add(new UnpoolingLayer(2, 2));
     pipeline.add(convolutionLayer("inv_conv4_1_25_", 64, 64));
 
-    {
-      final String prefix1 = "inv_conv4_1_28_";
-      pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
-      Layer layer = new ImgBandBiasLayer(3).set(getBias(prefix1));
-      pipeline.add(layer).freeRef();
-    }
+    final String prefix1 = "inv_conv4_1_28_";
+    pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
+    Layer layer = new ImgBandBiasLayer(3).set(getBias(prefix1));
+    pipeline.add(layer).freeRef();
 
     return polish(pipeline);
   }
@@ -363,12 +348,10 @@ class VGG_WCT_Import {
     pipeline.add(new UnpoolingLayer(2, 2));
     pipeline.add(convolutionLayer("inv_conv5_1_38_", 64, 64));
 
-    {
-      final String prefix1 = "inv_conv5_1_41_";
-      pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
-      Layer layer = new ImgBandBiasLayer(3).set(getBias(prefix1));
-      pipeline.add(layer).freeRef();
-    }
+    final String prefix1 = "inv_conv5_1_41_";
+    pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
+    Layer layer = new ImgBandBiasLayer(3).set(getBias(prefix1));
+    pipeline.add(layer).freeRef();
 
     return polish(pipeline);
   }
@@ -409,16 +392,14 @@ class VGG_WCT_Import {
       pipeline2.add(convolutionLayer(bias2, weight2, 64, 64));
     }
 
-    {
-      PipelineNetwork pipeline = new PipelineNetwork(1);
-      final String prefix1 = "inv_conv2_1_8_";
-      final Tensor bias1 = getBias(prefix1);
-      final Tensor weight1 = getWeight(prefix1);
-      pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(weight1)).freeRef();
-      Layer layer = new ImgBandBiasLayer(3).set(bias1);
-      pipeline.add(layer).freeRef();
-      pipeline2.add(pipeline);
-    }
+    PipelineNetwork pipeline = new PipelineNetwork(1);
+    final String prefix1 = "inv_conv2_1_8_";
+    final Tensor bias1 = getBias(prefix1);
+    final Tensor weight1 = getWeight(prefix1);
+    pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(weight1)).freeRef();
+    Layer layer = new ImgBandBiasLayer(3).set(bias1);
+    pipeline.add(layer).freeRef();
+    pipeline2.add(pipeline);
 
     return polish(pipeline2);
   }
@@ -491,16 +472,14 @@ class VGG_WCT_Import {
       pipeline2.add(convolutionLayer(bias2, weight2, 64, 64));
     }
 
-    {
-      PipelineNetwork pipeline = new PipelineNetwork(1);
-      final String prefix1 = "inv_conv3_1_15_";
-      final Tensor bias1 = getBias(prefix1);
-      final Tensor weight1 = getWeight(prefix1);
-      pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(weight1)).freeRef();
-      Layer layer = new ImgBandBiasLayer(3).set(bias1);
-      pipeline.add(layer).freeRef();
-      pipeline2.add(pipeline);
-    }
+    PipelineNetwork pipeline = new PipelineNetwork(1);
+    final String prefix1 = "inv_conv3_1_15_";
+    final Tensor bias1 = getBias(prefix1);
+    final Tensor weight1 = getWeight(prefix1);
+    pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(weight1)).freeRef();
+    Layer layer = new ImgBandBiasLayer(3).set(bias1);
+    pipeline.add(layer).freeRef();
+    pipeline2.add(pipeline);
 
     return polish(pipeline2);
   }
@@ -538,14 +517,12 @@ class VGG_WCT_Import {
     pipeline2.add(new PhotoUnpoolingLayer(2, 2), pipeline2.getHead(), prepool_1);
     pipeline2.add(convolutionLayer("inv_conv4_1_25_", 64, 64));
 
-    {
-      final String prefix1 = "inv_conv4_1_28_";
-      PipelineNetwork pipeline = new PipelineNetwork(1);
-      pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
-      Layer layer = new ImgBandBiasLayer(3).set(getBias(prefix1));
-      pipeline.add(layer).freeRef();
-      pipeline2.add(pipeline);
-    }
+    final String prefix1 = "inv_conv4_1_28_";
+    PipelineNetwork pipeline = new PipelineNetwork(1);
+    pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
+    Layer layer = new ImgBandBiasLayer(3).set(getBias(prefix1));
+    pipeline.add(layer).freeRef();
+    pipeline2.add(pipeline);
 
     return polish(pipeline2);
   }
@@ -593,12 +570,10 @@ class VGG_WCT_Import {
     pipeline.add(new UnpoolingLayer(2, 2), pipeline.getHead(), prepool_1);
     pipeline.add(convolutionLayer("inv_conv5_1_38_", 64, 64));
 
-    {
-      final String prefix1 = "inv_conv5_1_41_";
-      pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
-      Layer layer = new ImgBandBiasLayer(3).set(getBias(prefix1));
-      pipeline.add(layer).freeRef();
-    }
+    final String prefix1 = "inv_conv5_1_41_";
+    pipeline.add(new ConvolutionLayer(3, 3, 64, 3).setPaddingXY(0, 0).set(getWeight(prefix1))).freeRef();
+    Layer layer = new ImgBandBiasLayer(3).set(getBias(prefix1));
+    pipeline.add(layer).freeRef();
 
     return polish(pipeline);
   }
@@ -649,7 +624,7 @@ class VGG_WCT_Import {
   }
 
   private static PipelineNetwork convolutionLayer(PipelineNetwork pipeline, Tensor bias1, Tensor weight1, int inBands,
-                                                  int outBands) {
+      int outBands) {
     pipeline.add(new ConvolutionLayer(3, 3, inBands, outBands).setPaddingXY(0, 0).set(weight1)).freeRef();
     pipeline.add(new ImgBandBiasLayer(outBands).set(bias1)).freeRef();
     pipeline.add(new ActivationLayer(ActivationLayer.Mode.RELU)).freeRef();
@@ -672,15 +647,13 @@ class VGG_WCT_Import {
 
   private static int[] dims(Object data) {
     if (data instanceof Double) {
-      return new int[]{};
+      return new int[] {};
     } else {
       int length = ((Object[]) data).length;
-      RefList<int[]> childDims = RefArrays
-          .stream(((Object[]) data)).map(x -> dims(x)).collect(RefCollectors.toList());
+      RefList<int[]> childDims = RefArrays.stream(((Object[]) data)).map(x -> dims(x)).collect(RefCollectors.toList());
       int[] head = childDims.get(0);
       childDims.stream().forEach(d -> RefArrays.equals(head, d));
-      return RefIntStream.concat(RefIntStream.of(length),
-          RefArrays.stream(head)).toArray();
+      return RefIntStream.concat(RefIntStream.of(length), RefArrays.stream(head)).toArray();
     }
   }
 

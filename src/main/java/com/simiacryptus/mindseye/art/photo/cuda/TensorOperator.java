@@ -28,9 +28,7 @@ import com.simiacryptus.ref.wrappers.RefIntStream;
 
 import java.util.Arrays;
 
-public @RefAware
-class TensorOperator extends ReferenceCountingBase
-    implements RefOperator<Tensor> {
+public class TensorOperator extends ReferenceCountingBase implements RefOperator<Tensor> {
   private final RefOperator<double[][]> inner;
   private final int[] dimensions;
   private final RasterTopology topology;
@@ -41,16 +39,14 @@ class TensorOperator extends ReferenceCountingBase
     this.topology = topology;
   }
 
-  public static @SuppressWarnings("unused")
-  TensorOperator[] addRefs(TensorOperator[] array) {
+  public static @SuppressWarnings("unused") TensorOperator[] addRefs(TensorOperator[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(TensorOperator::addRef)
         .toArray((x) -> new TensorOperator[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  TensorOperator[][] addRefs(TensorOperator[][] array) {
+  public static @SuppressWarnings("unused") TensorOperator[][] addRefs(TensorOperator[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(TensorOperator::addRefs)
@@ -60,8 +56,8 @@ class TensorOperator extends ReferenceCountingBase
   @Override
   public Tensor apply(Tensor tensor) {
     if (!RefArrays.equals(dimensions, tensor.getDimensions()))
-      throw new IllegalArgumentException(RefArrays.toString(dimensions) + " != "
-          + RefArrays.toString(tensor.getDimensions()));
+      throw new IllegalArgumentException(
+          RefArrays.toString(dimensions) + " != " + RefArrays.toString(tensor.getDimensions()));
     final int channels = 3 <= dimensions.length ? dimensions[2] : 1;
     final double[][] imageMatrix = RefIntStream.range(0, channels).mapToObj(c -> {
       final double[] doubles = new double[dimensions[0] * dimensions[1]];
@@ -85,9 +81,7 @@ class TensorOperator extends ReferenceCountingBase
     super._free();
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  TensorOperator addRef() {
+  public @Override @SuppressWarnings("unused") TensorOperator addRef() {
     return (TensorOperator) super.addRef();
   }
 

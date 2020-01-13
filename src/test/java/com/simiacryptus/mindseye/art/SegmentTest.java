@@ -48,8 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.simiacryptus.mindseye.art.photo.RegionAssembler.volumeEntropy;
 import static com.simiacryptus.mindseye.art.photo.SegmentUtil.*;
 
-public @RefAware
-class SegmentTest extends NotebookReportBase {
+public class SegmentTest extends NotebookReportBase {
 
   private String contentImage = "file:///C:/Users/andre/Downloads/pictures/E17-E.jpg";
   private int imageSize = 600;
@@ -65,20 +64,16 @@ class SegmentTest extends NotebookReportBase {
     return FastPhotoStyleTransfer.class;
   }
 
-  public static @SuppressWarnings("unused")
-  SegmentTest[] addRefs(SegmentTest[] array) {
+  public static @SuppressWarnings("unused") SegmentTest[] addRefs(SegmentTest[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRef)
-        .toArray((x) -> new SegmentTest[x]);
+    return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRef).toArray((x) -> new SegmentTest[x]);
   }
 
-  public static @SuppressWarnings("unused")
-  SegmentTest[][] addRefs(SegmentTest[][] array) {
+  public static @SuppressWarnings("unused") SegmentTest[][] addRefs(SegmentTest[][] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRefs)
-        .toArray((x) -> new SegmentTest[x][]);
+    return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRefs).toArray((x) -> new SegmentTest[x][]);
   }
 
   @Test
@@ -91,13 +86,10 @@ class SegmentTest extends NotebookReportBase {
     run(this::segment_minCut);
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
+  public @SuppressWarnings("unused") void _free() {
   }
 
-  public @Override
-  @SuppressWarnings("unused")
-  SegmentTest addRef() {
+  public @Override @SuppressWarnings("unused") SegmentTest addRef() {
     return (SegmentTest) super.addRef();
   }
 
@@ -140,18 +132,15 @@ class SegmentTest extends NotebookReportBase {
       final Tensor flattenedTensor = Tensor.fromRGB(flattenedColors);
       final int[] dimensions = topology.getDimensions();
       final int pixels = dimensions[0] * dimensions[1];
-      final int[] islands = markIslands(topology, flattenedTensor::getPixel,
-          (a, b) -> RefIntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i])
-              .map(x -> x * x).average().getAsDouble() < 0.2,
-          128, pixels);
+      final int[] islands = markIslands(topology, flattenedTensor::getPixel, (a, b) -> RefIntStream.range(0, a.length)
+          .mapToDouble(i -> a[i] - b[i]).map(x -> x * x).average().getAsDouble() < 0.2, 128, pixels);
       pixelMap.set(islands);
       return flattenedColors;
     });
     return pixelMap.get();
   }
 
-  private static @RefAware
-  class Assemble_minCut extends ReferenceCountingBase {
+  private static class Assemble_minCut extends ReferenceCountingBase {
     private final Tensor content;
     private final RasterTopology topology;
     private SparseMatrixFloat graph;
@@ -164,8 +153,7 @@ class SegmentTest extends NotebookReportBase {
       this.topology = topology;
     }
 
-    public static @SuppressWarnings("unused")
-    Assemble_minCut[] addRefs(Assemble_minCut[] array) {
+    public static @SuppressWarnings("unused") Assemble_minCut[] addRefs(Assemble_minCut[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(Assemble_minCut::addRef)
@@ -187,11 +175,10 @@ class SegmentTest extends NotebookReportBase {
       update(graph.getDenseProjection());
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).mapToObj(x->x).sorted(Comparator.comparing(x->-x)).mapToDouble(x->x).toArray()
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).sorted().toArray()
-      final RefMap<float[], Float> eigensystem = log
-          .eval(() -> this.graph.dense_graph_eigensys());
+      final RefMap<float[], Float> eigensystem = log.eval(() -> this.graph.dense_graph_eigensys());
       log.run(() -> {
-        com.simiacryptus.ref.wrappers.RefSystem.out.println("Sorted Eigenvalues: " + RefArrays
-            .toString(eigensystem.values().stream().mapToDouble(Float::doubleValue).toArray()));
+        com.simiacryptus.ref.wrappers.RefSystem.out.println("Sorted Eigenvalues: "
+            + RefArrays.toString(eigensystem.values().stream().mapToDouble(Float::doubleValue).toArray()));
       });
       final int sampleEigenvectors = 20;
       log.h2("Smallest Eigenvectors");
@@ -202,12 +189,9 @@ class SegmentTest extends NotebookReportBase {
         log.h3("Eigenvector " + index++);
         log.eval(() -> tuple.getValue());
         final double[] vector = SparseMatrixFloat.toDouble(tuple.getKey());
-        updateAndDisplay(log,
-            RefArrays.stream(vector).mapToInt(x -> x < 0 ? 0 : x == 0 ? 1 : 2).toArray());
-        final double median = log
-            .eval(() -> RefArrays.stream(vector).sorted().toArray()[vector.length / 2]);
-        updateAndDisplay(log, RefArrays.stream(vector)
-            .mapToInt(x -> x < median ? 0 : x == median ? 1 : 2).toArray());
+        updateAndDisplay(log, RefArrays.stream(vector).mapToInt(x -> x < 0 ? 0 : x == 0 ? 1 : 2).toArray());
+        final double median = log.eval(() -> RefArrays.stream(vector).sorted().toArray()[vector.length / 2]);
+        updateAndDisplay(log, RefArrays.stream(vector).mapToInt(x -> x < median ? 0 : x == median ? 1 : 2).toArray());
       }
 
       log.h2("Largest Eigenvectors");
@@ -218,12 +202,9 @@ class SegmentTest extends NotebookReportBase {
         log.h3("Eigenvector " + index++);
         log.eval(() -> tuple.getValue());
         final double[] vector = SparseMatrixFloat.toDouble(tuple.getKey());
-        updateAndDisplay(log,
-            RefArrays.stream(vector).mapToInt(x -> x < 0 ? 0 : x == 0 ? 1 : 2).toArray());
-        final double median = log
-            .eval(() -> RefArrays.stream(vector).sorted().toArray()[vector.length / 2]);
-        updateAndDisplay(log, RefArrays.stream(vector)
-            .mapToInt(x -> x < median ? 0 : x == median ? 1 : 2).toArray());
+        updateAndDisplay(log, RefArrays.stream(vector).mapToInt(x -> x < 0 ? 0 : x == 0 ? 1 : 2).toArray());
+        final double median = log.eval(() -> RefArrays.stream(vector).sorted().toArray()[vector.length / 2]);
+        updateAndDisplay(log, RefArrays.stream(vector).mapToInt(x -> x < median ? 0 : x == median ? 1 : 2).toArray());
       }
 
       log.h2("Mincut Eigenvector");
@@ -232,10 +213,10 @@ class SegmentTest extends NotebookReportBase {
         final Map.Entry<float[], Float> secondLowest = eigensystem.entrySet().stream()
             .sorted(RefComparator.comparing(x -> x.getValue())).limit(sampleEigenvectors)
             .collect(RefCollectors.toList()).get(1);
-        com.simiacryptus.ref.wrappers.RefSystem.out.println(
-            "Second Smallest Eigenvector " + RefArrays.toString(secondLowest.getKey()));
-        return RefArrays.stream(SparseMatrixFloat.toDouble(secondLowest.getKey()))
-            .mapToInt(x -> x < 0 ? 0 : 1).toArray();
+        com.simiacryptus.ref.wrappers.RefSystem.out
+            .println("Second Smallest Eigenvector " + RefArrays.toString(secondLowest.getKey()));
+        return RefArrays.stream(SparseMatrixFloat.toDouble(secondLowest.getKey())).mapToInt(x -> x < 0 ? 0 : 1)
+            .toArray();
       }));
       display(log);
     }
@@ -255,25 +236,22 @@ class SegmentTest extends NotebookReportBase {
 
     public void display(NotebookOutput log, int[] pixelMap, SparseMatrixFloat graph) {
       log.eval(() -> {
-        com.simiacryptus.ref.wrappers.RefSystem.out.println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
+        com.simiacryptus.ref.wrappers.RefSystem.out
+            .println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
         return paintWithRandomColors(topology, pixelMap, graph);
       });
     }
 
-    public @SuppressWarnings("unused")
-    void _free() {
+    public @SuppressWarnings("unused") void _free() {
     }
 
-    public @Override
-    @SuppressWarnings("unused")
-    Assemble_minCut addRef() {
+    public @Override @SuppressWarnings("unused") Assemble_minCut addRef() {
       return (Assemble_minCut) super.addRef();
     }
   }
 
-  private static @RefAware
-  class Assemble_volumeEntropy extends ReferenceCountingBase {
+  private static class Assemble_volumeEntropy extends ReferenceCountingBase {
     private final Tensor content;
     private final RasterTopology topology;
     private SparseMatrixFloat graph;
@@ -286,8 +264,7 @@ class SegmentTest extends NotebookReportBase {
       this.topology = topology;
     }
 
-    public static @SuppressWarnings("unused")
-    Assemble_volumeEntropy[] addRefs(Assemble_volumeEntropy[] array) {
+    public static @SuppressWarnings("unused") Assemble_volumeEntropy[] addRefs(Assemble_volumeEntropy[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(Assemble_volumeEntropy::addRef)
@@ -311,19 +288,17 @@ class SegmentTest extends NotebookReportBase {
 
     public void display(NotebookOutput log) {
       log.eval(() -> {
-        com.simiacryptus.ref.wrappers.RefSystem.out.println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
+        com.simiacryptus.ref.wrappers.RefSystem.out
+            .println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
         return paintWithRandomColors(topology, pixelMap, graph);
       });
     }
 
-    public @SuppressWarnings("unused")
-    void _free() {
+    public @SuppressWarnings("unused") void _free() {
     }
 
-    public @Override
-    @SuppressWarnings("unused")
-    Assemble_volumeEntropy addRef() {
+    public @Override @SuppressWarnings("unused") Assemble_volumeEntropy addRef() {
       return (Assemble_volumeEntropy) super.addRef();
     }
   }

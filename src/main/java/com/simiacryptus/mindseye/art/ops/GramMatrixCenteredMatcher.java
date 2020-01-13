@@ -31,6 +31,7 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefString;
 import org.jetbrains.annotations.NotNull;
@@ -39,8 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-public @RefAware
-class GramMatrixCenteredMatcher implements VisualModifier {
+public class GramMatrixCenteredMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixCenteredMatcher.class);
   private final Precision precision = Precision.Float;
   private boolean averaging = true;
@@ -76,19 +76,18 @@ class GramMatrixCenteredMatcher implements VisualModifier {
 
   @NotNull
   public static Layer loss(Tensor result, double mag, boolean averaging) {
-    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(),
+    final Layer[] layers = new Layer[] { new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(),
         averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))};
+        new LinearActivationLayer().setScale(Math.pow(mag, -2)) };
     Layer layer = PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", mag));
     result.freeRef();
     return layer;
   }
 
   public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, Tensor... image) {
-    return RefArrays.stream(image).flatMap(img -> {
+    return RefUtil.get(RefArrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
-      return RefArrays
-          .stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, false))
+      return RefArrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, false))
           .map(selector -> {
             //log.info(selector.toString());
             Tensor tile = selector.eval(img).getData().get(0);
@@ -102,7 +101,7 @@ class GramMatrixCenteredMatcher implements VisualModifier {
       a.addInPlace(b);
       b.freeRef();
       return a;
-    }).get().scaleInPlace(1.0 / pixels).map(x -> {
+    })).scaleInPlace(1.0 / pixels).map(x -> {
       if (Double.isFinite(x)) {
         return x;
       } else {

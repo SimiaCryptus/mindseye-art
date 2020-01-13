@@ -39,8 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-public @RefAware
-class GramMatrixMatcher implements VisualModifier {
+public class GramMatrixMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixMatcher.class);
   private final Precision precision = Precision.Float;
   private boolean averaging = true;
@@ -76,9 +75,9 @@ class GramMatrixMatcher implements VisualModifier {
 
   @NotNull
   public static Layer loss(Tensor result, double mag, boolean averaging) {
-    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(),
+    final Layer[] layers = new Layer[] { new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(),
         averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))};
+        new LinearActivationLayer().setScale(Math.pow(mag, -2)) };
     Layer layer = PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", mag));
     result.freeRef();
     return layer;
@@ -87,8 +86,7 @@ class GramMatrixMatcher implements VisualModifier {
   public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, int padding, Tensor... image) {
     final Tensor tensor = RefArrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
-      return RefArrays
-          .stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
+      return RefArrays.stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
           .map(selector -> {
             //log.info(selector.toString());
             Tensor tile = selector.eval(img).getData().get(0);
@@ -150,10 +148,8 @@ class GramMatrixMatcher implements VisualModifier {
       final DAGNode head = network.getHead();
       network.add(new ProductLayer(getAppendUUID(network, ProductLayer.class)), head, network.constValue(boolMask))
           .freeRef();
-      network
-          .add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision).setAlpha(
-              1.0 / RefArrays.stream(boolMask.getData()).average().getAsDouble()))
-          .freeRef();
+      network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)
+          .setAlpha(1.0 / RefArrays.stream(boolMask.getData()).average().getAsDouble())).freeRef();
       boolMask.freeRef();
     } else {
       network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
