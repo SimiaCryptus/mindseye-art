@@ -22,24 +22,27 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.util.ImageUtil;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
 public class VisualModifierParameters extends ReferenceCountingBase {
+  @Nullable
   public final PipelineNetwork network;
+  @Nonnull
   public final Tensor mask;
   public final UnaryOperator<Tensor> viewLayer;
   public final Tensor[] style;
   private final int[] contentDims;
 
-  public VisualModifierParameters(PipelineNetwork network, int[] contentDims, UnaryOperator<Tensor> viewLayer,
-      Tensor mask, Tensor... styleImages) {
-    this.network = null == network ? network : network.addRef();
-    this.mask = null == mask ? mask : mask.addRef();
+  public VisualModifierParameters(@Nullable PipelineNetwork network, int[] contentDims, UnaryOperator<Tensor> viewLayer,
+                                  @Nullable Tensor mask, Tensor... styleImages) {
+    this.network = null == network ? null : network.addRef();
+    assert mask != null;
+    this.mask = mask.addRef();
     this.contentDims = contentDims;
     this.viewLayer = viewLayer;
     this.style = styleImages;
@@ -49,14 +52,18 @@ public class VisualModifierParameters extends ReferenceCountingBase {
     }
   }
 
-  public static @SuppressWarnings("unused") VisualModifierParameters[] addRefs(VisualModifierParameters[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  VisualModifierParameters[] addRefs(@Nullable VisualModifierParameters[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRef)
         .toArray((x) -> new VisualModifierParameters[x]);
   }
 
-  public static @SuppressWarnings("unused") VisualModifierParameters[][] addRefs(VisualModifierParameters[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  VisualModifierParameters[][] addRefs(@Nullable VisualModifierParameters[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRefs)
@@ -66,8 +73,7 @@ public class VisualModifierParameters extends ReferenceCountingBase {
   public void _free() {
     if (null != network)
       network.freeRef();
-    if (null != mask)
-      mask.freeRef();
+    mask.freeRef();
     for (Tensor tensor : this.style) {
       if (null != tensor)
         tensor.freeRef();
@@ -75,8 +81,8 @@ public class VisualModifierParameters extends ReferenceCountingBase {
     super._free();
   }
 
-  @NotNull
-  public VisualModifierParameters withMask(Tensor mask) {
+  @Nonnull
+  public VisualModifierParameters withMask(@Nullable Tensor mask) {
     if (null != mask) {
       mask = Tensor.fromRGB(ImageUtil.resize(mask.toRgbImage(), contentDims[0], contentDims[1]));
       if (null != viewLayer)
@@ -90,7 +96,10 @@ public class VisualModifierParameters extends ReferenceCountingBase {
     return visualModifierParameters;
   }
 
-  public @Override @SuppressWarnings("unused") VisualModifierParameters addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  VisualModifierParameters addRef() {
     return (VisualModifierParameters) super.addRef();
   }
 

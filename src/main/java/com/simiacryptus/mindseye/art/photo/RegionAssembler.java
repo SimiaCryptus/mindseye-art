@@ -22,10 +22,11 @@ package com.simiacryptus.mindseye.art.photo;
 import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
-import org.jetbrains.annotations.NotNull;
+import com.simiacryptus.ref.wrappers.RefSystem;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -43,9 +44,9 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
   private final int regionCount;
   private final Predicate<Connection> connectionFilter;
 
-  public RegionAssembler(SparseMatrixFloat graph, int[] pixelMap, Map<Integer, Integer> assignments,
-      IntFunction<double[]> pixelFunction, IntFunction<double[]> coordFunction,
-      Predicate<Connection> connectionFilter) {
+  public RegionAssembler(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Map<Integer, Integer> assignments,
+                         @Nonnull IntFunction<double[]> pixelFunction, @Nonnull IntFunction<double[]> coordFunction,
+                         Predicate<Connection> connectionFilter) {
     graph.assertSymmetric();
     this.regionCount = graph.rows;
     this.pixels = pixelMap.length;
@@ -86,6 +87,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     });
   }
 
+  @Nonnull
   public int[] getPixelMap() {
     final int[] ints = new int[pixels];
     regions.forEach(i -> {
@@ -95,6 +97,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     return ints;
   }
 
+  @Nonnull
   public int[] getProjection() {
     final int[] ints = new int[regionCount];
     regions.forEach(i -> {
@@ -104,13 +107,14 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     return ints;
   }
 
+  @Nonnull
   public RegionTree getTree() {
     return new RegionTree(regions.stream().map(x -> x.tree).toArray(i -> new RegionTree[i]));
   }
 
-  @NotNull
-  public static RegionAssembler wrap(SparseMatrixFloat graph, int[] pixelMap, Function<Connection, Double> extractor,
-      final Tensor content, final RasterTopology topology, final Map<Integer, Integer> assignments) {
+  @Nonnull
+  public static RegionAssembler wrap(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Function<Connection, Double> extractor,
+                                     @Nonnull final Tensor content, @Nonnull final RasterTopology topology, @Nonnull final Map<Integer, Integer> assignments) {
     final IntFunction<double[]> pixelFunction = p -> content.getPixel(topology.getCoordsFromIndex(p));
     final IntFunction<double[]> coordFunction = p -> Arrays.stream(topology.getCoordsFromIndex(p)).mapToDouble(x -> x)
         .toArray();
@@ -124,11 +128,12 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     };
   }
 
-  public @NotNull static RegionAssembler volumeEntropy(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
-      RasterTopology topology) {
+  public @Nonnull
+  static RegionAssembler volumeEntropy(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Tensor content,
+                                       @Nonnull RasterTopology topology) {
     return wrap(graph, pixelMap, new Function<Connection, Double>() {
       @Override
-      public Double apply(Connection entry) {
+      public Double apply(@Nullable Connection entry) {
         if (null == entry)
           return Double.POSITIVE_INFINITY;
         if (0 == entry.to.getConnectionWeight())
@@ -147,11 +152,12 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }, content, topology, new HashMap<Integer, Integer>());
   }
 
-  public @NotNull static RegionAssembler simpleEntropy(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
-      RasterTopology topology) {
+  public @Nonnull
+  static RegionAssembler simpleEntropy(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Tensor content,
+                                       @Nonnull RasterTopology topology) {
     return wrap(graph, pixelMap, new Function<Connection, Double>() {
       @Override
-      public Double apply(Connection entry) {
+      public Double apply(@Nullable Connection entry) {
         if (null == entry)
           return Double.POSITIVE_INFINITY;
         if (0 == entry.to.getConnectionWeight())
@@ -169,11 +175,12 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }, content, topology, new HashMap<Integer, Integer>());
   }
 
-  public @NotNull static RegionAssembler epidemic(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
-      RasterTopology topology, Map<Integer, Integer> assignments) {
+  public @Nonnull
+  static RegionAssembler epidemic(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Tensor content,
+                                  @Nonnull RasterTopology topology, @Nonnull Map<Integer, Integer> assignments) {
     return wrap(graph, pixelMap, new Function<Connection, Double>() {
       @Override
-      public Double apply(Connection entry) {
+      public Double apply(@Nullable Connection entry) {
         if (null == entry)
           return Double.POSITIVE_INFINITY;
         if (0 == entry.to.getConnectionWeight())
@@ -204,13 +211,14 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }, content, topology, assignments);
   }
 
-  public @NotNull static RegionAssembler volume5D(SparseMatrixFloat graph, int[] pixelMap, Tensor content,
-      RasterTopology topology) {
+  public @Nonnull
+  static RegionAssembler volume5D(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Tensor content,
+                                  @Nonnull RasterTopology topology) {
     final double minVol = 5e-1;
     final double color_coeff = 1e3;
     return wrap(graph, pixelMap, new Function<Connection, Double>() {
       @Override
-      public Double apply(Connection entry) {
+      public Double apply(@Nullable Connection entry) {
         if (null == entry)
           return Double.POSITIVE_INFINITY;
         final int to_pixels = entry.to.pixels.size();
@@ -226,16 +234,16 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
         return (resultVolume - sourceVolume) / split_entropy;
       }
 
-      public double logVol(DoubleVectorStatistics colorStats, DoubleVectorStatistics spacialStats) {
+      public double logVol(@Nonnull DoubleVectorStatistics colorStats, @Nonnull DoubleVectorStatistics spacialStats) {
         return color_coeff * log(volumeStdDev(minVol, colorStats)) + log(volumeExtrema(minVol, spacialStats));
       }
 
-      public double volumeExtrema(double minVol, DoubleVectorStatistics union) {
+      public double volumeExtrema(double minVol, @Nonnull DoubleVectorStatistics union) {
         return Arrays.stream(union.firstOrder).mapToDouble(statistics -> statistics.getMax() - statistics.getMin())
             .map(x -> Math.abs(x) < minVol ? minVol : x).reduce((a, b) -> a * b).orElse(0);
       }
 
-      public double volumeStdDev(double minVol, DoubleVectorStatistics stats) {
+      public double volumeStdDev(double minVol, @Nonnull DoubleVectorStatistics stats) {
         final DoubleSummaryStatistics[] firstOrder = stats.firstOrder;
         final DoubleSummaryStatistics[] secondOrder = stats.secondOrder;
         return IntStream.range(0, firstOrder.length)
@@ -244,7 +252,8 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
             .map(x -> Math.abs(x) < minVol ? minVol : x).reduce((a, b) -> a * b).orElse(0);
       }
 
-      private DoubleVectorStatistics union(DoubleVectorStatistics a, DoubleVectorStatistics b) {
+      @Nonnull
+      private DoubleVectorStatistics union(@Nonnull DoubleVectorStatistics a, @Nonnull DoubleVectorStatistics b) {
         final DoubleVectorStatistics statistics = new DoubleVectorStatistics(a.firstOrder.length);
         statistics.combine(a);
         statistics.combine(b);
@@ -254,19 +263,21 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }, content, topology, new HashMap<Integer, Integer>());
   }
 
-  public static int[] reduce(SparseMatrixFloat graph, int targetCount, final int[] sizes, Tensor content,
-      RasterTopology topology) {
+  @Nonnull
+  public static int[] reduce(@Nonnull SparseMatrixFloat graph, int targetCount, @Nonnull final int[] sizes, @Nonnull Tensor content,
+                             @Nonnull RasterTopology topology) {
     return wrap(graph, sizes, (Connection entry) -> {
       return null == entry ? Double.POSITIVE_INFINITY : entry.value;
     }, content, topology, new HashMap<Integer, Integer>()).reduceTo(targetCount).getProjection();
   }
 
-  private static void assertEmpty(List<?> collect) {
+  private static void assertEmpty(@Nonnull List<?> collect) {
     if (!collect.isEmpty()) {
       throw new IllegalArgumentException("Items: " + collect.size());
     }
   }
 
+  @Nonnull
   public RegionAssembler reduceTo(int count) {
     while (regions.parallelStream().map(Region::connections_stream)
         .filter(stream -> stream.filter(connectionFilter).count() > 0).limit(count + 1).count() > count) {
@@ -274,7 +285,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       List<Connection> first = regions.parallelStream().flatMap(Region::connections_stream_parallel)
           .filter(connectionFilter).sorted(this).limit(limit).collect(Collectors.toList());
       if (first.isEmpty()) {
-        com.simiacryptus.ref.wrappers.RefSystem.out.println("No connections left");
+        RefSystem.out.println("No connections left");
         break;
       } else {
         final HashSet<Region> touched = new HashSet<>();
@@ -287,14 +298,15 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
 
   public static class RegionTree {
     public final int[] regions;
+    @Nonnull
     public final RegionTree[] children;
 
     public RegionTree(int... regions) {
       this.regions = regions;
-      children = new RegionTree[] {};
+      children = new RegionTree[]{};
     }
 
-    public RegionTree(RegionTree... children) {
+    public RegionTree(@Nonnull RegionTree... children) {
       this.regions = Arrays.stream(children).flatMapToInt(x -> Arrays.stream(x.regions)).toArray();
       this.children = children;
     }
@@ -329,7 +341,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
         consolidated = this.from;
       }
       if (!regions.remove(toRemove)) {
-        com.simiacryptus.ref.wrappers.RefSystem.out.println("Remove dead connection to Region " + toRemove.minId());
+        RefSystem.out.println("Remove dead connection to Region " + toRemove.minId());
         if (!this.from.connections_remove(this)) {
           throw new IllegalStateException();
         } else {
@@ -350,10 +362,11 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     public final HashSet<Integer> original_regions = new HashSet<>();
     public final DoubleVectorStatistics colorStats = new DoubleVectorStatistics(3);
     public final DoubleVectorStatistics spacialStats = new DoubleVectorStatistics(2);
+    @Nullable
     public RegionTree tree;
     private double connectionWeight = 0;
 
-    public Region(int id, Connection... connections) {
+    public Region(int id, @Nonnull Connection... connections) {
       this.original_regions.add(id);
       tree = new RegionTree(id);
       Arrays.stream(connections).forEach(this::connections_add);
@@ -376,7 +389,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       connections.clear();
     }
 
-    public boolean connections_add(Connection connection) {
+    public boolean connections_add(@Nonnull Connection connection) {
       assert connection.from == this;
       final boolean add = null == connections.put(connection.to, connection);
       if (add)
@@ -384,14 +397,14 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       return add;
     }
 
-    public boolean connections_remove(Connection connection) {
+    public boolean connections_remove(@Nonnull Connection connection) {
       final boolean remove = null != connections.remove(connection.to);
       if (remove)
         connectionWeight -= connection.value;
       return remove;
     }
 
-    public boolean connections_addAll(Collection<? extends Connection> connections) {
+    public boolean connections_addAll(@Nonnull Collection<? extends Connection> connections) {
       return connections.stream().filter(x -> !this.connections_add(x)).allMatch(this::connections_add);
     }
 
@@ -399,7 +412,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       return original_regions.stream().mapToInt(x -> x).min().getAsInt();
     }
 
-    private void union(Region other) {
+    private void union(@Nonnull Region other) {
       final List<Connection> newConnections = Stream.concat(other.connections_stream(), connections_stream())
           .filter(k -> k.to != other && k.to != this)
           .collect(Collectors.groupingBy(k -> k.to, Collectors.reducing((a, b) -> {

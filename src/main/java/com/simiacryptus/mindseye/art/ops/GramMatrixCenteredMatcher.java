@@ -30,14 +30,14 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefString;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.UUID;
 
 public class GramMatrixCenteredMatcher implements VisualModifier {
@@ -51,6 +51,7 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
     return tileSize;
   }
 
+  @Nonnull
   public GramMatrixCenteredMatcher setTileSize(int tileSize) {
     this.tileSize = tileSize;
     return this;
@@ -60,6 +61,7 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
     return averaging;
   }
 
+  @Nonnull
   public GramMatrixCenteredMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
@@ -69,22 +71,24 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
     return balanced;
   }
 
+  @Nonnull
   public GramMatrixCenteredMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
-  @NotNull
-  public static Layer loss(Tensor result, double mag, boolean averaging) {
-    final Layer[] layers = new Layer[] { new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(),
+  @Nonnull
+  public static Layer loss(@Nonnull Tensor result, double mag, boolean averaging) {
+    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(),
         averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2)) };
+        new LinearActivationLayer().setScale(Math.pow(mag, -2))};
     Layer layer = PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", mag));
     result.freeRef();
     return layer;
   }
 
-  public static Tensor eval(int pixels, PipelineNetwork network, int tileSize, Tensor... image) {
+  @Nonnull
+  public static Tensor eval(int pixels, @Nonnull PipelineNetwork network, int tileSize, @Nonnull Tensor... image) {
     return RefUtil.get(RefArrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
       return RefArrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, false))
@@ -110,8 +114,8 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
     });
   }
 
-  @NotNull
-  public static UUID getAppendUUID(PipelineNetwork network, Class<GramianLayer> layerClass) {
+  @Nonnull
+  public static UUID getAppendUUID(@Nonnull PipelineNetwork network, @Nonnull Class<GramianLayer> layerClass) {
     DAGNode head = network.getHead();
     Layer layer = head.getLayer();
     if (null == layer)
@@ -119,17 +123,19 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
     return UUID.nameUUIDFromBytes((layer.getId().toString() + layerClass.getName()).getBytes());
   }
 
+  @Nonnull
   @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+  public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, null,
         visualModifierParameters.style);
     visualModifierParameters.freeRef();
     return pipelineNetwork;
   }
 
-  @NotNull
-  public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor cov, Tensor... image) {
+  @Nonnull
+  public PipelineNetwork buildWithModel(PipelineNetwork network, @Nullable Tensor cov, @Nonnull Tensor... image) {
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
+    assert network != null;
     network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
     int pixels = RefArrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();

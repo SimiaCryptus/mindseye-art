@@ -19,25 +19,31 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
 public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
+  @Nonnull
   static <T> RefOperator<T> wrap(UnaryOperator<T> inner) {
     return new RefOperatorWrapper<T>(inner);
   }
 
-  public static @SuppressWarnings("unused") RefOperator[] addRefs(RefOperator[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  RefOperator[] addRefs(@Nullable RefOperator[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRef).toArray((x) -> new RefOperator[x]);
   }
 
-  public static @SuppressWarnings("unused") RefOperator[][] addRefs(RefOperator[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  RefOperator[][] addRefs(@Nullable RefOperator[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRefs).toArray((x) -> new RefOperator[x][]);
@@ -49,6 +55,7 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
 
   public void _free();
 
+  @Nonnull
   public RefOperator<T> addRef();
 
   class RefOperatorWrapper<T> extends ReferenceCountingBase implements RefOperator<T> {
@@ -59,7 +66,9 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
       this.inner = inner;
     }
 
-    public static @SuppressWarnings("unused") RefOperatorWrapper[] addRefs(RefOperatorWrapper[] array) {
+    @Nullable
+    public static @SuppressWarnings("unused")
+    RefOperatorWrapper[] addRefs(@Nullable RefOperatorWrapper[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(RefOperatorWrapper::addRef)
@@ -71,10 +80,14 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
       return inner.apply(t);
     }
 
-    public @SuppressWarnings("unused") void _free() {
+    public @SuppressWarnings("unused")
+    void _free() {
     }
 
-    public @Override @SuppressWarnings("unused") RefOperatorWrapper<T> addRef() {
+    @Nonnull
+    public @Override
+    @SuppressWarnings("unused")
+    RefOperatorWrapper<T> addRef() {
       return (RefOperatorWrapper<T>) super.addRef();
     }
   }

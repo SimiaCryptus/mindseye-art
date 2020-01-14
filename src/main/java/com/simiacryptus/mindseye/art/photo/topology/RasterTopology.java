@@ -19,13 +19,15 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefList;
+
+import javax.annotation.Nonnull;
 
 public interface RasterTopology {
 
   int[] getDimensions();
 
+  @Nonnull
   default RasterTopology cached() {
     return new RasterTopologyWrapper.CachedRasterTopology(this);
   }

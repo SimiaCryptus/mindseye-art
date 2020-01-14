@@ -26,12 +26,17 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.wrappers.RefMap;
 import com.simiacryptus.tensorflow.ImageNetworkPipeline;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 public enum Inception5H implements VisionPipelineLayer {
   Inc5H_1a("conv2d0"), Inc5H_2a("localresponsenorm1"), Inc5H_3a("mixed3a"), Inc5H_3b("mixed3b"), Inc5H_4a("mixed4a"),
   Inc5H_4b("mixed4b"), Inc5H_4c("mixed4c"), Inc5H_4d("mixed4d"), Inc5H_4e("mixed4e"), Inc5H_5a("mixed5a"),
   Inc5H_5b("mixed5b");
 
+  @Nullable
   private static transient RefMap<String, PipelineNetwork> inception5h = null;
+  @Nullable
   private static volatile VisionPipeline<Inception5H> visionPipeline = null;
   private final String layerId;
 
@@ -39,21 +44,25 @@ public enum Inception5H implements VisionPipelineLayer {
     this.layerId = layerId;
   }
 
+  @Nonnull
   @Override
   public PipelineNetwork getLayer() {
     return (PipelineNetwork) layerMap().get(this.layerId).copyPipeline().setName(name());
   }
 
+  @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
     return getVisionPipeline().addRef();
   }
 
+  @Nonnull
   @Override
   public String getPipelineName() {
     return getVisionPipeline().name;
   }
 
+  @Nullable
   public static VisionPipeline<Inception5H> getVisionPipeline() {
     if (null == visionPipeline) {
       synchronized (Inception5H.class) {
@@ -65,6 +74,7 @@ public enum Inception5H implements VisionPipelineLayer {
     return visionPipeline;
   }
 
+  @Nonnull
   public static RefMap<String, PipelineNetwork> layerMap() {
     if (null == inception5h) {
       synchronized (Inception5H.class) {

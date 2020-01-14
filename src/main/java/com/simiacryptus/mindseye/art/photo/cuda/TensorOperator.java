@@ -21,11 +21,12 @@ package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 public class TensorOperator extends ReferenceCountingBase implements RefOperator<Tensor> {
@@ -39,22 +40,27 @@ public class TensorOperator extends ReferenceCountingBase implements RefOperator
     this.topology = topology;
   }
 
-  public static @SuppressWarnings("unused") TensorOperator[] addRefs(TensorOperator[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  TensorOperator[] addRefs(@Nullable TensorOperator[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(TensorOperator::addRef)
         .toArray((x) -> new TensorOperator[x]);
   }
 
-  public static @SuppressWarnings("unused") TensorOperator[][] addRefs(TensorOperator[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  TensorOperator[][] addRefs(@Nullable TensorOperator[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(TensorOperator::addRefs)
         .toArray((x) -> new TensorOperator[x][]);
   }
 
+  @Nullable
   @Override
-  public Tensor apply(Tensor tensor) {
+  public Tensor apply(@Nonnull Tensor tensor) {
     if (!RefArrays.equals(dimensions, tensor.getDimensions()))
       throw new IllegalArgumentException(
           RefArrays.toString(dimensions) + " != " + RefArrays.toString(tensor.getDimensions()));
@@ -81,7 +87,10 @@ public class TensorOperator extends ReferenceCountingBase implements RefOperator
     super._free();
   }
 
-  public @Override @SuppressWarnings("unused") TensorOperator addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  TensorOperator addRef() {
     return (TensorOperator) super.addRef();
   }
 

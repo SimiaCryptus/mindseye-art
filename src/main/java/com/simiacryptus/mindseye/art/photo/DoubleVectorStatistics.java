@@ -19,9 +19,9 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.*;
 
+import javax.annotation.Nonnull;
 import java.util.DoubleSummaryStatistics;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -31,7 +31,9 @@ import java.util.stream.Collector;
 
 public class DoubleVectorStatistics implements RefConsumer<double[]> {
 
+  @Nonnull
   final DoubleSummaryStatistics[] firstOrder;
+  @Nonnull
   final DoubleSummaryStatistics[] secondOrder;
 
   public DoubleVectorStatistics(int length) {
@@ -41,18 +43,22 @@ public class DoubleVectorStatistics implements RefConsumer<double[]> {
         .toArray(i -> new DoubleSummaryStatistics[i]);
   }
 
+  @Nonnull
   public static Collector<double[], DoubleVectorStatistics, DoubleVectorStatistics> collector(int dims) {
     return new Collector<double[], DoubleVectorStatistics, DoubleVectorStatistics>() {
+      @Nonnull
       @Override
       public Supplier<DoubleVectorStatistics> supplier() {
         return () -> new DoubleVectorStatistics(dims);
       }
 
+      @Nonnull
       @Override
       public BiConsumer<DoubleVectorStatistics, double[]> accumulator() {
         return (a, b) -> a.accept(b);
       }
 
+      @Nonnull
       @Override
       public BinaryOperator<DoubleVectorStatistics> combiner() {
         return (a, b) -> {
@@ -63,6 +69,7 @@ public class DoubleVectorStatistics implements RefConsumer<double[]> {
         };
       }
 
+      @Nonnull
       @Override
       public Function<DoubleVectorStatistics, DoubleVectorStatistics> finisher() {
         return x -> x;
@@ -76,13 +83,13 @@ public class DoubleVectorStatistics implements RefConsumer<double[]> {
   }
 
   @Override
-  public void accept(double[] doubles) {
+  public void accept(@Nonnull double[] doubles) {
     assert firstOrder.length == doubles.length;
     RefIntStream.range(0, doubles.length).forEach(i -> firstOrder[i].accept(doubles[i]));
     RefIntStream.range(0, doubles.length).forEach(i -> secondOrder[i].accept(doubles[i] * doubles[i]));
   }
 
-  public void combine(DoubleVectorStatistics colorStats) {
+  public void combine(@Nonnull DoubleVectorStatistics colorStats) {
     assert firstOrder.length == colorStats.firstOrder.length;
     RefIntStream.range(0, firstOrder.length).forEach(i -> firstOrder[i].combine(colorStats.firstOrder[i]));
     RefIntStream.range(0, secondOrder.length).forEach(i -> secondOrder[i].combine(colorStats.secondOrder[i]));

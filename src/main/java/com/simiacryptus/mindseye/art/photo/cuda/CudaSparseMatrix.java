@@ -20,15 +20,15 @@
 package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.ref.lang.LazyVal;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcusolver.cusolverSpHandle;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 import static jcuda.jcusolver.JCusolverSp.cusolverSpCreate;
@@ -45,20 +45,21 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
     this.matrix = matrix;
   }
 
-  @NotNull
+  @Nonnull
   public static cusparseHandle newSparseHandle() {
     cusparseHandle handle = new cusparseHandle();
     cusparseCreate(handle);
     return handle;
   }
 
+  @Nonnull
   public static cusolverSpHandle newSolverHandle() {
     cusolverSpHandle handle = new cusolverSpHandle();
     cusolverSpCreate(handle);
     return handle;
   }
 
-  @NotNull
+  @Nonnull
   public static cusparseMatDescr descriptor(int matType, int indexBase) {
     cusparseMatDescr descra = new cusparseMatDescr();
     cusparseCreateMatDescr(descra);
@@ -67,30 +68,34 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
     return descra;
   }
 
-  @NotNull
-  public static Pointer toDevice(float[] values) {
+  @Nonnull
+  public static Pointer toDevice(@Nonnull float[] values) {
     Pointer cooVal = new Pointer();
     cudaMalloc(cooVal, values.length * Sizeof.FLOAT);
     cudaMemcpy(cooVal, Pointer.to(values), values.length * Sizeof.FLOAT, cudaMemcpyHostToDevice);
     return cooVal;
   }
 
-  @NotNull
-  public static Pointer toDevice(int[] values) {
+  @Nonnull
+  public static Pointer toDevice(@Nonnull int[] values) {
     Pointer cooRowIndex = new Pointer();
     cudaMalloc(cooRowIndex, values.length * Sizeof.INT);
     cudaMemcpy(cooRowIndex, Pointer.to(values), values.length * Sizeof.INT, cudaMemcpyHostToDevice);
     return cooRowIndex;
   }
 
-  public static @SuppressWarnings("unused") CudaSparseMatrix[] addRefs(CudaSparseMatrix[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  CudaSparseMatrix[] addRefs(@Nullable CudaSparseMatrix[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(CudaSparseMatrix::addRef)
         .toArray((x) -> new CudaSparseMatrix[x]);
   }
 
-  public static @SuppressWarnings("unused") CudaSparseMatrix[][] addRefs(CudaSparseMatrix[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  CudaSparseMatrix[][] addRefs(@Nullable CudaSparseMatrix[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(CudaSparseMatrix::addRefs)
@@ -98,26 +103,33 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
   }
 
   @Override
-  @NotNull
+  @Nonnull
   public CudaSparseMatrix.GpuCopy build() {
     return new GpuCopy(this);
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") CudaSparseMatrix addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  CudaSparseMatrix addRef() {
     return (CudaSparseMatrix) super.addRef();
   }
 
   public static final class GpuCopy extends ReferenceCountingBase {
+    @Nonnull
     public final Pointer rowIndices;
+    @Nonnull
     public final Pointer columnIndices;
+    @Nonnull
     public final Pointer values;
     public final SparseMatrixFloat matrix;
     public final int rows;
 
-    public GpuCopy(CudaSparseMatrix cudaCoo) {
+    public GpuCopy(@Nonnull CudaSparseMatrix cudaCoo) {
       this.matrix = cudaCoo.matrix;
       rows = matrix.rows;
       rowIndices = toDevice(matrix.rowIndices);
@@ -125,12 +137,15 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
       values = toDevice(matrix.values);
     }
 
-    public static @SuppressWarnings("unused") GpuCopy[] addRefs(GpuCopy[] array) {
+    @Nullable
+    public static @SuppressWarnings("unused")
+    GpuCopy[] addRefs(@Nullable GpuCopy[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(GpuCopy::addRef).toArray((x) -> new GpuCopy[x]);
     }
 
+    @Nonnull
     public Pointer csrRows(cusparseHandle handle) {
       Pointer csrRowPtr = new Pointer();
       cudaMalloc(csrRowPtr, (rows + 1) * Sizeof.INT);
@@ -145,7 +160,10 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
       cudaFree(gpuCopy.values);
     }
 
-    public @Override @SuppressWarnings("unused") GpuCopy addRef() {
+    @Nonnull
+    public @Override
+    @SuppressWarnings("unused")
+    GpuCopy addRef() {
       return (GpuCopy) super.addRef();
     }
 

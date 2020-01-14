@@ -33,16 +33,16 @@ import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefStream;
 import com.simiacryptus.ref.wrappers.RefString;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -59,6 +59,7 @@ public class MomentMatcher implements VisualModifier {
     return covCoeff;
   }
 
+  @Nonnull
   public MomentMatcher setCovCoeff(double covCoeff) {
     this.covCoeff = covCoeff;
     return this;
@@ -68,6 +69,7 @@ public class MomentMatcher implements VisualModifier {
     return posCoeff;
   }
 
+  @Nonnull
   public MomentMatcher setPosCoeff(double posCoeff) {
     this.posCoeff = posCoeff;
     return this;
@@ -77,6 +79,7 @@ public class MomentMatcher implements VisualModifier {
     return precision;
   }
 
+  @Nonnull
   public MomentMatcher setPrecision(Precision precision) {
     this.precision = precision;
     return this;
@@ -86,6 +89,7 @@ public class MomentMatcher implements VisualModifier {
     return scaleCoeff;
   }
 
+  @Nonnull
   public MomentMatcher setScaleCoeff(double scaleCoeff) {
     this.scaleCoeff = scaleCoeff;
     return this;
@@ -95,23 +99,24 @@ public class MomentMatcher implements VisualModifier {
     return tileSize;
   }
 
+  @Nonnull
   public MomentMatcher setTileSize(int tileSize) {
     this.tileSize = tileSize;
     return this;
   }
 
-  @NotNull
-  public static Layer lossSq(Precision precision, Tensor target) {
+  @Nonnull
+  public static Layer lossSq(Precision precision, @Nonnull Tensor target) {
     double rms = target.rms();
     final Tensor bias = target.scale(0 == rms ? 1 : -Math.pow(rms, -1));
-    final Layer[] layers = new Layer[] { new LinearActivationLayer().setScale(0 == rms ? 1 : Math.pow(rms, -1)),
+    final Layer[] layers = new Layer[]{new LinearActivationLayer().setScale(0 == rms ? 1 : Math.pow(rms, -1)),
         new ImgBandBiasLayer(bias).setPrecision(precision), new SquareActivationLayer().setPrecision(precision),
-        new AvgReducerLayer().setPrecision(precision) };
+        new AvgReducerLayer().setPrecision(precision)};
     return PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", 0 == rms ? 1 : rms));
   }
 
-  @NotNull
-  public static Tensor sum(RefStream<Tensor> tensorStream) {
+  @Nonnull
+  public static Tensor sum(@Nonnull RefStream<Tensor> tensorStream) {
     return tensorStream.reduce((a, b) -> {
       a.addAndFree(b);
       b.freeRef();
@@ -119,8 +124,8 @@ public class MomentMatcher implements VisualModifier {
     }).orElse(null);
   }
 
-  @NotNull
-  public static UUID getAppendUUID(PipelineNetwork network, Class<GramianLayer> layerClass) {
+  @Nonnull
+  public static UUID getAppendUUID(@Nonnull PipelineNetwork network, @Nonnull Class<GramianLayer> layerClass) {
     DAGNode head = network.getHead();
     Layer layer = head.getLayer();
     head.freeRef();
@@ -129,8 +134,10 @@ public class MomentMatcher implements VisualModifier {
     return UUID.nameUUIDFromBytes((layer.getId().toString() + layerClass.getName()).getBytes());
   }
 
+  @Nonnull
   public static Tensor transform(PipelineNetwork network, Tensor in, Precision precision) {
     network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
+    assert network != null;
     network.visitLayers(layer -> {
       if (layer instanceof ImgBandBiasLayer) {
         ((ImgBandBiasLayer) layer).setWeights(i -> 0);
@@ -143,15 +150,17 @@ public class MomentMatcher implements VisualModifier {
     return tensor;
   }
 
-  @NotNull
-  public static PipelineNetwork gateNetwork(PipelineNetwork network, Tensor finalMask) {
+  @Nonnull
+  public static PipelineNetwork gateNetwork(@Nonnull PipelineNetwork network, Tensor finalMask) {
     final PipelineNetwork copyPipeline = network.copyPipeline();
+    assert copyPipeline != null;
     final DAGNode head = copyPipeline.getHead();
     copyPipeline.add(new ProductLayer(), head, copyPipeline.constValue(finalMask)).freeRef();
     return copyPipeline;
   }
 
-  public static Tensor toMask(Tensor tensor) {
+  @Nonnull
+  public static Tensor toMask(@Nonnull Tensor tensor) {
     return tensor.mapPixels(pixel -> {
       if (RefArrays.stream(pixel).filter(x -> x != 0).findFirst().isPresent()) {
         return RefArrays.stream(pixel).map(x -> 1).toArray();
@@ -161,7 +170,7 @@ public class MomentMatcher implements VisualModifier {
     });
   }
 
-  public static boolean test(PipelineNetwork network, Tensor... images) {
+  public static boolean test(@Nonnull PipelineNetwork network, @Nonnull Tensor... images) {
     if (images.length > 1)
       return RefUtil.get(RefArrays.stream(images).map(x -> test(network, x)).reduce((a, b) -> a && b));
     try {
@@ -173,7 +182,8 @@ public class MomentMatcher implements VisualModifier {
     }
   }
 
-  protected static Tensor eval(int pixels, PipelineNetwork network, int tileSize, double power, Tensor[] image) {
+  @Nonnull
+  protected static Tensor eval(int pixels, @Nonnull PipelineNetwork network, int tileSize, double power, @Nonnull Tensor[] image) {
     if (image.length <= 0) {
       throw new IllegalArgumentException("image.length <= 0");
     }
@@ -204,60 +214,58 @@ public class MomentMatcher implements VisualModifier {
     });
   }
 
+  @Nonnull
   @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+  public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
+    assert network != null;
     network = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
 
+    assert network != null;
     Tensor evalRoot = avg(network, getPixels(visualModifierParameters.style), visualModifierParameters.style);
+    assert evalRoot != null;
     double sumSq = evalRoot.sumSq();
     evalRoot.freeRef();
     log.info(RefString.format("Adjust for %s : %s", network.getName(), sumSq));
     final Layer nextHead = new ScaleLayer(0 == sumSq ? 1 : 1.0 / sumSq);
     network.add(nextHead).freeRef();
 
-    if (null != visualModifierParameters.mask) {
-      final Tensor boolMask = toMask(transform(network, visualModifierParameters.mask, getPrecision()));
-      log.info("Mask: " + RefArrays.toString(boolMask.getDimensions()));
-      final double maskFactor = RefArrays.stream(boolMask.getData()).average().getAsDouble();
-      PipelineNetwork maskedNetwork = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
-      assert test(maskedNetwork, visualModifierParameters.mask);
-      final MomentParams params = getMomentParams(network, maskFactor, visualModifierParameters.style);
-      network.freeRef();
-      assert test(maskedNetwork, visualModifierParameters.mask);
-      final DAGNode head = maskedNetwork.getHead();
-      maskedNetwork.add(new ProductLayer(), head, maskedNetwork.constValue(boolMask)).freeRef();
-      assert test(maskedNetwork, visualModifierParameters.mask);
-      final MomentParams nodes = getMomentNodes(maskedNetwork, maskFactor);
-      assert test(maskedNetwork, visualModifierParameters.mask);
-      final MomentParams momentParams = new MomentParams(nodes.avgNode.addRef(), params.avgValue.addRef(),
-          nodes.rmsNode.addRef(), params.rmsValue.addRef(), nodes.covNode.addRef(), params.covValue.addRef(),
-          MomentMatcher.this);
-      params.freeRef();
-      nodes.freeRef();
-      momentParams.addLoss(maskedNetwork).freeRef();
-      assert test(maskedNetwork, visualModifierParameters.mask);
-      visualModifierParameters.freeRef();
-      MultiPrecision.setPrecision(maskedNetwork, getPrecision());
-      return (PipelineNetwork) maskedNetwork.freeze();
-    } else {
-      getMomentParams(network, 1.0, visualModifierParameters.style).addLoss(network).freeRef();
-      visualModifierParameters.freeRef();
-      MultiPrecision.setPrecision(network, getPrecision());
-      return (PipelineNetwork) network.freeze();
-    }
+    final Tensor boolMask = toMask(transform(network, visualModifierParameters.mask, getPrecision()));
+    log.info("Mask: " + RefArrays.toString(boolMask.getDimensions()));
+    final double maskFactor = RefArrays.stream(boolMask.getData()).average().getAsDouble();
+    PipelineNetwork maskedNetwork = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
+    assert maskedNetwork != null;
+    assert test(maskedNetwork, visualModifierParameters.mask);
+    final MomentParams params = getMomentParams(network, maskFactor, visualModifierParameters.style);
+    network.freeRef();
+    assert test(maskedNetwork, visualModifierParameters.mask);
+    final DAGNode head = maskedNetwork.getHead();
+    maskedNetwork.add(new ProductLayer(), head, maskedNetwork.constValue(boolMask)).freeRef();
+    assert test(maskedNetwork, visualModifierParameters.mask);
+    final MomentParams nodes = getMomentNodes(maskedNetwork, maskFactor);
+    assert test(maskedNetwork, visualModifierParameters.mask);
+    final MomentParams momentParams = new MomentParams(nodes.avgNode.addRef(), params.avgValue.addRef(),
+        nodes.rmsNode.addRef(), params.rmsValue.addRef(), nodes.covNode.addRef(), params.covValue.addRef(),
+        MomentMatcher.this);
+    params.freeRef();
+    nodes.freeRef();
+    momentParams.addLoss(maskedNetwork).freeRef();
+    assert test(maskedNetwork, visualModifierParameters.mask);
+    visualModifierParameters.freeRef();
+    MultiPrecision.setPrecision(maskedNetwork, getPrecision());
+    return (PipelineNetwork) maskedNetwork.freeze();
 
   }
 
-  public int getPixels(Tensor[] images) {
+  public int getPixels(@Nonnull Tensor[] images) {
     return Math.max(1, RefArrays.stream(images).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
     }).sum());
   }
 
-  @NotNull
-  public MomentMatcher.MomentParams getMomentParams(PipelineNetwork network, double maskFactor, Tensor... images) {
+  @Nonnull
+  public MomentMatcher.MomentParams getMomentParams(@Nonnull PipelineNetwork network, double maskFactor, @Nonnull Tensor... images) {
     int pixels = getPixels(images);
     DAGNode mainIn = network.getHead();
     InnerNode avgNode = network.add(new BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef()); // Scale the average metrics by 1/x
@@ -282,8 +290,8 @@ public class MomentMatcher implements VisualModifier {
     return new MomentParams(avgNode, avgValue, rmsNode, rmsValue, covNode, covValue, MomentMatcher.this);
   }
 
-  @NotNull
-  public MomentMatcher.MomentParams getMomentNodes(PipelineNetwork network, double maskFactor) {
+  @Nonnull
+  public MomentMatcher.MomentParams getMomentNodes(@Nonnull PipelineNetwork network, double maskFactor) {
     DAGNode mainIn = network.getHead();
     InnerNode avgNode = network.add(new BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef()); // Scale the average metrics by 1/x
 
@@ -304,7 +312,8 @@ public class MomentMatcher implements VisualModifier {
     return new MomentParams(avgNode, null, rmsNode, null, covNode, null, MomentMatcher.this);
   }
 
-  protected Tensor avg(PipelineNetwork network, int pixels, Tensor[] image) {
+  @Nullable
+  protected Tensor avg(@Nonnull PipelineNetwork network, int pixels, @Nonnull Tensor[] image) {
     //    return eval(pixels, network, getTileSize(), 1.0, image);
     PipelineNetwork avgNet = PipelineNetwork.build(1, network.addRef(), new BandAvgReducerLayer());
     Tensor evalRoot = eval(pixels, avgNet, getTileSize(), 1.0, image);
@@ -322,7 +331,7 @@ public class MomentMatcher implements VisualModifier {
     private final MomentMatcher parent;
 
     private MomentParams(InnerNode avgNode, Tensor avgValue, InnerNode rmsNode, Tensor rmsValue, InnerNode covNode,
-        Tensor covValue, MomentMatcher parent) {
+                         Tensor covValue, MomentMatcher parent) {
       this.parent = parent;
       this.avgNode = avgNode;
       this.avgValue = avgValue;
@@ -332,7 +341,9 @@ public class MomentMatcher implements VisualModifier {
       this.covValue = covValue;
     }
 
-    public static @SuppressWarnings("unused") MomentParams[] addRefs(MomentParams[] array) {
+    @Nullable
+    public static @SuppressWarnings("unused")
+    MomentParams[] addRefs(@Nullable MomentParams[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(MomentParams::addRef)
@@ -355,7 +366,8 @@ public class MomentMatcher implements VisualModifier {
       super._free();
     }
 
-    public InnerNode addLoss(PipelineNetwork network) {
+    @Nullable
+    public InnerNode addLoss(@Nonnull PipelineNetwork network) {
       final InnerNode wrap = network.add(new SumInputsLayer().setPrecision(parent.getPrecision()),
           network.add(new ScaleLayer(parent.getPosCoeff()).setPrecision(parent.getPrecision()),
               network.add(lossSq(parent.getPrecision(), avgValue), avgNode.addRef())),
@@ -367,7 +379,10 @@ public class MomentMatcher implements VisualModifier {
       return wrap;
     }
 
-    public @Override @SuppressWarnings("unused") MomentParams addRef() {
+    @Nonnull
+    public @Override
+    @SuppressWarnings("unused")
+    MomentParams addRef() {
       return (MomentParams) super.addRef();
     }
 

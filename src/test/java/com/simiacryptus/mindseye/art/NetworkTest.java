@@ -32,10 +32,11 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.notebook.NullNotebookOutput;
-import com.simiacryptus.ref.lang.RefAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Random;
@@ -57,13 +58,17 @@ public class NetworkTest extends LayerTestBase {
     testingBatchSize = 1;
   }
 
-  public static @SuppressWarnings("unused") NetworkTest[] addRefs(NetworkTest[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  NetworkTest[] addRefs(@Nullable NetworkTest[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRef).toArray((x) -> new NetworkTest[x]);
   }
 
-  public static @SuppressWarnings("unused") NetworkTest[][] addRefs(NetworkTest[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  NetworkTest[][] addRefs(@Nullable NetworkTest[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRefs).toArray((x) -> new NetworkTest[x][]);
@@ -81,20 +86,26 @@ public class NetworkTest extends LayerTestBase {
     return dagNetwork;
   }
 
+  @Nonnull
   @Override
   public int[][] getSmallDims(Random random) {
-    return new int[][] { { contentImage.getWidth(), contentImage.getHeight(), 3 } };
+    return new int[][]{{contentImage.getWidth(), contentImage.getHeight(), 3}};
   }
 
+  @Nonnull
   @Override
   public Layer getLayer(int[][] inputSize, Random random) {
     return layer.copy();
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") NetworkTest addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  NetworkTest addRef() {
     return (NetworkTest) super.addRef();
   }
 }

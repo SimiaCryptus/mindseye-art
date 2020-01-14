@@ -22,31 +22,33 @@ package com.simiacryptus.mindseye.art.photo.cuda;
 import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.*;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.jblas.Eigen;
 import org.jblas.FloatMatrix;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.function.DoubleBinaryOperator;
 
 import static java.util.Arrays.binarySearch;
 
 public class SparseMatrixFloat {
+  @Nonnull
   public final int[] rowIndices;
+  @Nonnull
   public final int[] colIndices;
+  @Nonnull
   public final float[] values;
   public final int rows;
   public final int cols;
 
-  public SparseMatrixFloat(int[] rowIndices, int[] colIndices, float[] values) {
+  public SparseMatrixFloat(@Nonnull int[] rowIndices, @Nonnull int[] colIndices, @Nonnull float[] values) {
     this(rowIndices, colIndices, values, RefArrays.stream(rowIndices).max().getAsInt() + 1,
         RefArrays.stream(colIndices).max().getAsInt() + 1);
   }
 
-  public SparseMatrixFloat(int[] rowIndices, int[] colIndices, float[] values, int rows, int cols) {
+  public SparseMatrixFloat(@Nonnull int[] rowIndices, @Nonnull int[] colIndices, @Nonnull float[] values, int rows, int cols) {
     this.rows = rows;
     this.cols = cols;
     assert rowIndices.length == colIndices.length;
@@ -73,6 +75,7 @@ public class SparseMatrixFloat {
     return this.rowIndices.length;
   }
 
+  @Nonnull
   public double[] getValues() {
     final double[] doubles = new double[values.length];
     for (int i = 0; i < values.length; i++) {
@@ -81,11 +84,12 @@ public class SparseMatrixFloat {
     return doubles;
   }
 
-  public static double[] toDouble(float[] data) {
+  public static double[] toDouble(@Nonnull float[] data) {
     return RefIntStream.range(0, data.length).mapToDouble(x -> data[x]).toArray();
   }
 
-  public static float[] toFloat(double[] doubles) {
+  @Nonnull
+  public static float[] toFloat(@Nonnull double[] doubles) {
     final float[] floats = new float[doubles.length];
     for (int i = 0; i < floats.length; i++) {
       floats[i] = (float) doubles[i];
@@ -93,19 +97,20 @@ public class SparseMatrixFloat {
     return floats;
   }
 
-  public static long[] reorder(long[] data, int[] index) {
+  public static long[] reorder(long[] data, @Nonnull int[] index) {
     return RefIntStream.range(0, index.length).mapToLong(i -> data[index[i]]).toArray();
   }
 
-  public static int[] reorder(int[] data, int[] index) {
+  public static int[] reorder(int[] data, @Nonnull int[] index) {
     return RefIntStream.range(0, index.length).map(i -> data[index[i]]).toArray();
   }
 
-  public static double[] reorder(double[] data, int[] index) {
+  public static double[] reorder(double[] data, @Nonnull int[] index) {
     return RefIntStream.range(0, index.length).mapToDouble(i -> data[index[i]]).toArray();
   }
 
-  public static float[] reorder(float[] data, int[] index) {
+  @Nonnull
+  public static float[] reorder(float[] data, @Nonnull int[] index) {
     float[] copy = new float[10];
     int count = 0;
     for (int i = 0; i < index.length; i++) {
@@ -118,31 +123,32 @@ public class SparseMatrixFloat {
     return copy;
   }
 
-  public static int[] index(long[] data) {
+  public static int[] index(@Nonnull long[] data) {
     return RefIntStream.range(0, data.length).mapToObj(x -> x).sorted(RefComparator.comparing(i -> data[i]))
         .mapToInt(x -> x).toArray();
   }
 
-  public static int[] index(int[] data) {
+  public static int[] index(@Nonnull int[] data) {
     return index(data, RefComparator.comparingInt(i -> data[i]));
   }
 
-  public static int[] index(int[] data, RefComparator<Integer> comparator) {
+  public static int[] index(@Nonnull int[] data, @Nonnull RefComparator<Integer> comparator) {
     return RefIntStream.range(0, data.length).mapToObj(x -> x).sorted(comparator).mapToInt(x -> x).toArray();
   }
 
-  public static int[] filterValues(int[] base, int[] filter) {
+  public static int[] filterValues(@Nonnull int[] base, @Nonnull int[] filter) {
     return RefArrays.stream(base).filter(i -> 0 > binarySearch(filter, i)).toArray();
   }
 
-  public static int[] zeros(float[] values) {
+  public static int[] zeros(@Nonnull float[] values) {
     return zeros(values, 1e-18);
   }
 
-  public static int[] zeros(float[] values, double tol) {
+  public static int[] zeros(@Nonnull float[] values, double tol) {
     return RefIntStream.range(0, values.length).filter(i -> Math.abs(values[i]) < tol).sorted().toArray();
   }
 
+  @Nonnull
   public static SparseMatrixFloat identity(int size) {
     final float[] values = new float[size];
     RefArrays.fill(values, 1.0f);
@@ -150,7 +156,7 @@ public class SparseMatrixFloat {
         size, size).sortAndPrune();
   }
 
-  public static int binarySearch_first(int[] ints, int row) {
+  public static int binarySearch_first(@Nonnull int[] ints, int row) {
     final int search = binarySearch(ints, row);
     if (search <= 0)
       return search;
@@ -158,7 +164,7 @@ public class SparseMatrixFloat {
         .orElse(-1) + 1;
   }
 
-  public static int binarySearch_first(long[] ints, long row) {
+  public static int binarySearch_first(@Nonnull long[] ints, long row) {
     final int search = binarySearch(ints, row);
     if (search <= 0)
       return search;
@@ -166,12 +172,13 @@ public class SparseMatrixFloat {
         .orElse(-1) + 1;
   }
 
-  public static int[] project(int[] assignments, int[] projection) {
+  public static int[] project(@Nonnull int[] assignments, int[] projection) {
     return RefArrays.stream(assignments).map(i -> projection[i]).toArray();
   }
 
-  public SparseMatrixFloat recalculateConnectionWeights(RasterTopology topology, Tensor content, int[] pixelMap,
-      double scale, double mixing, double minValue) {
+  @Nonnull
+  public SparseMatrixFloat recalculateConnectionWeights(@Nonnull RasterTopology topology, @Nonnull Tensor content, @Nonnull int[] pixelMap,
+                                                        double scale, double mixing, double minValue) {
     final MultivariateFrameOfReference globalFOR = new MultivariateFrameOfReference(() -> content.getPixelStream(), 3);
     final RefMap<Integer, MultivariateFrameOfReference> islandDistributions = RefIntStream.range(0, pixelMap.length)
         .mapToObj(x -> x).collect(RefCollectors.groupingBy(x -> pixelMap[x], RefCollectors.toList())).entrySet()
@@ -184,6 +191,8 @@ public class SparseMatrixFloat {
         toFloat(RefIntStream.range(0, this.rowIndices.length).mapToDouble(i -> {
           final MultivariateFrameOfReference a = islandDistributions.get(this.rowIndices[i]);
           final MultivariateFrameOfReference b = islandDistributions.get(this.colIndices[i]);
+          assert b != null;
+          assert a != null;
           double dist = a.dist(b);
           final double exp = Math.exp(-dist / scale);
           if (!Double.isFinite(exp) || exp < minValue)
@@ -192,7 +201,7 @@ public class SparseMatrixFloat {
         }).toArray()), this.rows, this.cols).sortAndPrune();
   }
 
-  @NotNull
+  @Nonnull
   public Array2DRowRealMatrix toApacheMatrix() {
     Array2DRowRealMatrix matrix = new Array2DRowRealMatrix(rows, cols);
     for (int i = 0; i < values.length; i++) {
@@ -212,6 +221,7 @@ public class SparseMatrixFloat {
         .collect(RefCollectors.toMap(i -> eigensys[0].getColumn(i).data, i -> realEigenvalues[i]));
   }
 
+  @Nonnull
   public FloatMatrix toJBLAS() {
     FloatMatrix matrix = new FloatMatrix(rows, cols);
     for (int i = 0; i < values.length; i++) {
@@ -220,12 +230,13 @@ public class SparseMatrixFloat {
     return matrix;
   }
 
+  @Nonnull
   public SparseMatrixFloat degreeMatrix() {
-    assert null != assertSymmetric();
     return new SparseMatrixFloat(RefIntStream.range(0, rows).toArray(), RefIntStream.range(0, rows).toArray(),
         toFloat(degree()), rows, cols);
   }
 
+  @Nonnull
   public SparseMatrixFloat project(int[] projection) {
     final int[] rowIndices = project(this.rowIndices, projection);
     final int[] colIndices = project(this.colIndices, projection);
@@ -237,7 +248,8 @@ public class SparseMatrixFloat {
     return RefArrays.stream(rowIndices).distinct().sorted().toArray();
   }
 
-  public SparseMatrixFloat select(int[] projection) {
+  @Nonnull
+  public SparseMatrixFloat select(@Nonnull int[] projection) {
     final RefMap<Integer, Integer> reverseIndex = RefIntStream.range(0, projection.length).mapToObj(x -> x)
         .collect(RefCollectors.toMap(x -> projection[x], x -> x));
     final int[] indices = RefIntStream.range(0, this.rowIndices.length)
@@ -255,6 +267,7 @@ public class SparseMatrixFloat {
         RefArrays.stream(colIndices).max().getAsInt() + 1).sortAndPrune().aggregate();
   }
 
+  @Nonnull
   public SparseMatrixFloat sortAndPrune() {
     assert rowIndices.length == colIndices.length;
     assert rowIndices.length == values.length;
@@ -267,14 +280,17 @@ public class SparseMatrixFloat {
         reorder(values, sortedAndFiltered), rows, cols);
   }
 
+  @Nonnull
   public SparseMatrixFloat copy() {
     return new SparseMatrixFloat(rowIndices, colIndices, values, rows, cols).sortAndPrune();
   }
 
+  @Nonnull
   public SparseMatrixFloat transpose() {
     return new SparseMatrixFloat(colIndices, rowIndices, values, cols, rows).sortAndPrune();
   }
 
+  @Nonnull
   public SparseMatrixFloat scale(double alpha) {
     final float[] values = new float[this.values.length];
     for (int i = 0; i < values.length; i++) {
@@ -283,12 +299,13 @@ public class SparseMatrixFloat {
     return new SparseMatrixFloat(rowIndices, colIndices, values, rows, cols).sortAndPrune();
   }
 
-  public SparseMatrixFloat minus(SparseMatrixFloat right) {
+  @Nonnull
+  public SparseMatrixFloat minus(@Nonnull SparseMatrixFloat right) {
     return binaryOp(right, (a, b) -> a - b);
   }
 
-  @NotNull
-  public SparseMatrixFloat binaryOp(SparseMatrixFloat right, DoubleBinaryOperator fn) {
+  @Nonnull
+  public SparseMatrixFloat binaryOp(@Nonnull SparseMatrixFloat right, @Nonnull DoubleBinaryOperator fn) {
     assert right.rows == rows : right.rows + " != " + rows;
     assert right.cols == cols : right.cols + " != " + cols;
 
@@ -328,10 +345,11 @@ public class SparseMatrixFloat {
         }).toArray()), rows, cols).sortAndPrune();
   }
 
+  @Nonnull
   public int[] getCols(int row) {
     final int begin = rowStart(row);
     if (begin < 0)
-      return new int[] {};
+      return new int[]{};
     int end = getEnd(row, begin);
     return RefArrays.copyOfRange(colIndices, begin, end);
   }
@@ -346,10 +364,11 @@ public class SparseMatrixFloat {
     return binarySearch_first(ints, row);
   }
 
+  @Nonnull
   public float[] getVals(int row) {
     final int begin = rowStart(row);
     if (begin < 0)
-      return new float[] {};
+      return new float[]{};
     int end = getEnd(row, begin);
     return RefArrays.copyOfRange(values, begin, end);
   }
@@ -360,11 +379,11 @@ public class SparseMatrixFloat {
     if (begin < 0 || begin >= this.rowIndices.length)
       return 0;
     final int nnz = this.rowIndices.length;
-    assert begin < nnz;
     int end = RefIntStream.range(begin, nnz).filter(i -> this.rowIndices[i] != row).findFirst().orElse(nnz);
     return RefIntStream.range(begin, end).filter(i -> colIndices[i] != row).mapToDouble(i -> values[i]).sum();
   }
 
+  @Nonnull
   public SparseMatrixFloat assertSymmetric() {
     assert RefArrays.stream(this.activeRows()).map(x -> this.getCols(x).length).sum() == this.getNumNonZeros();
     assert RefArrays.stream(this.activeRows()).map(x -> this.getVals(x).length).sum() == this.getNumNonZeros();
@@ -372,10 +391,12 @@ public class SparseMatrixFloat {
     return this;
   }
 
+  @Nonnull
   public SparseMatrixFloat identity() {
     return SparseMatrixFloat.identity(rows);
   }
 
+  @Nonnull
   public SparseMatrixFloat symmetricNormal() {
     double[] degree = degree();
     final float[] newValues = new float[values.length];
@@ -385,6 +406,7 @@ public class SparseMatrixFloat {
     return new SparseMatrixFloat(rowIndices, colIndices, newValues, rows, cols);
   }
 
+  @Nonnull
   public SparseMatrixFloat diagonal() {
     final int[] rowIndices = new int[this.rowIndices.length];
     final int[] colIndices = new int[this.colIndices.length];
@@ -404,6 +426,7 @@ public class SparseMatrixFloat {
         RefArrays.copyOf(values, targetIndex), rows, cols);
   }
 
+  @Nonnull
   public SparseMatrixFloat filterDiagonal() {
     final int[] rowIndices = new int[this.rowIndices.length];
     final int[] colIndices = new int[this.colIndices.length];
@@ -423,6 +446,7 @@ public class SparseMatrixFloat {
         RefArrays.copyOf(values, targetIndex), rows, cols);
   }
 
+  @Nonnull
   public double[] degree() {
     double[] degree = new double[rows];
     for (int i = 0; i < values.length; i++) {
@@ -431,6 +455,7 @@ public class SparseMatrixFloat {
     return degree;
   }
 
+  @Nonnull
   protected SparseMatrixFloat aggregate() {
     assert rowIndices.length == colIndices.length;
     assert rowIndices.length == values.length;
@@ -454,7 +479,7 @@ public class SparseMatrixFloat {
         RefArrays.copyOfRange(colIndices_copy, 0, j), RefArrays.copyOfRange(values_copy, 0, j), rows, cols);
   }
 
-  private boolean equals(SparseMatrixFloat other, double tolerance) {
+  private boolean equals(@Nonnull SparseMatrixFloat other, double tolerance) {
     if (rowIndices.length != other.rowIndices.length) {
       return false;
     }

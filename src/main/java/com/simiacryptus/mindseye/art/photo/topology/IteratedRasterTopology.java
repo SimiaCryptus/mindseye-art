@@ -19,11 +19,12 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
+
+import javax.annotation.Nonnull;
 
 public class IteratedRasterTopology implements RasterTopology {
   private final RasterTopology inner;
@@ -43,6 +44,7 @@ public class IteratedRasterTopology implements RasterTopology {
     return iterations;
   }
 
+  @Nonnull
   public IteratedRasterTopology setIterations(int iterations) {
     this.iterations = iterations;
     return this;

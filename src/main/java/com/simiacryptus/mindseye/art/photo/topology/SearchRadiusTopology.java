@@ -20,9 +20,10 @@
 package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.*;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,7 +36,7 @@ public class SearchRadiusTopology extends ContentTopology {
   private boolean spatialPriority = false;
   private boolean selfRef = false;
 
-  public SearchRadiusTopology(Tensor content) {
+  public SearchRadiusTopology(@Nonnull Tensor content) {
     super(content);
   }
 
@@ -43,6 +44,7 @@ public class SearchRadiusTopology extends ContentTopology {
     return initialRadius;
   }
 
+  @Nonnull
   public SearchRadiusTopology setInitialRadius(int initialRadius) {
     this.initialRadius = initialRadius;
     return this;
@@ -52,6 +54,7 @@ public class SearchRadiusTopology extends ContentTopology {
     return maxChromaDist;
   }
 
+  @Nonnull
   public SearchRadiusTopology setMaxChromaDist(double maxChromaDist) {
     this.maxChromaDist = maxChromaDist;
     return this;
@@ -61,6 +64,7 @@ public class SearchRadiusTopology extends ContentTopology {
     return maxSpatialDist;
   }
 
+  @Nonnull
   public SearchRadiusTopology setMaxSpatialDist(double maxSpatialDist) {
     this.maxSpatialDist = maxSpatialDist;
     return this;
@@ -70,6 +74,7 @@ public class SearchRadiusTopology extends ContentTopology {
     return neighborhoodSize;
   }
 
+  @Nonnull
   public SearchRadiusTopology setNeighborhoodSize(int neighborhoodSize) {
     this.neighborhoodSize = neighborhoodSize;
     return this;
@@ -79,6 +84,7 @@ public class SearchRadiusTopology extends ContentTopology {
     return selfRef;
   }
 
+  @Nonnull
   public SearchRadiusTopology setSelfRef(boolean selfRef) {
     this.selfRef = selfRef;
     return this;
@@ -88,6 +94,7 @@ public class SearchRadiusTopology extends ContentTopology {
     return spatialPriority;
   }
 
+  @Nonnull
   public SearchRadiusTopology setSpatialPriority(boolean spatialPriority) {
     this.spatialPriority = spatialPriority;
     return this;
@@ -97,16 +104,19 @@ public class SearchRadiusTopology extends ContentTopology {
     return verbose;
   }
 
+  @Nonnull
   public SearchRadiusTopology setVerbose(boolean verbose) {
     this.verbose = verbose;
     return this;
   }
 
-  public static Tensor medianFilter(Tensor content) {
+  @Nonnull
+  public static Tensor medianFilter(@Nonnull Tensor content) {
     return medianFilter(content, 1);
   }
 
-  public static Tensor medianFilter(Tensor content, int window) {
+  @Nonnull
+  public static Tensor medianFilter(@Nonnull Tensor content, int window) {
     final int[] dimensions = content.getDimensions();
     return content.mapCoords(c -> {
       final int[] pos = c.getCoords();
@@ -119,21 +129,25 @@ public class SearchRadiusTopology extends ContentTopology {
     });
   }
 
-  public static @SuppressWarnings("unused") SearchRadiusTopology[] addRefs(SearchRadiusTopology[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  SearchRadiusTopology[] addRefs(@Nullable SearchRadiusTopology[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SearchRadiusTopology::addRef)
         .toArray((x) -> new SearchRadiusTopology[x]);
   }
 
-  public static @SuppressWarnings("unused") SearchRadiusTopology[][] addRefs(SearchRadiusTopology[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  SearchRadiusTopology[][] addRefs(@Nullable SearchRadiusTopology[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SearchRadiusTopology::addRefs)
         .toArray((x) -> new SearchRadiusTopology[x][]);
   }
 
-  private static double median(RefDoubleStream doubleStream) {
+  private static double median(@Nonnull RefDoubleStream doubleStream) {
     return doubleStream.average().getAsDouble();
   }
 
@@ -186,14 +200,18 @@ public class SearchRadiusTopology extends ContentTopology {
     return symmetric;
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") SearchRadiusTopology addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  SearchRadiusTopology addRef() {
     return (SearchRadiusTopology) super.addRef();
   }
 
-  private void collectSpacialNeighbors(int[] pos, RefArrayList<int[]> neighbors, int[] matchingGlobal) {
+  private void collectSpacialNeighbors(int[] pos, @Nonnull RefArrayList<int[]> neighbors, @Nonnull int[] matchingGlobal) {
     final RefMap<Long, RefList<Integer>> collect = RefArrays.stream(matchingGlobal).mapToObj(x -> x)
         .collect(RefCollectors.groupingBy((Integer x) -> {
           final int[] coords = getCoordsFromIndex(x);
@@ -209,7 +227,7 @@ public class SearchRadiusTopology extends ContentTopology {
     }
   }
 
-  private void collectChromaNeighbors(double[] fromPixel, RefArrayList<int[]> neighbors, int[] matchingGlobal) {
+  private void collectChromaNeighbors(double[] fromPixel, @Nonnull RefArrayList<int[]> neighbors, @Nonnull int[] matchingGlobal) {
     neighbors.add(RefArrays.stream(matchingGlobal).mapToObj(x -> x)
         .sorted(RefComparator.comparing(x -> chromaDistance(pixel(x), fromPixel))).mapToInt(x -> x).distinct()
         .limit(getNeighborhoodSize() - neighbors.stream().mapToInt(x -> x.length).sum()).toArray());

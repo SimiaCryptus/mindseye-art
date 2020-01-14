@@ -25,6 +25,8 @@ import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.wrappers.RefConsumer;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.UUID;
 
 public enum PoolingPipeline implements VisionPipelineLayer {
@@ -39,6 +41,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   Pooling64(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
   Pooling128(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3);
 
+  @Nullable
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
   private final RefConsumer<PipelineNetwork> fn;
   private final int[] inputBorders;
@@ -66,6 +69,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
     this.strides = strides;
   }
 
+  @Nonnull
   @Override
   public PipelineNetwork getLayer() {
     PipelineNetwork layer = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
@@ -73,16 +77,19 @@ public enum PoolingPipeline implements VisionPipelineLayer {
     return layer;
   }
 
+  @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
     return getVisionPipeline().addRef();
   }
 
+  @Nonnull
   @Override
   public String getPipelineName() {
     return getVisionPipeline().name;
   }
 
+  @Nullable
   public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
     if (null == visionPipeline) {
       synchronized (PoolingPipeline.class) {

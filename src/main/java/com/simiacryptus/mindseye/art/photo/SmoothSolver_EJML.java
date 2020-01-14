@@ -23,7 +23,6 @@ import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefList;
 import org.ejml.data.DMatrixRMaj;
@@ -32,13 +31,14 @@ import org.ejml.interfaces.linsol.LinearSolverSparse;
 import org.ejml.simple.SimpleMatrix;
 import org.ejml.sparse.FillReducing;
 import org.ejml.sparse.csc.factory.LinearSolverFactory_DSCC;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.function.UnaryOperator;
 
 public class SmoothSolver_EJML implements SmoothSolver {
 
-  public static UnaryOperator<SimpleMatrix> solve(DMatrixSparseCSC affinity, double lambda) {
+  @Nonnull
+  public static UnaryOperator<SimpleMatrix> solve(@Nonnull DMatrixSparseCSC affinity, double lambda) {
     final double alpha = 1.0 / (1.0 + lambda);
     final LinearSolverSparse<DMatrixSparseCSC, DMatrixRMaj> solver = LinearSolverFactory_DSCC
         .cholesky(FillReducing.NONE);
@@ -51,13 +51,13 @@ public class SmoothSolver_EJML implements SmoothSolver {
     };
   }
 
-  @NotNull
-  public static DMatrixSparseCSC laplacian(RasterAffinity affinity, RasterTopology topology) {
+  @Nonnull
+  public static DMatrixSparseCSC laplacian(@Nonnull RasterAffinity affinity, @Nonnull RasterTopology topology) {
     return laplacian(topology.connectivity(), affinity.affinityList(topology.connectivity()));
   }
 
-  @NotNull
-  public static UnaryOperator<Tensor> wrap(UnaryOperator<SimpleMatrix> solver, RasterTopology topology) {
+  @Nonnull
+  public static UnaryOperator<Tensor> wrap(@Nonnull UnaryOperator<SimpleMatrix> solver, @Nonnull RasterTopology topology) {
     final int[] dimensions = topology.getDimensions();
     return tensor -> {
       if (!RefArrays.equals(dimensions, tensor.getDimensions()))
@@ -79,7 +79,8 @@ public class SmoothSolver_EJML implements SmoothSolver {
     };
   }
 
-  public static @NotNull DMatrixSparseCSC laplacian(RefList<int[]> graphEdges, RefList<double[]> affinityList) {
+  public static @Nonnull
+  DMatrixSparseCSC laplacian(@Nonnull RefList<int[]> graphEdges, @Nonnull RefList<double[]> affinityList) {
     final int pixels = graphEdges.size();
     final DMatrixSparseCSC adjacency = new DMatrixSparseCSC(pixels, pixels);
     for (int i = 0; i < pixels; i++) {
@@ -117,7 +118,8 @@ public class SmoothSolver_EJML implements SmoothSolver {
     return rescaled;
   }
 
-  public RefOperator<Tensor> solve(RasterTopology topology, RasterAffinity affinity, double lambda) {
+  @Nonnull
+  public RefOperator<Tensor> solve(@Nonnull RasterTopology topology, @Nonnull RasterAffinity affinity, double lambda) {
     return RefOperator.wrap(wrap(solve(laplacian(affinity, topology), lambda), topology));
   }
 

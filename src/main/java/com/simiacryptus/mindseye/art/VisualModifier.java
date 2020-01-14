@@ -24,10 +24,9 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefString;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.function.UnaryOperator;
 
 public interface VisualModifier {
@@ -38,8 +37,8 @@ public interface VisualModifier {
 
   PipelineNetwork build(VisualModifierParameters visualModifierParameters);
 
-  default PipelineNetwork build(VisionPipelineLayer layer, int[] contentDims, UnaryOperator<Tensor> viewLayer,
-      Tensor... image) {
+  default PipelineNetwork build(@Nonnull VisionPipelineLayer layer, int[] contentDims, UnaryOperator<Tensor> viewLayer,
+                                Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
     network.assertAlive();
     PipelineNetwork pipelineNetwork = build(new VisualModifierParameters(network, contentDims, viewLayer, null, image));
@@ -47,26 +46,30 @@ public interface VisualModifier {
     return pipelineNetwork;
   }
 
-  default VisualModifier combine(VisualModifier right) {
+  @Nonnull
+  default VisualModifier combine(@Nonnull VisualModifier right) {
     VisualModifier left = this;
     return new VisualModifier() {
       public boolean isLocalized() {
         return left.isLocalized() || right.isLocalized();
       }
 
+      @Nonnull
       @Override
       public String toString() {
         return RefString.format("(%s+%s)", left.toString(), right);
       }
 
+      @Nonnull
       @Override
-      public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+      public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
         return (PipelineNetwork) SumInputsLayer.combine(VisualModifier.this.build(visualModifierParameters.addRef()),
             right.build(visualModifierParameters)).freeze();
       }
     };
   }
 
+  @Nonnull
   default VisualModifier scale(double scale) {
     VisualModifier left = this;
     return new VisualModifier() {
@@ -74,11 +77,13 @@ public interface VisualModifier {
         return left.isLocalized();
       }
 
+      @Nonnull
       @Override
       public String toString() {
         return RefString.format("(%s*%s)", left.toString(), scale);
       }
 
+      @Nonnull
       @Override
       public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
         PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
@@ -88,6 +93,7 @@ public interface VisualModifier {
     };
   }
 
+  @Nonnull
   default VisualModifier pow(double power) {
     VisualModifier left = this;
     return new VisualModifier() {
@@ -95,11 +101,13 @@ public interface VisualModifier {
         return left.isLocalized();
       }
 
+      @Nonnull
       @Override
       public String toString() {
         return RefString.format("(%s^%s)", left.toString(), power);
       }
 
+      @Nonnull
       @Override
       public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
         PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
@@ -109,7 +117,7 @@ public interface VisualModifier {
     };
   }
 
-  @NotNull
+  @Nonnull
   default VisualModifier withMask(Tensor maskedInput) {
     final VisualModifier inner = this;
     return new VisualModifier() {
@@ -118,7 +126,7 @@ public interface VisualModifier {
       }
 
       @Override
-      public PipelineNetwork build(VisualModifierParameters parameters) {
+      public PipelineNetwork build(@Nonnull VisualModifierParameters parameters) {
         return inner.build(parameters.withMask(maskedInput));
       }
     };

@@ -26,11 +26,12 @@ import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefString;
-import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class ChannelMeanMatcher implements VisualModifier {
 
@@ -42,6 +43,7 @@ public class ChannelMeanMatcher implements VisualModifier {
     return averaging;
   }
 
+  @Nonnull
   public ChannelMeanMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
@@ -51,23 +53,26 @@ public class ChannelMeanMatcher implements VisualModifier {
     return balanced;
   }
 
+  @Nonnull
   public ChannelMeanMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
+  @Nonnull
   @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+  public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     Tensor meanSignal = null;
-    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, meanSignal,
+    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, null,
         visualModifierParameters.style);
     visualModifierParameters.freeRef();
     return pipelineNetwork;
   }
 
-  @NotNull
-  public PipelineNetwork buildWithModel(PipelineNetwork network, Tensor meanSignal, Tensor... image) {
+  @Nonnull
+  public PipelineNetwork buildWithModel(PipelineNetwork network, @Nullable Tensor meanSignal, @Nonnull Tensor... image) {
     network = network.copyPipeline();
+    assert network != null;
     network.add(new BandAvgReducerLayer());
     if (meanSignal == null) {
       final PipelineNetwork meanNetwork = PipelineNetwork.build(1,
@@ -80,9 +85,9 @@ public class ChannelMeanMatcher implements VisualModifier {
       meanNetwork.freeRef();
     }
     double mag = isBalanced() ? meanSignal.rms() : 1;
-    final Layer[] layers = new Layer[] { new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)), new SquareActivationLayer(),
+    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(meanSignal.scaleInPlace(-1)), new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2)) };
+        new LinearActivationLayer().setScale(Math.pow(mag, -2))};
     network.add(PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }

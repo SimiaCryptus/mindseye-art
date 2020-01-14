@@ -19,11 +19,12 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
+
+import javax.annotation.Nonnull;
 
 public class SimpleRasterTopology implements RasterTopology {
   protected final int[] dimensions;
@@ -52,11 +53,12 @@ public class SimpleRasterTopology implements RasterTopology {
     return x + dimensions[0] * y;
   }
 
+  @Nonnull
   @Override
   public int[] getCoordsFromIndex(int i) {
     final int x = i % dimensions[0];
     final int y = (i - x) / dimensions[0];
-    return new int[] { x, y };
+    return new int[]{x, y};
   }
 
   private int getNeighbors(int[] coords, int[] neighbors) {

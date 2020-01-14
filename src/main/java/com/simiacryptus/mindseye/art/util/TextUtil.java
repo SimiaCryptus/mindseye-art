@@ -19,9 +19,7 @@
 
 package com.simiacryptus.mindseye.art.util;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -29,27 +27,29 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
 public class TextUtil {
-  public static BufferedImage draw(final String text, final int resolution, final int padding, final String fontName,
-      final int style) {
+  @Nonnull
+  public static BufferedImage draw(@Nonnull final String text, final int resolution, final int padding, final String fontName,
+                                   final int style) {
     return draw(text, resolution, padding, fitWidth(text, resolution, padding, fontName, style));
   }
 
-  @NotNull
-  public static BufferedImage draw(String text, int resolution, int padding, Font font) {
+  @Nonnull
+  public static BufferedImage draw(@Nonnull String text, int resolution, int padding, Font font) {
     Rectangle2D bounds = measure(font, text);
     double aspect_ratio = (2.0 * padding + bounds.getHeight()) / (2.0 * padding + bounds.getWidth());
     return draw(text, resolution, (int) (aspect_ratio * resolution), padding, font, bounds);
   }
 
-  @NotNull
-  public static BufferedImage drawHeight(String text, int resolution, int padding, Font font) {
+  @Nonnull
+  public static BufferedImage drawHeight(@Nonnull String text, int resolution, int padding, Font font) {
     Rectangle2D bounds = measure(font, text);
     double aspect_ratio = (2.0 * padding + bounds.getHeight()) / (2.0 * padding + bounds.getWidth());
     return draw(text, (int) (resolution / aspect_ratio), resolution, padding, font, bounds);
   }
 
-  public @NotNull static BufferedImage draw(String text, int width, int height, int padding, Font font,
-      Rectangle2D bounds) {
+  public @Nonnull
+  static BufferedImage draw(@Nonnull String text, int width, int height, int padding, Font font,
+                            @Nonnull Rectangle2D bounds) {
     BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     Graphics2D graphics = (Graphics2D) image.getGraphics();
     graphics.setColor(Color.WHITE);
@@ -71,7 +71,7 @@ public class TextUtil {
   }
 
   @Nonnull
-  public static Rectangle2D measure(final Font font, final String text) {
+  public static Rectangle2D measure(final Font font, @Nonnull final String text) {
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
     graphics.setFont(font);
     String[] lines = text.split("\n");
@@ -84,8 +84,8 @@ public class TextUtil {
   }
 
   @Nonnull
-  public static Font fitWidth(final String text, final int resolution, final int padding, final String fontName,
-      final int style) {
+  public static Font fitWidth(@Nonnull final String text, final int resolution, final int padding, final String fontName,
+                              final int style) {
     final Font font;
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
     double width = 0;
@@ -102,8 +102,8 @@ public class TextUtil {
   }
 
   @Nonnull
-  public static Font fitHeight(final String text, final int resolution, final int padding, final String fontName,
-      final int style) {
+  public static Font fitHeight(@Nonnull final String text, final int resolution, final int padding, final String fontName,
+                               final int style) {
     final Font font;
     double height = 0;
     int size = 12;
@@ -117,8 +117,8 @@ public class TextUtil {
   }
 
   @Nonnull
-  public static Font fit(final String text, final int max_width, final int max_height, final int padding,
-      final String fontName, final int style) {
+  public static Font fit(@Nonnull final String text, final int max_width, final int max_height, final int padding,
+                         final String fontName, final int style) {
     final Font font;
     double height = 0;
     double width = 0;

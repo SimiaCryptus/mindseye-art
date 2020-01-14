@@ -25,17 +25,17 @@ import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.PointSample;
 import com.simiacryptus.mindseye.lang.StateSet;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefList;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -53,25 +53,30 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
     return inner;
   }
 
-  @NotNull
+  @Nonnull
   @Override
   public Layer getLayer() {
     return null;
   }
 
-  public static @SuppressWarnings("unused") SumTrainable[] addRefs(SumTrainable[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  SumTrainable[] addRefs(@Nullable SumTrainable[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SumTrainable::addRef).toArray((x) -> new SumTrainable[x]);
   }
 
-  public static @SuppressWarnings("unused") SumTrainable[][] addRefs(SumTrainable[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  SumTrainable[][] addRefs(@Nullable SumTrainable[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SumTrainable::addRefs)
         .toArray((x) -> new SumTrainable[x][]);
   }
 
+  @Nonnull
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
     RefList<PointSample> results = RefArrays.stream(getInner()).map(x -> x.measure(monitor))
@@ -103,7 +108,10 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
     super._free();
   }
 
-  public @Override @SuppressWarnings("unused") SumTrainable addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  SumTrainable addRef() {
     return (SumTrainable) super.addRef();
   }
 }

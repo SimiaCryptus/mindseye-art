@@ -22,9 +22,7 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefString;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 
@@ -41,6 +39,7 @@ public interface VisionPipelineLayer {
     final VisionPipeline<?> pipeline = getPipeline();
     final PipelineNetwork pipelineNetwork = pipeline.getLayers().get(this).copyPipeline();
     pipeline.freeRef();
+    assert pipelineNetwork != null;
     return pipelineNetwork;
   }
 
@@ -53,38 +52,42 @@ public interface VisionPipelineLayer {
   @Nonnull
   String name();
 
+  @Nonnull
   default VisionPipelineLayer prependAvgPool(int radius) {
     return prependPool(radius, PoolingLayer.PoolingMode.Avg);
   }
 
+  @Nonnull
   default VisionPipelineLayer appendAvgPool(int radius) {
     return appendPool(radius, PoolingLayer.PoolingMode.Avg);
   }
 
+  @Nonnull
   default VisionPipelineLayer appendMaxPool(int radius) {
     return appendPool(radius, PoolingLayer.PoolingMode.Max);
   }
 
+  @Nonnull
   default VisionPipelineLayer prependMaxPool(int radius) {
     return prependPool(radius, PoolingLayer.PoolingMode.Max);
   }
 
-  @NotNull
+  @Nonnull
   default VisionPipelineLayer prependPool(int radius, PoolingLayer.PoolingMode mode) {
     return prepend(getPoolingLayer(radius, mode, RefString.format("prepend(%s)", this)));
   }
 
-  @NotNull
+  @Nonnull
   default VisionPipelineLayer appendPool(int radius, PoolingLayer.PoolingMode mode) {
     return append(getPoolingLayer(radius, mode, RefString.format("append(%s)", this)));
   }
 
-  @NotNull
+  @Nonnull
   default VisionPipelineLayer prepend(Layer layer) {
     return new PrependVisionPipelineLayer(this, layer);
   }
 
-  @NotNull
+  @Nonnull
   default VisionPipelineLayer append(Layer layer) {
     return new AppendVisionPipelineLayer(this, layer);
   }
@@ -102,7 +105,8 @@ public interface VisionPipelineLayer {
     public VisionPipeline<Noop> getPipeline() {
       return new VisionPipeline<Noop>(name(), this) {
 
-        public @SuppressWarnings("unused") void _free() {
+        public @SuppressWarnings("unused")
+        void _free() {
         }
       };
     }

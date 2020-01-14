@@ -19,10 +19,11 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<double[][]> {
@@ -32,23 +33,28 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
     this.unaryOperator = unaryOperator;
   }
 
-  public static @SuppressWarnings("unused") SingleChannelWrapper[] addRefs(SingleChannelWrapper[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  SingleChannelWrapper[] addRefs(@Nullable SingleChannelWrapper[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRef)
         .toArray((x) -> new SingleChannelWrapper[x]);
   }
 
-  public static @SuppressWarnings("unused") SingleChannelWrapper[][] addRefs(SingleChannelWrapper[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  SingleChannelWrapper[][] addRefs(@Nullable SingleChannelWrapper[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRefs)
         .toArray((x) -> new SingleChannelWrapper[x][]);
   }
 
+  @Nonnull
   @Override
-  public double[][] apply(double[][] img) {
-    return RefArrays.stream(img).map(x -> unaryOperator.apply(new double[][] { x })[0]).toArray(i -> new double[i][]);
+  public double[][] apply(@Nonnull double[][] img) {
+    return RefArrays.stream(img).map(x -> unaryOperator.apply(new double[][]{x})[0]).toArray(i -> new double[i][]);
   }
 
   public void _free() {
@@ -56,7 +62,10 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
     super._free();
   }
 
-  public @Override @SuppressWarnings("unused") SingleChannelWrapper addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  SingleChannelWrapper addRef() {
     return (SingleChannelWrapper) super.addRef();
   }
 }

@@ -31,7 +31,6 @@ import com.simiacryptus.mindseye.util.TFConverter;
 import com.simiacryptus.notebook.MarkdownNotebookOutput;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.notebook.UploadImageQuery;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.tensorflow.GraphModel;
@@ -44,10 +43,10 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.s3a.S3AFileSystem;
-import org.jetbrains.annotations.NotNull;
 import org.tensorflow.framework.GraphDef;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -71,7 +70,8 @@ public class ImageArtUtil {
     return configuration;
   }
 
-  public static Closeable cudaReports(NotebookOutput log, boolean interceptLog) {
+  @Nonnull
+  public static Closeable cudaReports(@Nonnull NotebookOutput log, boolean interceptLog) {
     Closeable handler_info = log.getHttpd().addGET("cuda/info.txt", "text/plain", outputStream -> {
       try {
         PrintStream stream = new PrintStream(outputStream);
@@ -101,12 +101,13 @@ public class ImageArtUtil {
     if (interceptLog)
       log.subreport(sublog -> {
         CudaSystem.addLog(new RefConsumer<String>() {
+          @Nullable
           PrintWriter out;
           long remainingOut = 0;
           long killAt = 0;
 
           @Override
-          public void accept(String formattedMessage) {
+          public void accept(@Nonnull String formattedMessage) {
             if (null == out) {
               SimpleDateFormat dateFormat = new SimpleDateFormat("dd_HH_mm_ss");
               String date = dateFormat.format(new Date());
@@ -119,14 +120,14 @@ public class ImageArtUtil {
               } catch (Throwable e) {
                 throw new RuntimeException(e);
               }
-              killAt = com.simiacryptus.ref.wrappers.RefSystem.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
+              killAt = RefSystem.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
               remainingOut = 10L * 1024 * 1024;
             }
             out.println(formattedMessage);
             out.flush();
             int length = formattedMessage.length();
             remainingOut -= length;
-            if (remainingOut < 0 || killAt < com.simiacryptus.ref.wrappers.RefSystem.currentTimeMillis()) {
+            if (remainingOut < 0 || killAt < RefSystem.currentTimeMillis()) {
               out.close();
               out = null;
             }
@@ -145,8 +146,8 @@ public class ImageArtUtil {
 
   }
 
-  @NotNull
-  public static RefMap<String, PipelineNetwork> convertPipeline(GraphDef graphDef, String... nodes) {
+  @Nonnull
+  public static RefMap<String, PipelineNetwork> convertPipeline(@Nonnull GraphDef graphDef, @Nonnull String... nodes) {
     GraphModel graphModel = new GraphModel(graphDef.toByteArray());
     RefMap<String, PipelineNetwork> graphs = new RefHashMap<>();
     TFConverter tfConverter = new TFConverter();
@@ -167,22 +168,24 @@ public class ImageArtUtil {
     return graphs;
   }
 
-  public static BufferedImage load(NotebookOutput log, final CharSequence image, final int imageSize) {
+  @Nonnull
+  public static BufferedImage load(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int imageSize) {
     return getImageTensor(image, log, imageSize).toImage();
   }
 
-  public static BufferedImage load(NotebookOutput log, final CharSequence image, final int width, final int height) {
+  @Nonnull
+  public static BufferedImage load(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int width, final int height) {
     return getImageTensor(image, log, width, height).toImage();
   }
 
   @Nonnull
-  public static Tensor getImageTensor(@Nonnull final CharSequence file, NotebookOutput log, int width) {
+  public static Tensor getImageTensor(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width) {
     String fileStr = file.toString();
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
         Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width))
-            .filter(x -> x != null).findFirst());
+            .filter(x -> true).findFirst());
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
@@ -192,7 +195,7 @@ public class ImageArtUtil {
             }));
       } else if (fileStr.contains(" * ")) {
         Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width))
-            .filter(x -> x != null).findFirst());
+            .filter(x -> true).findFirst());
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
@@ -213,13 +216,13 @@ public class ImageArtUtil {
   }
 
   @Nonnull
-  public static Tensor getImageTensor(@Nonnull final CharSequence file, NotebookOutput log, int width, int height) {
+  public static Tensor getImageTensor(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width, int height) {
     String fileStr = file.toString();
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
         Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width, height))
-            .filter(x -> x != null).findFirst());
+            .filter(x -> true).findFirst());
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
@@ -229,7 +232,7 @@ public class ImageArtUtil {
             }));
       } else if (fileStr.contains(" * ")) {
         Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width, height))
-            .filter(x -> x != null).findFirst());
+            .filter(x -> true).findFirst());
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +"))
             .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
             .reduce((a, b) -> {
@@ -249,8 +252,8 @@ public class ImageArtUtil {
     return Tensor.fromRGB(ImageUtil.resize(getTensor(log, file).toImage(), width, height));
   }
 
-  @NotNull
-  public static Tensor getTensor(NotebookOutput log, @Nonnull CharSequence file) {
+  @Nonnull
+  public static Tensor getTensor(@Nonnull NotebookOutput log, @Nonnull CharSequence file) {
     String fileStr = file.toString();
     if (fileStr.trim().toLowerCase().startsWith("upload:")) {
       String key = fileStr.substring("upload:".length());
@@ -289,7 +292,7 @@ public class ImageArtUtil {
     }
   }
 
-  public static FileSystem getFileSystem(final CharSequence file) {
+  public static FileSystem getFileSystem(@Nonnull final CharSequence file) {
     Configuration conf = getHadoopConfig();
     FileSystem fileSystem;
     try {
@@ -300,7 +303,8 @@ public class ImageArtUtil {
     return fileSystem;
   }
 
-  public static int[][] getIndexMap(final SimpleConvolutionLayer layer) {
+  @Nonnull
+  public static int[][] getIndexMap(@Nonnull final SimpleConvolutionLayer layer) {
     int[] kernelDimensions = layer.getKernelDimensions();
     double b = Math.sqrt(kernelDimensions[2]);
     int h = kernelDimensions[1];

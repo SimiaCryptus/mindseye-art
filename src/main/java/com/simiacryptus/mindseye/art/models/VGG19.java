@@ -25,6 +25,8 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.wrappers.RefConsumer;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.UUID;
 
 public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
@@ -38,7 +40,9 @@ public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
   //  VGG19_3a(getVGG19_hdf5()::phase3a),
   //  VGG19_3b(getVGG19_hdf5()::phase3b);
 
+  @Nullable
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
+  @Nullable
   private static VGG19_HDF5 VGG19_hdf5 = null;
   private final RefConsumer<PipelineNetwork> fn;
 
@@ -46,6 +50,7 @@ public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
     this.fn = fn;
   }
 
+  @Nonnull
   @Override
   public PipelineNetwork getLayer() {
     PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
@@ -53,25 +58,27 @@ public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
     return pipeline.copyPipeline();
   }
 
+  @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
     return getVisionPipeline().addRef();
   }
 
+  @Nonnull
   @Override
   public String getPipelineName() {
     return getVisionPipeline().name;
   }
 
+  @Nonnull
   public static VGG19_HDF5 getVGG19_hdf5() {
     if (null == VGG19_hdf5) {
-      if (null == VGG19_hdf5) {
-        VGG19_hdf5 = VGG19_HDF5.fromHDF5();
-      }
+      VGG19_hdf5 = VGG19_HDF5.fromHDF5();
     }
     return VGG19_hdf5;
   }
 
+  @Nullable
   public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
     if (null == visionPipeline) {
       synchronized (VGG19.class) {

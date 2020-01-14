@@ -28,8 +28,9 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefString;
+
+import javax.annotation.Nonnull;
 
 public class ContentMatcher implements VisualModifier {
 
@@ -40,6 +41,7 @@ public class ContentMatcher implements VisualModifier {
     return averaging;
   }
 
+  @Nonnull
   public ContentMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
@@ -49,25 +51,27 @@ public class ContentMatcher implements VisualModifier {
     return balanced;
   }
 
+  @Nonnull
   public ContentMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
+  @Nonnull
   @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+  public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     if (1 != visualModifierParameters.style.length)
       throw new IllegalArgumentException();
     PipelineNetwork network = visualModifierParameters.network;
+    assert network != null;
     network = network.copyPipeline();
+    assert network != null;
     Layer layer = network.getHead().getLayer();
     String name = (layer != null ? layer.getName() : "Original") + " Content";
 
-    if (null != visualModifierParameters.mask) {
-      final Tensor boolMask = MomentMatcher
-          .toMask(MomentMatcher.transform(network, visualModifierParameters.mask, Precision.Float));
-      network.add(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
-    }
+    final Tensor boolMask = MomentMatcher
+        .toMask(MomentMatcher.transform(network, visualModifierParameters.mask, Precision.Float));
+    network.add(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
 
     Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
     visualModifierParameters.freeRef();
@@ -76,10 +80,11 @@ public class ContentMatcher implements VisualModifier {
       throw new RuntimeException("RMS = " + mag);
     DAGNode head = network.getHead();
     DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
+    assert constNode != null;
     constNode.getLayer().setName(name);
     network.add(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
-    final Layer[] layers = new Layer[] { new LinearActivationLayer().setScale(0 == mag ? 1 : Math.pow(mag, -1)),
-        new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer() };
+    final Layer[] layers = new Layer[]{new LinearActivationLayer().setScale(0 == mag ? 1 : Math.pow(mag, -1)),
+        new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
     network.add(PipelineNetwork.build(1, layers).setName(RefString.format("RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }

@@ -23,19 +23,21 @@ import com.simiacryptus.mindseye.art.photo.SmoothSolver;
 import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
-import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
 
 public class SmoothSolver_Cuda implements SmoothSolver {
 
-  public static @NotNull CudaSparseMatrix laplacian(RasterAffinity affinity, RasterTopology topology) {
+  public static @Nonnull
+  CudaSparseMatrix laplacian(@Nonnull RasterAffinity affinity, @Nonnull RasterTopology topology) {
     return laplacian(topology.connectivity(), affinity.affinityList(topology.connectivity()));
   }
 
-  public static @NotNull CudaSparseMatrix laplacian(RefList<int[]> graphEdges, RefList<double[]> affinityList) {
+  public static @Nonnull
+  CudaSparseMatrix laplacian(@Nonnull RefList<int[]> graphEdges, @Nonnull RefList<double[]> affinityList) {
     final int pixels = graphEdges.size();
     final double[] doubles = RasterAffinity.normalize(graphEdges, affinityList).stream()
         .flatMapToDouble(x -> RefArrays.stream(x)).toArray();
@@ -45,8 +47,9 @@ public class SmoothSolver_Cuda implements SmoothSolver {
         SparseMatrixFloat.toFloat(doubles), pixels, pixels).sortAndPrune().assertSymmetric());
   }
 
+  @Nonnull
   @Override
-  public RefOperator<Tensor> solve(RasterTopology topology, RasterAffinity affinity, double lambda) {
+  public RefOperator<Tensor> solve(@Nonnull RasterTopology topology, @Nonnull RasterAffinity affinity, double lambda) {
     double alpha = 1.0 / (1.0 + lambda);
     final CudaSparseMatrix laplacian = laplacian(affinity, topology);
     final SparseMatrixFloat forwardMatrix = forwardMatrix(laplacian, alpha);
@@ -55,7 +58,8 @@ public class SmoothSolver_Cuda implements SmoothSolver {
         topology.getDimensions(), topology);
   }
 
-  public SparseMatrixFloat forwardMatrix(@NotNull CudaSparseMatrix laplacian, double alpha) {
+  @Nonnull
+  public SparseMatrixFloat forwardMatrix(@Nonnull CudaSparseMatrix laplacian, double alpha) {
     return SparseMatrixFloat.identity(laplacian.matrix.rows).minus(laplacian.matrix.scale(alpha));
   }
 

@@ -21,9 +21,10 @@ package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -37,11 +38,13 @@ public class AppendVisionPipelineLayer extends ReferenceCountingBase implements 
     this.layer = layer;
   }
 
+  @Nonnull
   @Override
   public Layer getLayer() {
     return inner.getLayer();
   }
 
+  @Nonnull
   @Override
   public PipelineNetwork getNetwork() {
     final PipelineNetwork network = inner.getNetwork();
@@ -49,6 +52,7 @@ public class AppendVisionPipelineLayer extends ReferenceCountingBase implements 
     return network;
   }
 
+  @Nonnull
   @Override
   public VisionPipeline<VisionPipelineLayer> getPipeline() {
     final VisionPipeline<?> innerPipeline = inner.getPipeline();
@@ -59,32 +63,38 @@ public class AppendVisionPipelineLayer extends ReferenceCountingBase implements 
     return pipeline;
   }
 
+  @Nonnull
   @Override
   public String getPipelineName() {
     return inner.getPipelineName();
   }
 
-  public static @SuppressWarnings("unused") AppendVisionPipelineLayer[] addRefs(AppendVisionPipelineLayer[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  AppendVisionPipelineLayer[] addRefs(@Nullable AppendVisionPipelineLayer[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRef)
         .toArray((x) -> new AppendVisionPipelineLayer[x]);
   }
 
-  public static @SuppressWarnings("unused") AppendVisionPipelineLayer[][] addRefs(AppendVisionPipelineLayer[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  AppendVisionPipelineLayer[][] addRefs(@Nullable AppendVisionPipelineLayer[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRefs)
         .toArray((x) -> new AppendVisionPipelineLayer[x][]);
   }
 
+  @Nonnull
   @Override
   public String name() {
     return inner.name() + "/append=" + layer.getName();
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (this == o)
       return true;
     if (o == null || getClass() != o.getClass())
@@ -102,10 +112,14 @@ public class AppendVisionPipelineLayer extends ReferenceCountingBase implements 
     return getPipelineName().hashCode() ^ name().hashCode();
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") AppendVisionPipelineLayer addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  AppendVisionPipelineLayer addRef() {
     return (AppendVisionPipelineLayer) super.addRef();
   }
 }

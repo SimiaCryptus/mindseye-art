@@ -24,6 +24,8 @@ import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.wrappers.RefConsumer;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.UUID;
 
 public enum VGG16 implements VisionPipelineLayer {
@@ -35,7 +37,9 @@ public enum VGG16 implements VisionPipelineLayer {
   VGG16_1e3(getVgg16_hdf5()::phase1e3), VGG16_2(getVgg16_hdf5()::phase2), VGG16_3a(getVgg16_hdf5()::phase3a),
   VGG16_3b(getVgg16_hdf5()::phase3b);
 
+  @Nullable
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
+  @Nullable
   private static VGG16_HDF5 vgg16_hdf5 = null;
   private final RefConsumer<PipelineNetwork> fn;
 
@@ -43,6 +47,7 @@ public enum VGG16 implements VisionPipelineLayer {
     this.fn = fn;
   }
 
+  @Nonnull
   @Override
   public PipelineNetwork getLayer() {
     PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
@@ -50,25 +55,27 @@ public enum VGG16 implements VisionPipelineLayer {
     return pipeline.copyPipeline();
   }
 
+  @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
     return getVisionPipeline().addRef();
   }
 
+  @Nonnull
   @Override
   public String getPipelineName() {
     return getVisionPipeline().name;
   }
 
+  @Nonnull
   public static VGG16_HDF5 getVgg16_hdf5() {
     if (null == vgg16_hdf5) {
-      if (null == vgg16_hdf5) {
-        vgg16_hdf5 = VGG16_HDF5.fromHDF5();
-      }
+      vgg16_hdf5 = VGG16_HDF5.fromHDF5();
     }
     return vgg16_hdf5;
   }
 
+  @Nullable
   public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
     if (null == visionPipeline) {
       synchronized (VGG16.class) {

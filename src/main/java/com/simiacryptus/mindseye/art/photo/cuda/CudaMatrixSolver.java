@@ -19,10 +19,10 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
+import com.simiacryptus.ref.wrappers.RefSystem;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcusolver.JCusolver;
@@ -30,8 +30,9 @@ import jcuda.jcusolver.cusolverSpHandle;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.runtime.JCuda;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 import static jcuda.jcusolver.JCusolverSp.cusolverSpScsrlsvchol;
@@ -46,17 +47,19 @@ public class CudaMatrixSolver extends ReferenceCountingBase implements RefOperat
   private static final int REORDER = 0;
 
   final double scaleOutput;
+  @Nonnull
   final CudaSparseMatrix forwardMatrix;
   final int pixels;
-  @NotNull
+  @Nonnull
   cusparseHandle spHandle;
-  private @NotNull cusolverSpHandle solverHandle;
+  private @Nonnull
+  cusolverSpHandle solverHandle;
 
-  public CudaMatrixSolver(SparseMatrixFloat forwardMatrix) {
+  public CudaMatrixSolver(@Nonnull SparseMatrixFloat forwardMatrix) {
     this(forwardMatrix, 1.0);
   }
 
-  public CudaMatrixSolver(SparseMatrixFloat forwardMatrix, double scaleOutput) {
+  public CudaMatrixSolver(@Nonnull SparseMatrixFloat forwardMatrix, double scaleOutput) {
     JCuda.setExceptionsEnabled(true);
     JCusparse.setExceptionsEnabled(true);
     JCusolver.setExceptionsEnabled(true);
@@ -67,14 +70,18 @@ public class CudaMatrixSolver extends ReferenceCountingBase implements RefOperat
     pixels = forwardMatrix.cols;
   }
 
-  public static @SuppressWarnings("unused") CudaMatrixSolver[] addRefs(CudaMatrixSolver[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  CudaMatrixSolver[] addRefs(@Nullable CudaMatrixSolver[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRef)
         .toArray((x) -> new CudaMatrixSolver[x]);
   }
 
-  public static @SuppressWarnings("unused") CudaMatrixSolver[][] addRefs(CudaMatrixSolver[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  CudaMatrixSolver[][] addRefs(@Nullable CudaMatrixSolver[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRefs)
@@ -86,25 +93,27 @@ public class CudaMatrixSolver extends ReferenceCountingBase implements RefOperat
     super._free();
   }
 
+  @Nonnull
   @Override
-  public double[][] apply(double[][] img) {
+  public double[][] apply(@Nonnull double[][] img) {
     final int channels = img.length;
     final float[] flattened = new float[RefArrays.stream(img).mapToInt(x -> x.length).sum()];
     for (int i = 0; i < flattened.length; i++) {
       flattened[i] = (float) img[i / pixels][i % pixels];
     }
-    int singularityRowArray[] = { -1 };
+    int singularityRowArray[] = {-1};
     Pointer gpuResult = new Pointer();
     cudaMalloc(gpuResult, Sizeof.FLOAT * flattened.length);
     final Pointer input = CudaSparseMatrix.toDevice(flattened);
     final CudaSparseMatrix.GpuCopy gpuCopy = forwardMatrix.get();
+    assert gpuCopy != null;
     cusolverSpScsrlsvchol(solverHandle, pixels, forwardMatrix.matrix.getNumNonZeros(),
         CudaSparseMatrix.descriptor(CUSPARSE_MATRIX_TYPE_GENERAL, CUSPARSE_INDEX_BASE_ZERO), gpuCopy.values,
         gpuCopy.csrRows(spHandle), gpuCopy.columnIndices, input, (float) TOLERANCE, REORDER, gpuResult,
         singularityRowArray);
     gpuCopy.freeRef();
     if (singularityRowArray[0] != -1)
-      com.simiacryptus.ref.wrappers.RefSystem.err.println("Singular pixel: " + singularityRowArray[0]);
+      RefSystem.err.println("Singular pixel: " + singularityRowArray[0]);
     cudaFree(input);
 
     final float[] floats = new float[channels * pixels];
@@ -116,7 +125,10 @@ public class CudaMatrixSolver extends ReferenceCountingBase implements RefOperat
         .toArray(i -> new double[i][]);
   }
 
-  public @Override @SuppressWarnings("unused") CudaMatrixSolver addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  CudaMatrixSolver addRef() {
     return (CudaMatrixSolver) super.addRef();
   }
 }

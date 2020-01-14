@@ -19,10 +19,11 @@
 
 package com.simiacryptus.mindseye.art.photo.affinity;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefList;
+
+import javax.annotation.Nonnull;
 
 public class TruncatedAffinity extends AffinityWrapper {
   private double min = 1e-2;
@@ -36,6 +37,7 @@ public class TruncatedAffinity extends AffinityWrapper {
     return min;
   }
 
+  @Nonnull
   public TruncatedAffinity setMin(double min) {
     this.min = min;
     return this;
@@ -45,13 +47,14 @@ public class TruncatedAffinity extends AffinityWrapper {
     return power;
   }
 
+  @Nonnull
   public TruncatedAffinity setPower(double power) {
     this.power = power;
     return this;
   }
 
   @Override
-  public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
+  public RefList<double[]> affinityList(@Nonnull RefList<int[]> graphEdges) {
     final RefList<double[]> innerResult = inner.affinityList(graphEdges);
     final double[] degree = RasterAffinity.degree(innerResult);
     final RefList<double[]> doubles = RasterAffinity.adjust(graphEdges, innerResult, degree, getPower());

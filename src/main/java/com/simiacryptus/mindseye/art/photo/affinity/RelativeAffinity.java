@@ -23,9 +23,10 @@ import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefAware;
 import org.ejml.simple.SimpleMatrix;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
@@ -37,11 +38,11 @@ public class RelativeAffinity extends ContextAffinity {
   private double epsilon = 1e-5;
   private double contrast = 5e0;
 
-  public RelativeAffinity(Tensor content) {
+  public RelativeAffinity(@Nonnull Tensor content) {
     this(content, new SimpleRasterTopology(content.getDimensions()));
   }
 
-  public RelativeAffinity(Tensor content, RasterTopology topology) {
+  public RelativeAffinity(@Nonnull Tensor content, RasterTopology topology) {
     super(content);
     this.setTopology(topology);
   }
@@ -50,6 +51,7 @@ public class RelativeAffinity extends ContextAffinity {
     return contrast;
   }
 
+  @Nonnull
   public RelativeAffinity setContrast(double contrast) {
     this.contrast = contrast;
     return this;
@@ -59,6 +61,7 @@ public class RelativeAffinity extends ContextAffinity {
     return epsilon;
   }
 
+  @Nonnull
   public RelativeAffinity setEpsilon(double epsilon) {
     this.epsilon = epsilon;
     return this;
@@ -68,30 +71,38 @@ public class RelativeAffinity extends ContextAffinity {
     return introversion;
   }
 
-  public static @SuppressWarnings("unused") RelativeAffinity[] addRefs(RelativeAffinity[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  RelativeAffinity[] addRefs(@Nullable RelativeAffinity[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRef)
         .toArray((x) -> new RelativeAffinity[x]);
   }
 
-  public static @SuppressWarnings("unused") RelativeAffinity[][] addRefs(RelativeAffinity[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  RelativeAffinity[][] addRefs(@Nullable RelativeAffinity[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRefs)
         .toArray((x) -> new RelativeAffinity[x][]);
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") RelativeAffinity addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  RelativeAffinity addRef() {
     return (RelativeAffinity) super.addRef();
   }
 
   @Override
-  protected double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize,
-      int globalSize) {
+  protected double dist(@Nonnull SimpleMatrix vector_i, SimpleMatrix vector_j, @Nonnull SimpleMatrix cov, int neighborhoodSize,
+                        int globalSize) {
     assert neighborhoodSize > 0;
     final SimpleMatrix invert = MultivariateFrameOfReference.safeInvert(cov, getEpsilon() / neighborhoodSize);
     final SimpleMatrix vect = vector_i.minus(vector_j);

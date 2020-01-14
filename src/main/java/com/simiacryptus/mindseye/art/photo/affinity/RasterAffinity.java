@@ -19,22 +19,22 @@
 
 package com.simiacryptus.mindseye.art.photo.affinity;
 
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public interface RasterAffinity {
-  static RefList<double[]> normalize(RefList<int[]> graphEdges, RefList<double[]> affinityList) {
+  static RefList<double[]> normalize(@Nonnull RefList<int[]> graphEdges, @Nonnull RefList<double[]> affinityList) {
     return adjust(graphEdges, affinityList, degree(affinityList), 0.5);
   }
 
-  static RefList<double[]> adjust(List<int[]> graphEdges, List<double[]> affinityList, double[] degree, double power) {
+  static RefList<double[]> adjust(@Nonnull List<int[]> graphEdges, @Nonnull List<double[]> affinityList, double[] degree, double power) {
     return RefIntStream.range(0, graphEdges.size()).mapToObj(i2 -> {
       final double deg_i = degree[i2];
       final int[] edges = graphEdges.get(i2);
@@ -50,11 +50,12 @@ public interface RasterAffinity {
     }).collect(RefCollectors.toList());
   }
 
-  static double[] degree(List<double[]> affinityList) {
+  static double[] degree(@Nonnull List<double[]> affinityList) {
     return affinityList.stream().parallel().mapToDouble(x -> RefArrays.stream(x).sum()).toArray();
   }
 
-  default AffinityWrapper wrap(BiFunction<RefList<int[]>, RefList<double[]>, RefList<double[]>> fn) {
+  @Nonnull
+  default AffinityWrapper wrap(@Nonnull BiFunction<RefList<int[]>, RefList<double[]>, RefList<double[]>> fn) {
     return new AffinityWrapper(this) {
       @Override
       public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
@@ -63,7 +64,8 @@ public interface RasterAffinity {
     };
   }
 
-  default AffinityWrapper wrap(Function<RefList<int[]>, RefList<double[]>> fn) {
+  @Nonnull
+  default AffinityWrapper wrap(@Nonnull Function<RefList<int[]>, RefList<double[]>> fn) {
     return new AffinityWrapper(this) {
       @Override
       public RefList<double[]> affinityList(RefList<int[]> graphEdges) {

@@ -21,7 +21,6 @@ package com.simiacryptus.mindseye.art.util;
 
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.util.ImageUtil;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefArrays;
 
 import javax.annotation.Nonnull;
@@ -44,6 +43,7 @@ public class Plasma {
     return bands;
   }
 
+  @Nonnull
   public Plasma setBands(int bands) {
     this.bands = bands;
     return this;
@@ -53,6 +53,7 @@ public class Plasma {
     return noiseAmplitude;
   }
 
+  @Nonnull
   public Plasma setNoiseAmplitude(double... noiseAmplitude) {
     this.noiseAmplitude = noiseAmplitude;
     return this;
@@ -62,6 +63,7 @@ public class Plasma {
     return noisePower;
   }
 
+  @Nonnull
   public Plasma setNoisePower(double noisePower) {
     this.noisePower = noisePower;
     return this;
@@ -75,6 +77,7 @@ public class Plasma {
     return tensor;
   }
 
+  @Nonnull
   public Tensor paint(final int width, final int height) {
     Tensor initSquare = initSquare(bands);
     Tensor expandPlasma = expandPlasma(initSquare, width, height);
@@ -83,7 +86,7 @@ public class Plasma {
   }
 
   @Nonnull
-  private Tensor expandPlasma(Tensor image, final int width, final int height) {
+  private Tensor expandPlasma(@Nonnull Tensor image, final int width, final int height) {
     image.addRef();
     while (image.getDimensions()[0] < Math.max(width, height)) {
       final double factor = Math.pow(image.getDimensions()[0], noisePower);
@@ -96,7 +99,8 @@ public class Plasma {
     return tensor;
   }
 
-  private Tensor expandPlasma(final Tensor seed, double... noise) {
+  @Nonnull
+  private Tensor expandPlasma(@Nonnull final Tensor seed, @Nonnull double... noise) {
     int bands = seed.getDimensions()[2];
     int width = seed.getDimensions()[0] * 2;
     int height = seed.getDimensions()[1] * 2;

@@ -27,8 +27,9 @@ import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefString;
+
+import javax.annotation.Nonnull;
 
 public class ChannelPowerEnhancer implements VisualModifier {
 
@@ -39,6 +40,7 @@ public class ChannelPowerEnhancer implements VisualModifier {
     return averaging;
   }
 
+  @Nonnull
   public ChannelPowerEnhancer setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
@@ -48,19 +50,23 @@ public class ChannelPowerEnhancer implements VisualModifier {
     return balanced;
   }
 
+  @Nonnull
   public ChannelPowerEnhancer setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
+  @Nonnull
   @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+  public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
+    assert network != null;
     network = network.copyPipeline();
+    assert network != null;
     double mag = balanced ? network.eval(visualModifierParameters.style).getData().get(0).rms() : 1;
-    final Layer[] layers = new Layer[] { new SquareActivationLayer(),
+    final Layer[] layers = new Layer[]{new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(-Math.pow(mag, -2)) };
+        new LinearActivationLayer().setScale(-Math.pow(mag, -2))};
     network.add(PipelineNetwork.build(1, layers).setName(RefString.format("-RMS / %.0E", mag))).freeRef();
     final PipelineNetwork freeze = (PipelineNetwork) network.freeze();
     visualModifierParameters.freeRef();

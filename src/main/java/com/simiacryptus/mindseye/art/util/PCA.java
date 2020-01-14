@@ -27,14 +27,13 @@ import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RecycleBin;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class PCA {
   private boolean recenter;
@@ -55,6 +54,7 @@ public class PCA {
     return eigenvaluePower;
   }
 
+  @Nonnull
   public PCA setEigenvaluePower(double eigenvaluePower) {
     this.eigenvaluePower = eigenvaluePower;
     return this;
@@ -64,6 +64,7 @@ public class PCA {
     return recenter;
   }
 
+  @Nonnull
   public PCA setRecenter(boolean recenter) {
     this.recenter = recenter;
     return this;
@@ -73,13 +74,14 @@ public class PCA {
     return rescale;
   }
 
+  @Nonnull
   public PCA setRescale(boolean rescale) {
     this.rescale = rescale;
     return this;
   }
 
-  public static double[] bandCovariance(final RefStream<double[]> pixelStream, final int pixels, final double[] mean,
-      final double[] rms) {
+  public static double[] bandCovariance(@Nonnull final RefStream<double[]> pixelStream, final int pixels, final double[] mean,
+                                        final double[] rms) {
     return RefArrays.stream(RefUtil.get(pixelStream.map(pixel -> {
       double[] crossproduct = RecycleBin.DOUBLES.obtain(pixel.length * pixel.length);
       int k = 0;
@@ -100,16 +102,15 @@ public class PCA {
     }))).map(x -> x / pixels).toArray();
   }
 
-  public static int countPixels(final Tensor featureImage) {
+  public static int countPixels(@Nonnull final Tensor featureImage) {
     int[] dimensions = featureImage.getDimensions();
     int width = dimensions[0];
     int height = dimensions[1];
     return width * height;
   }
 
-  public static RefList<Tensor> pca(final double[] bandCovariance, final double eigenPower) {
-    @Nonnull
-    final EigenDecomposition decomposition = new EigenDecomposition(toMatrix(bandCovariance));
+  public static RefList<Tensor> pca(@Nonnull final double[] bandCovariance, final double eigenPower) {
+    @Nonnull final EigenDecomposition decomposition = new EigenDecomposition(toMatrix(bandCovariance));
     return RefIntStream.range(0, (int) Math.sqrt(bandCovariance.length)).mapToObj(vectorIndex -> {
       double[] data = decomposition.getEigenvector(vectorIndex).toArray();
       return new Tensor(data, 1, 1, data.length).unit()
@@ -118,7 +119,7 @@ public class PCA {
   }
 
   @Nonnull
-  private static Array2DRowRealMatrix toMatrix(final double[] covariance) {
+  private static Array2DRowRealMatrix toMatrix(@Nonnull final double[] covariance) {
     final int bands = (int) Math.sqrt(covariance.length);
     Array2DRowRealMatrix matrix = new Array2DRowRealMatrix(bands, bands);
     int k = 0;
@@ -130,9 +131,10 @@ public class PCA {
     return matrix;
   }
 
-  public RefList<Tensor> channelPCA(Tensor image) {
+  public RefList<Tensor> channelPCA(@Nonnull Tensor image) {
     Tensor meanTensor = getChannelMeans(image);
     Tensor scaled = getChannelRms(image, image.getDimensions()[2], meanTensor);
+    assert scaled != null;
     double[] bandCovariance = bandCovariance(image.getPixelStream(), countPixels(image), meanTensor.getData(),
         scaled.getData());
     meanTensor.freeRef();
@@ -140,7 +142,8 @@ public class PCA {
     return pca(bandCovariance, getEigenvaluePower()).stream().collect(RefCollectors.toList());
   }
 
-  public Tensor getChannelRms(Tensor image, int bands, Tensor meanTensor) {
+  @Nullable
+  public Tensor getChannelRms(Tensor image, int bands, @Nonnull Tensor meanTensor) {
     if (!isRescale()) {
       return meanTensor.map(x -> 1);
     } else {
@@ -155,7 +158,7 @@ public class PCA {
     }
   }
 
-  @NotNull
+  @Nonnull
   public Tensor getChannelMeans(Tensor image) {
     BandReducerLayer bandReducerLayer = new BandReducerLayer();
     Tensor meanTensor = bandReducerLayer.setMode(PoolingLayer.PoolingMode.Avg).eval(image).getData().get(0);

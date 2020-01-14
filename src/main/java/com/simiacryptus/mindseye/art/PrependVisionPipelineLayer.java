@@ -20,10 +20,11 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefStream;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -37,11 +38,13 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
     this.layer = layer;
   }
 
+  @Nonnull
   @Override
   public Layer getLayer() {
     return inner.getLayer();
   }
 
+  @Nonnull
   @Override
   public VisionPipeline<VisionPipelineLayer> getPipeline() {
     StaticVisionPipelineLayer staticVisionPipelineLayer = new StaticVisionPipelineLayer(getPipelineName(), layer);
@@ -56,33 +59,39 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
     return visionPipeline;
   }
 
+  @Nonnull
   @Override
   public String getPipelineName() {
     return inner.getPipelineName() + "/prepend=" + layer.getName();
   }
 
-  public static @SuppressWarnings("unused") PrependVisionPipelineLayer[] addRefs(PrependVisionPipelineLayer[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  PrependVisionPipelineLayer[] addRefs(@Nullable PrependVisionPipelineLayer[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(PrependVisionPipelineLayer::addRef)
         .toArray((x) -> new PrependVisionPipelineLayer[x]);
   }
 
-  public static @SuppressWarnings("unused") PrependVisionPipelineLayer[][] addRefs(
-      PrependVisionPipelineLayer[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  PrependVisionPipelineLayer[][] addRefs(
+      @Nullable PrependVisionPipelineLayer[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(PrependVisionPipelineLayer::addRefs)
         .toArray((x) -> new PrependVisionPipelineLayer[x][]);
   }
 
+  @Nonnull
   @Override
   public String name() {
     return inner.name() + "/prepend=" + layer.getName();
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (this == o)
       return true;
     if (o == null || getClass() != o.getClass())
@@ -100,10 +109,14 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
     return getPipelineName().hashCode() ^ name().hashCode();
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") PrependVisionPipelineLayer addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  PrependVisionPipelineLayer addRef() {
     return (PrependVisionPipelineLayer) super.addRef();
   }
 

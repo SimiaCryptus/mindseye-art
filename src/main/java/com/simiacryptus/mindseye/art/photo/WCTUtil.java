@@ -25,16 +25,17 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
-import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
 
 public class WCTUtil {
 
+  @Nonnull
   public static PipelineNetwork applicator(Tensor encodedStyle, double contentDensity, double styleDensity) {
     return PipelineNetwork.build(1, normalizer(contentDensity), renormalizer(encodedStyle, styleDensity));
   }
 
-  @NotNull
+  @Nonnull
   public static PipelineNetwork renormalizer(Tensor encodedStyle, double styleDensity) {
     final Tensor meanSignal = means(encodedStyle).scaleInPlace(1.0 / styleDensity);
     final Tensor signalPower = rms(encodedStyle, meanSignal).scaleInPlace(Math.sqrt(1.0 / styleDensity));
@@ -48,6 +49,7 @@ public class WCTUtil {
     return renormalizer;
   }
 
+  @Nonnull
   public static Layer normalizer(double maskFactor) {
     final PipelineNetwork normalizer = new PipelineNetwork(1);
     final InnerNode avgNode = normalizer.add(new BandAvgReducerLayer());
@@ -61,6 +63,7 @@ public class WCTUtil {
     return normalizer.freeze();
   }
 
+  @Nonnull
   public static Tensor means(Tensor encodedStyle) {
     final BandAvgReducerLayer avgReducerLayer = new BandAvgReducerLayer();
     final Tensor tensor = avgReducerLayer.eval(encodedStyle).getData().get(0);
@@ -68,7 +71,8 @@ public class WCTUtil {
     return tensor;
   }
 
-  public static Tensor rms(Tensor normalFeatures, Tensor normalMeanSignal) {
+  @Nonnull
+  public static Tensor rms(Tensor normalFeatures, @Nonnull Tensor normalMeanSignal) {
     final Tensor scale = normalMeanSignal.scale(-1);
     final PipelineNetwork wrap = PipelineNetwork.build(1, new ImgBandBiasLayer(scale), new SquareActivationLayer(),
         new BandAvgReducerLayer(), new NthPowerActivationLayer().setPower(0.5));
@@ -78,10 +82,12 @@ public class WCTUtil {
     return tensor;
   }
 
+  @Nonnull
   public static Layer normalizer() {
     return normalizer(1.0);
   }
 
+  @Nonnull
   public static PipelineNetwork applicator(Tensor encodedStyle) {
     return applicator(encodedStyle, 1.0, 1.0);
   }

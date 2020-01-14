@@ -30,8 +30,9 @@ import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefString;
+
+import javax.annotation.Nonnull;
 
 public class ContentConvolutionMatcher implements VisualModifier {
 
@@ -46,6 +47,7 @@ public class ContentConvolutionMatcher implements VisualModifier {
     return maxValue;
   }
 
+  @Nonnull
   public ContentConvolutionMatcher setMaxValue(int maxValue) {
     this.maxValue = maxValue;
     return this;
@@ -55,6 +57,7 @@ public class ContentConvolutionMatcher implements VisualModifier {
     return minValue;
   }
 
+  @Nonnull
   public ContentConvolutionMatcher setMinValue(int minValue) {
     this.minValue = minValue;
     return this;
@@ -64,6 +67,7 @@ public class ContentConvolutionMatcher implements VisualModifier {
     return patternSize;
   }
 
+  @Nonnull
   public ContentConvolutionMatcher setPatternSize(int patternSize) {
     this.patternSize = patternSize;
     return this;
@@ -73,6 +77,7 @@ public class ContentConvolutionMatcher implements VisualModifier {
     return poolingMode;
   }
 
+  @Nonnull
   public ContentConvolutionMatcher setPoolingMode(PoolingLayer.PoolingMode poolingMode) {
     this.poolingMode = poolingMode;
     return this;
@@ -82,6 +87,7 @@ public class ContentConvolutionMatcher implements VisualModifier {
     return averaging;
   }
 
+  @Nonnull
   public ContentConvolutionMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
@@ -91,15 +97,19 @@ public class ContentConvolutionMatcher implements VisualModifier {
     return balanced;
   }
 
+  @Nonnull
   public ContentConvolutionMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
+  @Nonnull
   @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+  public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
+    assert network != null;
     network = network.copyPipeline();
+    assert network != null;
     Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
     visualModifierParameters.freeRef();
     double mag = balanced ? baseContent.rms() : 1;
@@ -120,9 +130,9 @@ public class ContentConvolutionMatcher implements VisualModifier {
                 .permuteDimensions(Integer.MAX_VALUE, -1, 2))
             .explode())
         .freeRef();
-    final Layer[] layers = new Layer[] {
+    final Layer[] layers = new Layer[]{
         new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer() };
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
     network.add(PipelineNetwork.build(1, layers).setName(RefString.format("-RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }

@@ -32,11 +32,11 @@ import com.simiacryptus.mindseye.layers.java.ImgBandScaleLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.*;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 
 public class PatternPCAMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(PatternPCAMatcher.class);
@@ -49,6 +49,7 @@ public class PatternPCAMatcher implements VisualModifier {
     return bands;
   }
 
+  @Nonnull
   public PatternPCAMatcher setBands(int bands) {
     this.bands = bands;
     return this;
@@ -58,6 +59,7 @@ public class PatternPCAMatcher implements VisualModifier {
     return maxValue;
   }
 
+  @Nonnull
   public PatternPCAMatcher setMaxValue(int maxValue) {
     this.maxValue = maxValue;
     return this;
@@ -67,6 +69,7 @@ public class PatternPCAMatcher implements VisualModifier {
     return minValue;
   }
 
+  @Nonnull
   public PatternPCAMatcher setMinValue(int minValue) {
     this.minValue = minValue;
     return this;
@@ -76,15 +79,19 @@ public class PatternPCAMatcher implements VisualModifier {
     return averaging;
   }
 
+  @Nonnull
   public PatternPCAMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
 
+  @Nonnull
   @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+  public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
+    assert network != null;
     network = network.copyPipeline();
+    assert network != null;
     Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
     visualModifierParameters.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
@@ -94,6 +101,7 @@ public class PatternPCAMatcher implements VisualModifier {
       PCA pca = new PCA().setRecenter(true).setRescale(false).setEigenvaluePower(0.0);
       Tensor channelMeans = pca.getChannelMeans(baseContent);
       Tensor channelRms = pca.getChannelRms(baseContent, contentDimensions[2], channelMeans);
+      assert channelRms != null;
       double[] covariance = PCA.bandCovariance(baseContent.getPixelStream(), PCA.countPixels(baseContent),
           channelMeans.getData(), channelRms.getData());
       signalProjection = PipelineNetwork.build(1, new ImgBandBiasLayer(channelMeans.scaleInPlace(-1)),
@@ -103,7 +111,7 @@ public class PatternPCAMatcher implements VisualModifier {
     } catch (Throwable e) {
       log.info("Error processing PCA for dimensions " + RefArrays.toString(contentDimensions), e);
       PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
-      pipelineNetwork.add(new ValueLayer(new Tensor(0.0)), new DAGNode[] {});
+      pipelineNetwork.add(new ValueLayer(new Tensor(0.0)), new DAGNode[]{});
       return pipelineNetwork;
     }
     int bands = Math.min(getBands(), contentDimensions[2]);
@@ -132,7 +140,7 @@ public class PatternPCAMatcher implements VisualModifier {
     return (PipelineNetwork) network.freeze();
   }
 
-  public void channelStats(Tensor spacialPattern, int bands) {
+  public void channelStats(@Nonnull Tensor spacialPattern, int bands) {
     double[] means = RefIntStream.range(0, bands).mapToDouble(band -> {
       return spacialPattern.selectBand(band).mean();
     }).toArray();
@@ -143,9 +151,9 @@ public class PatternPCAMatcher implements VisualModifier {
     log.info("Means: " + RefArrays.toString(means) + "; StdDev: " + RefArrays.toString(stdDevs));
   }
 
-  @NotNull
-  public ConvolutionLayer getConvolutionLayer1(ConvolutionLayer convolutionLayer, RefList<Tensor> components,
-      int stride) {
+  @Nonnull
+  public ConvolutionLayer getConvolutionLayer1(@Nonnull ConvolutionLayer convolutionLayer, @Nonnull RefList<Tensor> components,
+                                               int stride) {
     convolutionLayer.getKernel().setByCoord(c -> {
       int[] coords = c.getCoords();
       return components.get(coords[2] % stride).get(coords[2] / stride);
@@ -153,9 +161,9 @@ public class PatternPCAMatcher implements VisualModifier {
     return convolutionLayer;
   }
 
-  @NotNull
-  public ConvolutionLayer getConvolutionLayer2(ConvolutionLayer convolutionLayer, RefList<Tensor> components,
-      int stride) {
+  @Nonnull
+  public ConvolutionLayer getConvolutionLayer2(@Nonnull ConvolutionLayer convolutionLayer, @Nonnull RefList<Tensor> components,
+                                               int stride) {
     convolutionLayer.getKernel().setByCoord(c -> {
       int[] coords = c.getCoords();
       return components.get(coords[2] / stride).get(coords[2] % stride);

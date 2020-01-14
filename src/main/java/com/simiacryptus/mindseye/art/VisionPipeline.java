@@ -20,12 +20,13 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefLinkedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCountingBase {
@@ -35,7 +36,7 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
 
   private final RefLinkedHashMap<T, PipelineNetwork> layers = new RefLinkedHashMap<>();
 
-  public VisionPipeline(String name, T... values) {
+  public VisionPipeline(String name, @Nonnull T... values) {
     this.name = name;
     PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
     for (T value : values) {
@@ -45,18 +46,23 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
     pipelineNetwork.freeRef();
   }
 
+  @Nonnull
   public RefLinkedHashMap<T, PipelineNetwork> getLayers() {
     return new RefLinkedHashMap<>(layers);
   }
 
-  public static @SuppressWarnings("unused") VisionPipeline[] addRefs(VisionPipeline[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  VisionPipeline[] addRefs(@Nullable VisionPipeline[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRef)
         .toArray((x) -> new VisionPipeline[x]);
   }
 
-  public static @SuppressWarnings("unused") VisionPipeline[][] addRefs(VisionPipeline[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  VisionPipeline[][] addRefs(@Nullable VisionPipeline[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRefs)
@@ -68,7 +74,10 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
     super._free();
   }
 
-  public @Override @SuppressWarnings("unused") VisionPipeline<T> addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  VisionPipeline<T> addRef() {
     return (VisionPipeline<T>) super.addRef();
   }
 }

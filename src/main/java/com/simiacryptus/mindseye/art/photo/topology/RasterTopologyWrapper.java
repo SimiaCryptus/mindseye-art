@@ -20,8 +20,9 @@
 package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.lang.Singleton;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefList;
+
+import javax.annotation.Nonnull;
 
 public class RasterTopologyWrapper implements RasterTopology {
 
@@ -59,6 +60,7 @@ public class RasterTopologyWrapper implements RasterTopology {
       super(inner);
     }
 
+    @Nonnull
     @Override
     public RefList<int[]> connectivity() {
       return cache.getOrInit(() -> super.connectivity());

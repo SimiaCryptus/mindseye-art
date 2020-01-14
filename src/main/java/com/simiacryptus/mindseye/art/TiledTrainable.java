@@ -31,17 +31,16 @@ import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -51,7 +50,9 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
 
   public final Tensor canvas;
   public final Layer filter;
+  @Nullable
   private final Layer[] selectors;
+  @Nullable
   private final PipelineNetwork[] networks;
   private final Singleton<PipelineNetwork> networkSingleton = new Singleton<>();
   @Nonnull
@@ -62,20 +63,20 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     this(canvas, tileSize, padding, Precision.Float);
   }
 
-  public TiledTrainable(Tensor canvas, int tileSize, int padding, Precision precision) {
+  public TiledTrainable(Tensor canvas, int tileSize, int padding, @Nonnull Precision precision) {
     this(canvas, new PipelineNetwork(1), tileSize, padding, precision);
   }
 
-  public TiledTrainable(Tensor canvas, Layer filter, int tileSize, int padding) {
+  public TiledTrainable(Tensor canvas, @Nonnull Layer filter, int tileSize, int padding) {
     this(canvas, filter, tileSize, padding, Precision.Float);
   }
 
-  public TiledTrainable(Tensor canvas, Layer filter, int tileSize, int padding, @Nonnull Precision precision) {
+  public TiledTrainable(Tensor canvas, @Nonnull Layer filter, int tileSize, int padding, @Nonnull Precision precision) {
     this(canvas, filter, tileSize, padding, precision, true);
   }
 
-  public TiledTrainable(Tensor canvas, Layer filter, int tileSize, int padding, @Nonnull Precision precision,
-      boolean fade) {
+  public TiledTrainable(Tensor canvas, @Nonnull Layer filter, int tileSize, int padding, @Nonnull Precision precision,
+                        boolean fade) {
     this.setPrecision(precision);
     this.canvas = canvas;
     this.filter = filter.addRef();
@@ -97,12 +98,13 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     logger.info("Trainable canvas ID: " + this.canvas.getId());
   }
 
-  @NotNull
+  @Nonnull
   @Override
   public Layer getLayer() {
     return null;
   }
 
+  @Nonnull
   public Precision getPrecision() {
     return precision;
   }
@@ -112,6 +114,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     MultiPrecision.setPrecision((DAGNetwork) filter, precision);
   }
 
+  @Nullable
   public Layer[] getSelectors() {
     return selectors;
   }
@@ -120,11 +123,13 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     return mutableCanvas;
   }
 
+  @Nonnull
   public TiledTrainable setMutableCanvas(boolean mutableCanvas) {
     this.mutableCanvas = mutableCanvas;
     return this;
   }
 
+  @Nonnull
   public static Layer[] selectors(int padding, int width, int height, int tileSize, boolean fade) {
     int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
@@ -140,7 +145,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     //        rows
     //    ));
     if (1 == cols && 1 == rows) {
-      return new ImgTileSelectLayer[] { new ImgTileSelectLayer(width, height, 0, 0) };
+      return new ImgTileSelectLayer[]{new ImgTileSelectLayer(width, height, 0, 0)};
     } else {
       Layer[] selectors = new Layer[rows * cols];
       int index = 0;
@@ -179,14 +184,18 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     }
   }
 
-  public static @SuppressWarnings("unused") TiledTrainable[] addRefs(TiledTrainable[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  TiledTrainable[] addRefs(@Nullable TiledTrainable[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRef)
         .toArray((x) -> new TiledTrainable[x]);
   }
 
-  public static @SuppressWarnings("unused") TiledTrainable[][] addRefs(TiledTrainable[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  TiledTrainable[][] addRefs(@Nullable TiledTrainable[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRefs)
@@ -200,7 +209,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     if (null == getSelectors() || 0 == getSelectors().length) {
       Trainable trainable = new BasicTrainable(PipelineNetwork.build(1, filter.addRef(),
           networkSingleton.getOrInit(() -> getNetwork(filter.addRef())).addRef())).setMask(isMutableCanvas())
-              .setData(RefArrays.asList(new Tensor[][] { { canvas } }));
+          .setData(RefArrays.asList(new Tensor[][]{{canvas}}));
       PointSample measure = trainable.measure(monitor);
       trainable.freeRef();
       filter.freeRef();
@@ -217,9 +226,12 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       final DeltaSet<UUID> delta = RefUtil.get(RefIntStream.range(0, getSelectors().length).mapToObj(i -> {
         final DeltaSet<UUID> deltaSet = new DeltaSet<>();
         Result tileInput = getSelectors()[i].eval(canvasBuffer);
+        assert networks != null;
         Result tileOutput = networks[i].eval(tileInput);
+        assert tileInput != null;
         tileInput.freeRef();
         tileInput.getData().freeRef();
+        assert tileOutput != null;
         Tensor tensor = tileOutput.getData().get(0);
         assert 1 == tensor.length();
         resultSum.addAndGet(tensor.get(0));
@@ -232,6 +244,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
         b.freeRef();
         return a;
       }));
+      assert canvasBuffer != null;
       canvasBuffer.getData().freeRef();
       canvasBuffer.freeRef();
       final StateSet<UUID> weights = new StateSet<>(delta);
@@ -257,7 +270,10 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     super._free();
   }
 
-  public @Override @SuppressWarnings("unused") TiledTrainable addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  TiledTrainable addRef() {
     return (TiledTrainable) super.addRef();
   }
 

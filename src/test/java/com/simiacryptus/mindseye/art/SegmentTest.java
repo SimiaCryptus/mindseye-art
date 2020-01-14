@@ -33,13 +33,12 @@ import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.notebook.NotebookOutput;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.*;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Map;
@@ -50,6 +49,7 @@ import static com.simiacryptus.mindseye.art.photo.SegmentUtil.*;
 
 public class SegmentTest extends NotebookReportBase {
 
+  @Nonnull
   private String contentImage = "file:///C:/Users/andre/Downloads/pictures/E17-E.jpg";
   private int imageSize = 600;
 
@@ -59,18 +59,23 @@ public class SegmentTest extends NotebookReportBase {
     return ReportType.Applications;
   }
 
+  @Nonnull
   @Override
   protected Class<?> getTargetClass() {
     return FastPhotoStyleTransfer.class;
   }
 
-  public static @SuppressWarnings("unused") SegmentTest[] addRefs(SegmentTest[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  SegmentTest[] addRefs(@Nullable SegmentTest[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRef).toArray((x) -> new SegmentTest[x]);
   }
 
-  public static @SuppressWarnings("unused") SegmentTest[][] addRefs(SegmentTest[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  SegmentTest[][] addRefs(@Nullable SegmentTest[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRefs).toArray((x) -> new SegmentTest[x][]);
@@ -86,19 +91,23 @@ public class SegmentTest extends NotebookReportBase {
     run(this::segment_minCut);
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") SegmentTest addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  SegmentTest addRef() {
     return (SegmentTest) super.addRef();
   }
 
-  @NotNull
+  @Nonnull
   private Tensor contentImage() {
     return SegmentUtil.resize(ImageUtil.getTensor(contentImage), imageSize);
   }
 
-  private void segment_volumeEntropy(NotebookOutput log) {
+  private void segment_volumeEntropy(@Nonnull NotebookOutput log) {
     Tensor content = contentImage();
     log.eval(() -> content.toImage());
     final int[] pixelMap = getSmoothedRegions(log, content);
@@ -109,7 +118,7 @@ public class SegmentTest extends NotebookReportBase {
     }).run(log);
   }
 
-  private void segment_minCut(NotebookOutput log) {
+  private void segment_minCut(@Nonnull NotebookOutput log) {
     Tensor content = contentImage();
     log.eval(() -> content.toImage());
     final int[] pixelMap = getSmoothedRegions(log, content);
@@ -121,7 +130,7 @@ public class SegmentTest extends NotebookReportBase {
     }).run(log);
   }
 
-  private int[] getSmoothedRegions(NotebookOutput log, Tensor content) {
+  private int[] getSmoothedRegions(@Nonnull NotebookOutput log, @Nonnull Tensor content) {
     final AtomicReference<int[]> pixelMap = new AtomicReference(null);
     log.eval(() -> {
       RasterTopology topology = new SearchRadiusTopology(content).setNeighborhoodSize(6).setSelfRef(true)
@@ -142,25 +151,28 @@ public class SegmentTest extends NotebookReportBase {
 
   private static class Assemble_minCut extends ReferenceCountingBase {
     private final Tensor content;
+    @Nonnull
     private final RasterTopology topology;
     private SparseMatrixFloat graph;
     private int[] pixelMap;
 
-    public Assemble_minCut(Tensor content, RasterTopology topology, ContextAffinity affinity, int[] pixelMap) {
+    public Assemble_minCut(Tensor content, @Nonnull RasterTopology topology, @Nonnull ContextAffinity affinity, int[] pixelMap) {
       this.pixelMap = pixelMap;
       this.graph = SmoothSolver_Cuda.laplacian(affinity, topology).matrix.assertSymmetric().project(this.pixelMap);
       this.content = content;
       this.topology = topology;
     }
 
-    public static @SuppressWarnings("unused") Assemble_minCut[] addRefs(Assemble_minCut[] array) {
+    @Nullable
+    public static @SuppressWarnings("unused")
+    Assemble_minCut[] addRefs(@Nullable Assemble_minCut[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(Assemble_minCut::addRef)
           .toArray((x) -> new Assemble_minCut[x]);
     }
 
-    public void run(NotebookOutput log) {
+    public void run(@Nonnull NotebookOutput log) {
       display(log);
       update(volumeEntropy(graph, pixelMap, content, topology).reduceTo(10000).getProjection());
       update(graph.getDenseProjection());
@@ -177,7 +189,7 @@ public class SegmentTest extends NotebookReportBase {
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).sorted().toArray()
       final RefMap<float[], Float> eigensystem = log.eval(() -> this.graph.dense_graph_eigensys());
       log.run(() -> {
-        com.simiacryptus.ref.wrappers.RefSystem.out.println("Sorted Eigenvalues: "
+        RefSystem.out.println("Sorted Eigenvalues: "
             + RefArrays.toString(eigensystem.values().stream().mapToDouble(Float::doubleValue).toArray()));
       });
       final int sampleEigenvectors = 20;
@@ -213,7 +225,7 @@ public class SegmentTest extends NotebookReportBase {
         final Map.Entry<float[], Float> secondLowest = eigensystem.entrySet().stream()
             .sorted(RefComparator.comparing(x -> x.getValue())).limit(sampleEigenvectors)
             .collect(RefCollectors.toList()).get(1);
-        com.simiacryptus.ref.wrappers.RefSystem.out
+        RefSystem.out
             .println("Second Smallest Eigenvector " + RefArrays.toString(secondLowest.getKey()));
         return RefArrays.stream(SparseMatrixFloat.toDouble(secondLowest.getKey())).mapToInt(x -> x < 0 ? 0 : 1)
             .toArray();
@@ -221,11 +233,11 @@ public class SegmentTest extends NotebookReportBase {
       display(log);
     }
 
-    public void display(NotebookOutput log) {
+    public void display(@Nonnull NotebookOutput log) {
       display(log, pixelMap, graph);
     }
 
-    public void updateAndDisplay(NotebookOutput log, int[] projection) {
+    public void updateAndDisplay(@Nonnull NotebookOutput log, int[] projection) {
       display(log, SparseMatrixFloat.project(pixelMap, projection), graph.project(projection));
     }
 
@@ -234,44 +246,51 @@ public class SegmentTest extends NotebookReportBase {
       pixelMap = SparseMatrixFloat.project(pixelMap, projection);
     }
 
-    public void display(NotebookOutput log, int[] pixelMap, SparseMatrixFloat graph) {
+    public void display(@Nonnull NotebookOutput log, @Nonnull int[] pixelMap, @Nonnull SparseMatrixFloat graph) {
       log.eval(() -> {
-        com.simiacryptus.ref.wrappers.RefSystem.out
+        RefSystem.out
             .println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
         return paintWithRandomColors(topology, pixelMap, graph);
       });
     }
 
-    public @SuppressWarnings("unused") void _free() {
+    public @SuppressWarnings("unused")
+    void _free() {
     }
 
-    public @Override @SuppressWarnings("unused") Assemble_minCut addRef() {
+    @Nonnull
+    public @Override
+    @SuppressWarnings("unused")
+    Assemble_minCut addRef() {
       return (Assemble_minCut) super.addRef();
     }
   }
 
   private static class Assemble_volumeEntropy extends ReferenceCountingBase {
     private final Tensor content;
+    @Nonnull
     private final RasterTopology topology;
     private SparseMatrixFloat graph;
     private int[] pixelMap;
 
-    public Assemble_volumeEntropy(Tensor content, RasterTopology topology, ContextAffinity affinity, int[] pixelMap) {
+    public Assemble_volumeEntropy(Tensor content, @Nonnull RasterTopology topology, @Nonnull ContextAffinity affinity, int[] pixelMap) {
       this.pixelMap = pixelMap;
       this.graph = SmoothSolver_Cuda.laplacian(affinity, topology).matrix.assertSymmetric().project(this.pixelMap);
       this.content = content;
       this.topology = topology;
     }
 
-    public static @SuppressWarnings("unused") Assemble_volumeEntropy[] addRefs(Assemble_volumeEntropy[] array) {
+    @Nullable
+    public static @SuppressWarnings("unused")
+    Assemble_volumeEntropy[] addRefs(@Nullable Assemble_volumeEntropy[] array) {
       if (array == null)
         return null;
       return Arrays.stream(array).filter((x) -> x != null).map(Assemble_volumeEntropy::addRef)
           .toArray((x) -> new Assemble_volumeEntropy[x]);
     }
 
-    public void run(NotebookOutput log) {
+    public void run(@Nonnull NotebookOutput log) {
       display(log);
       update(log.eval(() -> volumeEntropy(graph, pixelMap, content, topology).reduceTo(5000).getProjection()));
       display(log);
@@ -286,19 +305,23 @@ public class SegmentTest extends NotebookReportBase {
       pixelMap = SparseMatrixFloat.project(pixelMap, projection);
     }
 
-    public void display(NotebookOutput log) {
+    public void display(@Nonnull NotebookOutput log) {
       log.eval(() -> {
-        com.simiacryptus.ref.wrappers.RefSystem.out
+        RefSystem.out
             .println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
         return paintWithRandomColors(topology, pixelMap, graph);
       });
     }
 
-    public @SuppressWarnings("unused") void _free() {
+    public @SuppressWarnings("unused")
+    void _free() {
     }
 
-    public @Override @SuppressWarnings("unused") Assemble_volumeEntropy addRef() {
+    @Nonnull
+    public @Override
+    @SuppressWarnings("unused")
+    Assemble_volumeEntropy addRef() {
       return (Assemble_volumeEntropy) super.addRef();
     }
   }

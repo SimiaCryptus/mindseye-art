@@ -20,26 +20,28 @@
 package com.simiacryptus.mindseye.art.photo;
 
 import com.simiacryptus.mindseye.art.photo.affinity.ContextAffinity;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefStream;
 import org.ejml.simple.SimpleMatrix;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
 public class MultivariateFrameOfReference {
+  @Nullable
   public final SimpleMatrix invCov;
   public final SimpleMatrix means;
   public final SimpleMatrix rms;
   public final SimpleMatrix cov;
   public final int dimension;
 
-  public MultivariateFrameOfReference(MultivariateFrameOfReference a, MultivariateFrameOfReference b, double mixing) {
+  public MultivariateFrameOfReference(@Nonnull MultivariateFrameOfReference a, @Nonnull MultivariateFrameOfReference b, double mixing) {
     this(a, b, mixing, 1e-4);
   }
 
-  public MultivariateFrameOfReference(MultivariateFrameOfReference a, MultivariateFrameOfReference b, double mixing,
-      double epsilon) {
+  public MultivariateFrameOfReference(@Nonnull MultivariateFrameOfReference a, @Nonnull MultivariateFrameOfReference b, double mixing,
+                                      double epsilon) {
     means = ContextAffinity.mix(b.means, a.means, mixing);
     rms = ContextAffinity.mix(b.rms, a.rms, mixing);
     cov = ContextAffinity.mix(b.cov, a.cov, mixing);
@@ -47,11 +49,11 @@ public class MultivariateFrameOfReference {
     this.invCov = safeInvert(cov, epsilon);
   }
 
-  public MultivariateFrameOfReference(Supplier<RefStream<double[]>> fn, int channels) {
+  public MultivariateFrameOfReference(@Nonnull Supplier<RefStream<double[]>> fn, int channels) {
     this(fn, channels, 1e-4);
   }
 
-  public MultivariateFrameOfReference(Supplier<RefStream<double[]>> fn, int channels, double epsilon) {
+  public MultivariateFrameOfReference(@Nonnull Supplier<RefStream<double[]>> fn, int channels, double epsilon) {
     this.dimension = channels;
     means = ContextAffinity.means(fn, this.dimension);
     rms = ContextAffinity.magnitude(means, fn, channels);
@@ -59,7 +61,8 @@ public class MultivariateFrameOfReference {
     this.invCov = safeInvert(cov, epsilon);
   }
 
-  public static SimpleMatrix safeInvert(SimpleMatrix cov, double epsilon) {
+  @Nullable
+  public static SimpleMatrix safeInvert(@Nonnull SimpleMatrix cov, double epsilon) {
     SimpleMatrix invCov;
     try {
       invCov = cov.plus(SimpleMatrix.identity(cov.numCols()).scale(epsilon)).invert();
@@ -69,12 +72,12 @@ public class MultivariateFrameOfReference {
     return invCov;
   }
 
-  public double[] adjust(double[] pixel) {
+  public double[] adjust(@Nonnull double[] pixel) {
     return RefIntStream.range(0, pixel.length).mapToDouble(c -> ((pixel[c]) - this.means.get(c)) / this.rms.get(c))
         .toArray();
   }
 
-  public double dist(double[] vector) {
+  public double dist(@Nonnull double[] vector) {
     final SimpleMatrix v = ContextAffinity.toMatrix(vector);
     return null == invCov ? v.dot(v) : v.dot(invCov.mult(v));
   }
@@ -83,7 +86,7 @@ public class MultivariateFrameOfReference {
     return rms.transpose().mult(cov.mult(rms));
   }
 
-  public double dist(MultivariateFrameOfReference right) {
+  public double dist(@Nonnull MultivariateFrameOfReference right) {
     final SimpleMatrix mu0 = this.means;
     final SimpleMatrix sigma0 = this.rawCov();
     final SimpleMatrix mu1 = right.means;

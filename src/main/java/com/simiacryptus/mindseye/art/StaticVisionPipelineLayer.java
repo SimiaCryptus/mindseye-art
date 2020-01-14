@@ -20,9 +20,10 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,42 +39,50 @@ public class StaticVisionPipelineLayer extends ReferenceCountingBase implements 
     this.pipelineName = pipelineName;
   }
 
+  @Nonnull
   @Override
   public Layer getLayer() {
     return layer.addRef();
   }
 
+  @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
     return reference.get().addRef();
   }
 
+  @Nonnull
   @Override
   public String getPipelineName() {
     return pipelineName;
   }
 
-  public static @SuppressWarnings("unused") StaticVisionPipelineLayer[] addRefs(StaticVisionPipelineLayer[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  StaticVisionPipelineLayer[] addRefs(@Nullable StaticVisionPipelineLayer[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(StaticVisionPipelineLayer::addRef)
         .toArray((x) -> new StaticVisionPipelineLayer[x]);
   }
 
-  public static @SuppressWarnings("unused") StaticVisionPipelineLayer[][] addRefs(StaticVisionPipelineLayer[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  StaticVisionPipelineLayer[][] addRefs(@Nullable StaticVisionPipelineLayer[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(StaticVisionPipelineLayer::addRefs)
         .toArray((x) -> new StaticVisionPipelineLayer[x][]);
   }
 
+  @Nonnull
   @Override
   public String name() {
     return layer.getName();
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (this == o)
       return true;
     if (o == null || getClass() != o.getClass())
@@ -91,10 +100,14 @@ public class StaticVisionPipelineLayer extends ReferenceCountingBase implements 
     return getPipelineName().hashCode() ^ name().hashCode();
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") StaticVisionPipelineLayer addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  StaticVisionPipelineLayer addRef() {
     return (StaticVisionPipelineLayer) super.addRef();
   }
 

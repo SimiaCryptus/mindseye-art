@@ -22,9 +22,10 @@ package com.simiacryptus.mindseye.art.photo.affinity;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefAware;
 import org.ejml.simple.SimpleMatrix;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
@@ -37,11 +38,11 @@ import java.util.Arrays;
 public class MattingAffinity extends ContextAffinity {
   private double epsilon = 1e-4;
 
-  public MattingAffinity(Tensor content) {
+  public MattingAffinity(@Nonnull Tensor content) {
     this(content, new SimpleRasterTopology(content.getDimensions()));
   }
 
-  public MattingAffinity(Tensor content, RasterTopology topology) {
+  public MattingAffinity(@Nonnull Tensor content, RasterTopology topology) {
     super(content);
     this.setTopology(topology);
   }
@@ -50,35 +51,44 @@ public class MattingAffinity extends ContextAffinity {
     return epsilon;
   }
 
+  @Nonnull
   public MattingAffinity setEpsilon(double epsilon) {
     this.epsilon = epsilon;
     return this;
   }
 
-  public static @SuppressWarnings("unused") MattingAffinity[] addRefs(MattingAffinity[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  MattingAffinity[] addRefs(@Nullable MattingAffinity[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRef)
         .toArray((x) -> new MattingAffinity[x]);
   }
 
-  public static @SuppressWarnings("unused") MattingAffinity[][] addRefs(MattingAffinity[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  MattingAffinity[][] addRefs(@Nullable MattingAffinity[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRefs)
         .toArray((x) -> new MattingAffinity[x][]);
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") MattingAffinity addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  MattingAffinity addRef() {
     return (MattingAffinity) super.addRef();
   }
 
   @Override
-  protected double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize,
-      int globalSize) {
+  protected double dist(@Nonnull SimpleMatrix vector_i, @Nonnull SimpleMatrix vector_j, @Nonnull SimpleMatrix cov, int neighborhoodSize,
+                        int globalSize) {
     int bands = dimensions[2];
     assert neighborhoodSize > 0;
     final SimpleMatrix invert = cov.plus(SimpleMatrix.identity(bands).scale(getEpsilon() / neighborhoodSize)).invert();

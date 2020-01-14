@@ -31,10 +31,8 @@ import com.simiacryptus.mindseye.layers.java.PhotoUnpoolingLayer;
 import com.simiacryptus.mindseye.layers.java.UnpoolingLayer;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.*;
 import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,10 +87,11 @@ public class VGG_WCT_Import {
   public static final Logger log = LoggerFactory.getLogger(VGG_WCT_Import.class);
   private static final String fileBase = "H:\\SimiaCryptus\\data-science-tools\\FastPhotoStyle\\models\\";
   @Nonnull
-  private static int[] convolutionOrder = { 1, 0, 3, 2 };
+  private static int[] convolutionOrder = {1, 0, 3, 2};
   private static boolean verbose = false;
   private static boolean simple = false;
 
+  @Nonnull
   public static Layer encode_1() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
     final String prefix1 = "vgg_conv1_1_0_";
@@ -107,6 +106,7 @@ public class VGG_WCT_Import {
     return pipeline;
   }
 
+  @Nonnull
   public static Layer encode_2() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
@@ -136,6 +136,7 @@ public class VGG_WCT_Import {
 
   }
 
+  @Nonnull
   public static Layer encode_3() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
@@ -178,6 +179,7 @@ public class VGG_WCT_Import {
 
   }
 
+  @Nonnull
   public static Layer encode_4() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
@@ -202,6 +204,7 @@ public class VGG_WCT_Import {
 
   }
 
+  @Nonnull
   public static Layer encode_5() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
@@ -232,6 +235,7 @@ public class VGG_WCT_Import {
 
   }
 
+  @Nonnull
   public static Layer decode_1() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
     final String prefix1 = "inv_conv1_1_1_";
@@ -243,6 +247,7 @@ public class VGG_WCT_Import {
     return pipeline;
   }
 
+  @Nonnull
   public static Layer decode_2() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
@@ -268,6 +273,7 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  @Nonnull
   public static Layer decode_3() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
@@ -305,6 +311,7 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  @Nonnull
   public static Layer decode_4() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
@@ -328,6 +335,7 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  @Nonnull
   public static Layer decode_5() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
 
@@ -356,7 +364,8 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
-  public static @NotNull Layer photo_decode_2() {
+  public static @Nonnull
+  Layer photo_decode_2() {
 
     PipelineNetwork pipeline2 = new PipelineNetwork(2);
 
@@ -404,7 +413,8 @@ public class VGG_WCT_Import {
     return polish(pipeline2);
   }
 
-  public static @NotNull Layer photo_decode_3() {
+  public static @Nonnull
+  Layer photo_decode_3() {
     PipelineNetwork pipeline2 = new PipelineNetwork(2);
 
     {
@@ -484,7 +494,8 @@ public class VGG_WCT_Import {
     return polish(pipeline2);
   }
 
-  public static @NotNull Layer photo_decode_4() {
+  public static @Nonnull
+  Layer photo_decode_4() {
     PipelineNetwork pipeline2 = new PipelineNetwork(2);
 
     {
@@ -527,7 +538,8 @@ public class VGG_WCT_Import {
     return polish(pipeline2);
   }
 
-  public static @NotNull Layer photo_decode_5() {
+  public static @Nonnull
+  Layer photo_decode_5() {
     PipelineNetwork pipeline = new PipelineNetwork(2);
 
     {
@@ -578,16 +590,18 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
-  @NotNull
+  @Nonnull
   public static Tensor getBias(String prefix1) {
     return loadNumpyTensor(fileBase + prefix1 + "bias.txt");
   }
 
+  @Nonnull
   public static Tensor getWeight(String prefix4) {
     return loadNumpyTensor(fileBase + prefix4 + "weight.txt").permuteDimensions(convolutionOrder);
   }
 
-  public static Tensor loadNumpyTensor(String file) {
+  @Nonnull
+  public static Tensor loadNumpyTensor(@Nonnull String file) {
     try {
       Object parse = parse(FileUtils.readFileToString(new File(file), "UTF-8"));
       return new Tensor(toStream(parse).toArray(), Tensor.reverse(dims(parse)));
@@ -596,19 +610,22 @@ public class VGG_WCT_Import {
     }
   }
 
+  @Nonnull
   public static FastPhotoStyleTransfer newFastPhotoStyleTransfer() {
     return new FastPhotoStyleTransfer(decode_1(), encode_1(), photo_decode_2(), encode_2(), photo_decode_3(),
         encode_3(), photo_decode_4(), encode_4());
   }
 
+  @Nonnull
   private static PipelineNetwork convolutionLayer(String prefix4, int inBands, int outBands) {
     return convolutionLayer(getBias(prefix4), getWeight(prefix4), inBands, outBands);
   }
 
-  @NotNull
-  private static Layer polish(Layer pipeline) {
+  @Nonnull
+  private static Layer polish(@Nonnull Layer pipeline) {
     ((PipelineNetwork) pipeline).visitNodes(true, node -> {
       Layer layer = node.getLayer();
+      assert layer != null;
       final String name = layer.getName();
       if (!simple && layer instanceof Explodable) {
         layer = ((Explodable) layer).explode();
@@ -623,20 +640,23 @@ public class VGG_WCT_Import {
     return pipeline;
   }
 
-  private static PipelineNetwork convolutionLayer(PipelineNetwork pipeline, Tensor bias1, Tensor weight1, int inBands,
-      int outBands) {
+  @Nonnull
+  private static PipelineNetwork convolutionLayer(@Nonnull PipelineNetwork pipeline, Tensor bias1, @Nonnull Tensor weight1, int inBands,
+                                                  int outBands) {
     pipeline.add(new ConvolutionLayer(3, 3, inBands, outBands).setPaddingXY(0, 0).set(weight1)).freeRef();
     pipeline.add(new ImgBandBiasLayer(outBands).set(bias1)).freeRef();
     pipeline.add(new ActivationLayer(ActivationLayer.Mode.RELU)).freeRef();
     return pipeline;
   }
 
-  private static PipelineNetwork convolutionLayer(Tensor bias1, Tensor weight1, int inBands, int outBands) {
+  @Nonnull
+  private static PipelineNetwork convolutionLayer(Tensor bias1, @Nonnull Tensor weight1, int inBands, int outBands) {
     return convolutionLayer(
         (PipelineNetwork) new PipelineNetwork(1).setName(RefString.format("Conv(%s/%s)", inBands, outBands)), bias1,
         weight1, inBands, outBands);
   }
 
+  @Nonnull
   private static RefDoubleStream toStream(Object data) {
     if (data instanceof Double) {
       return RefDoubleStream.of((Double) data);
@@ -647,7 +667,7 @@ public class VGG_WCT_Import {
 
   private static int[] dims(Object data) {
     if (data instanceof Double) {
-      return new int[] {};
+      return new int[]{};
     } else {
       int length = ((Object[]) data).length;
       RefList<int[]> childDims = RefArrays.stream(((Object[]) data)).map(x -> dims(x)).collect(RefCollectors.toList());

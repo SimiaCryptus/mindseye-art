@@ -28,8 +28,9 @@ import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.wrappers.RefString;
+
+import javax.annotation.Nonnull;
 
 public class ContentInceptionMatcher implements VisualModifier {
 
@@ -42,6 +43,7 @@ public class ContentInceptionMatcher implements VisualModifier {
     return maxValue;
   }
 
+  @Nonnull
   public ContentInceptionMatcher setMaxValue(int maxValue) {
     this.maxValue = maxValue;
     return this;
@@ -51,6 +53,7 @@ public class ContentInceptionMatcher implements VisualModifier {
     return minValue;
   }
 
+  @Nonnull
   public ContentInceptionMatcher setMinValue(int minValue) {
     this.minValue = minValue;
     return this;
@@ -60,6 +63,7 @@ public class ContentInceptionMatcher implements VisualModifier {
     return averaging;
   }
 
+  @Nonnull
   public ContentInceptionMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
@@ -69,15 +73,19 @@ public class ContentInceptionMatcher implements VisualModifier {
     return balanced;
   }
 
+  @Nonnull
   public ContentInceptionMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
+  @Nonnull
   @Override
-  public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+  public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
+    assert network != null;
     network = network.copyPipeline();
+    assert network != null;
     Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
     visualModifierParameters.freeRef();
     BandAvgReducerLayer bandAvgReducerLayer = new BandAvgReducerLayer();
@@ -93,9 +101,9 @@ public class ContentInceptionMatcher implements VisualModifier {
     network.add(colorProjection);
     network.add(new ConvolutionLayer(contentDimensions[0], contentDimensions[1], 1, 1)
         .set(spacialPattern.scaleInPlace(Math.pow(spacialPattern.rms(), -2))).explode()).freeRef();
-    final Layer[] layers = new Layer[] {
+    final Layer[] layers = new Layer[]{
         new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer() };
+        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
     network.add(PipelineNetwork.build(1, layers).setName(RefString.format("-RMS / %.0E", mag))).freeRef();
     return (PipelineNetwork) network.freeze();
   }

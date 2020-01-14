@@ -22,26 +22,29 @@ package com.simiacryptus.mindseye.art.photo.affinity;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 public class GaussianAffinity extends ReferenceCountingBase implements RasterAffinity {
+  @Nonnull
   protected final Tensor content;
   private final double sigma;
+  @Nonnull
   private final int[] dimensions;
   private RasterTopology topology;
 
-  public GaussianAffinity(Tensor content, double sigma) {
+  public GaussianAffinity(@Nonnull Tensor content, double sigma) {
     this(content, sigma, new SimpleRasterTopology(content.getDimensions()));
   }
 
-  public GaussianAffinity(Tensor content, double sigma, RasterTopology topology) {
+  public GaussianAffinity(@Nonnull Tensor content, double sigma, RasterTopology topology) {
     this.setTopology(topology);
     this.dimensions = content.getDimensions();
     this.content = content;
@@ -52,19 +55,24 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
     return topology;
   }
 
+  @Nonnull
   public GaussianAffinity setTopology(RasterTopology topology) {
     this.topology = topology;
     return this;
   }
 
-  public static @SuppressWarnings("unused") GaussianAffinity[] addRefs(GaussianAffinity[] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  GaussianAffinity[] addRefs(@Nullable GaussianAffinity[] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(GaussianAffinity::addRef)
         .toArray((x) -> new GaussianAffinity[x]);
   }
 
-  public static @SuppressWarnings("unused") GaussianAffinity[][] addRefs(GaussianAffinity[][] array) {
+  @Nullable
+  public static @SuppressWarnings("unused")
+  GaussianAffinity[][] addRefs(@Nullable GaussianAffinity[][] array) {
     if (array == null)
       return null;
     return Arrays.stream(array).filter((x) -> x != null).map(GaussianAffinity::addRefs)
@@ -72,16 +80,20 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
   }
 
   @Override
-  public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
+  public RefList<double[]> affinityList(@Nonnull RefList<int[]> graphEdges) {
     return RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel()
         .mapToObj(i -> RefArrays.stream(graphEdges.get(i)).mapToDouble(j -> affinity(i, j)).toArray())
         .collect(RefCollectors.toList());
   }
 
-  public @SuppressWarnings("unused") void _free() {
+  public @SuppressWarnings("unused")
+  void _free() {
   }
 
-  public @Override @SuppressWarnings("unused") GaussianAffinity addRef() {
+  @Nonnull
+  public @Override
+  @SuppressWarnings("unused")
+  GaussianAffinity addRef() {
     return (GaussianAffinity) super.addRef();
   }
 
