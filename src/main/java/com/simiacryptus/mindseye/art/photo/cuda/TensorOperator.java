@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
@@ -52,10 +53,7 @@ public class TensorOperator extends ReferenceCountingBase implements RefOperator
   @Nullable
   public static @SuppressWarnings("unused")
   TensorOperator[][] addRefs(@Nullable TensorOperator[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(TensorOperator::addRefs)
-        .toArray((x) -> new TensorOperator[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Nullable

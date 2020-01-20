@@ -54,8 +54,16 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels,
                   int outputChannels) {
     this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels,
-        (PipelineNetwork pipeline) -> pipeline
-            .add(new PoolingLayer().setStrideXY(2, 2).setWindowXY(2, 2).setMode(PoolingLayer.PoolingMode.Avg)));
+        (PipelineNetwork pipeline) -> {
+          PoolingLayer poolingLayer1 = new PoolingLayer();
+          poolingLayer1.setStrideXY(2, 2);
+          PoolingLayer poolingLayer2 = poolingLayer1.addRef();
+          poolingLayer2.setWindowXY(2, 2);
+          PoolingLayer poolingLayer = poolingLayer2.addRef();
+          poolingLayer.setMode(PoolingLayer.PoolingMode.Avg);
+          pipeline
+              .add(poolingLayer.addRef());
+        });
   }
 
   PoolingPipeline(int[] inputBorders, int[] outputBorders, int[] kenelSize, int[] strides, int inputChannels,

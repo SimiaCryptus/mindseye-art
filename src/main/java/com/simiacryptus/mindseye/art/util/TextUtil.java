@@ -86,7 +86,6 @@ public class TextUtil {
   @Nonnull
   public static Font fitWidth(@Nonnull final String text, final int resolution, final int padding, final String fontName,
                               final int style) {
-    final Font font;
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
     double width = 0;
     int size = 12;
@@ -97,14 +96,13 @@ public class TextUtil {
           .mapToInt(t -> (int) graphics.getFontMetrics().getStringBounds(t, graphics).getWidth()).max().getAsInt();
     }
     size -= 2;
-    font = new Font(fontName, style, size);
+    final Font font = new Font(fontName, style, size);
     return font;
   }
 
   @Nonnull
   public static Font fitHeight(@Nonnull final String text, final int resolution, final int padding, final String fontName,
                                final int style) {
-    final Font font;
     double height = 0;
     int size = 12;
     while (height < (resolution - 2 * padding) && size < 10000) {
@@ -112,14 +110,13 @@ public class TextUtil {
       height = measure(new Font(fontName, style, size), text).getHeight();
     }
     size -= 2;
-    font = new Font(fontName, style, size);
+    final Font font = new Font(fontName, style, size);
     return font;
   }
 
   @Nonnull
   public static Font fit(@Nonnull final String text, final int max_width, final int max_height, final int padding,
                          final String fontName, final int style) {
-    final Font font;
     double height = 0;
     double width = 0;
     int size = 12;
@@ -130,7 +127,7 @@ public class TextUtil {
       width = measure.getWidth();
     }
     size -= 2;
-    font = new Font(fontName, style, size);
+    final Font font = new Font(fontName, style, size);
     return font;
   }
 }

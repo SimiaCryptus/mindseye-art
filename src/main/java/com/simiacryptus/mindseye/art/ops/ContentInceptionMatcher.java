@@ -91,20 +91,32 @@ public class ContentInceptionMatcher implements VisualModifier {
     BandAvgReducerLayer bandAvgReducerLayer = new BandAvgReducerLayer();
     Tensor bandAvg = bandAvgReducerLayer.eval(baseContent).getData().get(0);
     ImgBandBiasLayer offsetLayer = new ImgBandBiasLayer(bandAvg.scale(-1));
+    NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
+    nthPowerActivationLayer.setPower(0.5);
     Tensor bandPowers = PipelineNetwork.build(1, offsetLayer, new SquareActivationLayer(), bandAvgReducerLayer,
-        new NthPowerActivationLayer().setPower(0.5)).eval(baseContent).getData().get(0);
+        nthPowerActivationLayer.addRef()).eval(baseContent).getData().get(0);
     int[] contentDimensions = baseContent.getDimensions();
-    Layer colorProjection = new ConvolutionLayer(1, 1, contentDimensions[2], 1).setPaddingXY(0, 0)
-        .set(bandPowers.unit()).explode();
+    ConvolutionLayer convolutionLayer1 = new ConvolutionLayer(1, 1, contentDimensions[2], 1).setPaddingXY(0, 0);
+    convolutionLayer1.set(bandPowers.unit());
+    Layer colorProjection = convolutionLayer1.addRef().explode();
     Tensor spacialPattern = colorProjection.eval(baseContent).getData().get(0);
     double mag = balanced ? spacialPattern.rms() : 1;
     network.add(colorProjection);
-    network.add(new ConvolutionLayer(contentDimensions[0], contentDimensions[1], 1, 1)
-        .set(spacialPattern.scaleInPlace(Math.pow(spacialPattern.rms(), -2))).explode()).freeRef();
+    spacialPattern.scaleInPlace(Math.pow(spacialPattern.rms(), -2));
+    ConvolutionLayer convolutionLayer = new ConvolutionLayer(contentDimensions[0], contentDimensions[1], 1, 1);
+    convolutionLayer.set(spacialPattern.addRef());
+    network.add(convolutionLayer.addRef().explode()).freeRef();
+    BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
+    boundedActivationLayer1.setMinValue(getMinValue());
+    BoundedActivationLayer boundedActivationLayer = boundedActivationLayer1.addRef();
+    boundedActivationLayer.setMaxValue(getMaxValue());
     final Layer[] layers = new Layer[]{
-        new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(),
+        boundedActivationLayer.addRef(), new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
-    network.add(PipelineNetwork.build(1, layers).setName(RefString.format("-RMS / %.0E", mag))).freeRef();
-    return (PipelineNetwork) network.freeze();
+    Layer layer = PipelineNetwork.build(1, layers);
+    layer.setName(RefString.format("-RMS / %.0E", mag));
+    network.add(layer.addRef()).freeRef();
+    network.freeze();
+    return network.addRef();
   }
 }

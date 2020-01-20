@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 
@@ -45,10 +46,7 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
   @Nullable
   public static @SuppressWarnings("unused")
   SingleChannelWrapper[][] addRefs(@Nullable SingleChannelWrapper[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRefs)
-        .toArray((x) -> new SingleChannelWrapper[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Nonnull

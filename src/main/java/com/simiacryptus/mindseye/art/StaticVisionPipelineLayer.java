@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
@@ -69,10 +70,7 @@ public class StaticVisionPipelineLayer extends ReferenceCountingBase implements 
   @Nullable
   public static @SuppressWarnings("unused")
   StaticVisionPipelineLayer[][] addRefs(@Nullable StaticVisionPipelineLayer[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(StaticVisionPipelineLayer::addRefs)
-        .toArray((x) -> new StaticVisionPipelineLayer[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Nonnull

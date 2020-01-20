@@ -29,6 +29,7 @@ import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.mindseye.test.unit.StandardLayerTests;
 import com.simiacryptus.notebook.NotebookOutput;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefAssert;
 import org.junit.Test;
@@ -90,10 +91,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   @Nullable
   public static @SuppressWarnings("unused")
   VisionPipelineTest[][] addRefs(@Nullable VisionPipelineTest[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRefs)
-        .toArray((x) -> new VisionPipelineTest[x][]);
+    return RefUtil.addRefs(array);
   }
 
   public int[] testDims(int... dims) {
@@ -216,9 +214,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     @Nullable
     public static @SuppressWarnings("unused")
     VGG16Test[] addRefs(@Nullable VGG16Test[] array) {
-      if (array == null)
-        return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(VGG16Test::addRef).toArray((x) -> new VGG16Test[x]);
+      return RefUtil.addRefs(array);
     }
 
     public void inoutDims(@Nonnull NotebookOutput log) {
@@ -271,9 +267,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     @Nullable
     public static @SuppressWarnings("unused")
     VGG19Test[] addRefs(@Nullable VGG19Test[] array) {
-      if (array == null)
-        return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(VGG19Test::addRef).toArray((x) -> new VGG19Test[x]);
+      return RefUtil.addRefs(array);
     }
 
     public void inoutDims(@Nonnull NotebookOutput log) {

@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
@@ -81,10 +82,7 @@ public class AppendVisionPipelineLayer extends ReferenceCountingBase implements 
   @Nullable
   public static @SuppressWarnings("unused")
   AppendVisionPipelineLayer[][] addRefs(@Nullable AppendVisionPipelineLayer[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(AppendVisionPipelineLayer::addRefs)
-        .toArray((x) -> new AppendVisionPipelineLayer[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Nonnull

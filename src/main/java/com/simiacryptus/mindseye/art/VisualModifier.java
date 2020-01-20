@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art;
 
+import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
@@ -63,8 +64,10 @@ public interface VisualModifier {
       @Nonnull
       @Override
       public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
-        return (PipelineNetwork) SumInputsLayer.combine(VisualModifier.this.build(visualModifierParameters.addRef()),
-            right.build(visualModifierParameters)).freeze();
+        Layer layer = SumInputsLayer.combine(VisualModifier.this.build(visualModifierParameters.addRef()),
+            right.build(visualModifierParameters));
+        layer.freeze();
+        return (PipelineNetwork) layer.addRef();
       }
     };
   }
@@ -87,8 +90,13 @@ public interface VisualModifier {
       @Override
       public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
         PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
-        build.add(new LinearActivationLayer().setScale(scale).freeze()).freeRef();
-        return (PipelineNetwork) build.freeze();
+        LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+        linearActivationLayer.setScale(scale);
+        Layer layer = linearActivationLayer.addRef();
+        layer.freeze();
+        build.add(layer.addRef()).freeRef();
+        build.freeze();
+        return build.addRef();
       }
     };
   }
@@ -111,8 +119,13 @@ public interface VisualModifier {
       @Override
       public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
         PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
-        build.add(new NthPowerActivationLayer().setPower(power).freeze()).freeRef();
-        return (PipelineNetwork) build.freeze();
+        NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
+        nthPowerActivationLayer.setPower(power);
+        Layer layer = nthPowerActivationLayer.addRef();
+        layer.freeze();
+        build.add(layer.addRef()).freeRef();
+        build.freeze();
+        return build.addRef();
       }
     };
   }
@@ -130,7 +143,6 @@ public interface VisualModifier {
         return inner.build(parameters.withMask(maskedInput));
       }
     };
-
   }
 
 }

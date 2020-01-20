@@ -104,7 +104,8 @@ public class PatternPCAMatcher implements VisualModifier {
       assert channelRms != null;
       double[] covariance = PCA.bandCovariance(baseContent.getPixelStream(), PCA.countPixels(baseContent),
           channelMeans.getData(), channelRms.getData());
-      signalProjection = PipelineNetwork.build(1, new ImgBandBiasLayer(channelMeans.scaleInPlace(-1)),
+      channelMeans.scaleInPlace(-1);
+      signalProjection = PipelineNetwork.build(1, new ImgBandBiasLayer(channelMeans.addRef()),
           new ImgBandScaleLayer(channelRms.map(x -> 1 / x).getData()));
       channelMeans.freeRef();
       components = PCA.pca(covariance, pca.getEigenvaluePower()).stream().collect(RefCollectors.toList());
@@ -128,16 +129,27 @@ public class PatternPCAMatcher implements VisualModifier {
     channelStats(spacialPattern, bands);
 
     DAGNode signalProjectionHead = signalProjection.getHead();
+    NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
+    nthPowerActivationLayer.setPower(-0.5);
     signalProjection.add(new ProductLayer(), signalProjectionHead, signalProjection.add(PipelineNetwork.build(1,
-        new SquareActivationLayer(), new AvgReducerLayer(), new NthPowerActivationLayer().setPower(-0.5))));
-    signalProjection.add(new ConvolutionLayer(contentDimensions[0], contentDimensions[1], bands, 1).setPaddingXY(0, 0)
-        .set(spacialPattern.unit().scaleInPlace(-1)).explode());
-    signalProjection.add(new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()));
+        new SquareActivationLayer(), new AvgReducerLayer(), nthPowerActivationLayer.addRef())));
+    Tensor tensor = spacialPattern.unit();
+    tensor.scaleInPlace(-1);
+    ConvolutionLayer convolutionLayer = new ConvolutionLayer(contentDimensions[0], contentDimensions[1], bands, 1).setPaddingXY(0, 0);
+    convolutionLayer.set(tensor.addRef());
+    signalProjection.add(convolutionLayer.addRef().explode());
+    BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
+    boundedActivationLayer1.setMinValue(getMinValue());
+    BoundedActivationLayer boundedActivationLayer = boundedActivationLayer1.addRef();
+    boundedActivationLayer.setMaxValue(getMaxValue());
+    signalProjection.add(boundedActivationLayer.addRef());
     final Layer nextHead = isAveraging() ? new AvgReducerLayer() : new SumReducerLayer();
     signalProjection.add(nextHead);
 
-    network.add(signalProjection.setName(RefString.format("PCA Match"))).freeRef();
-    return (PipelineNetwork) network.freeze();
+    signalProjection.setName(RefString.format("PCA Match"));
+    network.add(signalProjection.addRef()).freeRef();
+    network.freeze();
+    return network.addRef();
   }
 
   public void channelStats(@Nonnull Tensor spacialPattern, int bands) {

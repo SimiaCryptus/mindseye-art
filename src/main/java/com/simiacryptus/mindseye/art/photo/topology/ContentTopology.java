@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.util.JsonUtil;
@@ -85,10 +86,7 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
   @Nullable
   public static @SuppressWarnings("unused")
   ContentTopology[][] addRefs(@Nullable ContentTopology[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(ContentTopology::addRefs)
-        .toArray((x) -> new ContentTopology[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Override

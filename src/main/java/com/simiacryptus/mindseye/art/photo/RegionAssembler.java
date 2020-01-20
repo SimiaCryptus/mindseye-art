@@ -259,7 +259,6 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
         statistics.combine(b);
         return statistics;
       }
-
     }, content, topology, new HashMap<Integer, Integer>());
   }
 

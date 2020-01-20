@@ -20,11 +20,12 @@
 package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.lang.Singleton;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefList;
 
 import javax.annotation.Nonnull;
 
-public class RasterTopologyWrapper implements RasterTopology {
+public class RasterTopologyWrapper extends ReferenceCountingBase implements RasterTopology {
 
   public final RasterTopology inner;
 
@@ -52,6 +53,12 @@ public class RasterTopologyWrapper implements RasterTopology {
     return inner.getCoordsFromIndex(i);
   }
 
+
+  @Override
+  public RasterTopologyWrapper addRef() {
+    return (RasterTopologyWrapper) super.addRef();
+  }
+
   public static class CachedRasterTopology extends RasterTopologyWrapper {
 
     private final Singleton<RefList<int[]>> cache = new Singleton<>();
@@ -64,6 +71,12 @@ public class RasterTopologyWrapper implements RasterTopology {
     @Override
     public RefList<int[]> connectivity() {
       return cache.getOrInit(() -> super.connectivity());
+    }
+
+    @Override
+    protected void _free() {
+      cache.freeRef();
+      super._free();
     }
   }
 }

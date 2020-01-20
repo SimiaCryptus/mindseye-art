@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.util.FastRandom;
@@ -75,7 +76,9 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
 
   @Nonnull
   public static Tensor remaining(@Nonnull RefCollection<Tensor> eigenVectors, int... dimensions) {
-    Tensor seed = new Tensor(dimensions).set(() -> FastRandom.INSTANCE.random()).unit();
+    Tensor tensor = new Tensor(dimensions);
+    tensor.set(() -> FastRandom.INSTANCE.random());
+    Tensor seed = tensor.addRef().unit();
     for (Tensor eigenVector : eigenVectors) {
       final double dot = eigenVector.dot(seed);
       if (Double.isFinite(dot))
@@ -96,10 +99,7 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
   @Nullable
   public static @SuppressWarnings("unused")
   EigenvectorSolver_Cuda[][] addRefs(@Nullable EigenvectorSolver_Cuda[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(EigenvectorSolver_Cuda::addRefs)
-        .toArray((x) -> new EigenvectorSolver_Cuda[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Nonnull

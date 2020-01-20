@@ -94,7 +94,9 @@ class VGG19_HDF5 {
   }
 
   public void phase0(@Nonnull PipelineNetwork pipeline) {
-    add(new ImgBandBiasLayer(3).set(new Tensor(-103.939, -116.779, -123.68)), pipeline);
+    ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(3);
+    imgBandBiasLayer.set(new Tensor(-103.939, -116.779, -123.68));
+    add(imgBandBiasLayer.addRef(), pipeline);
     addConvolutionLayer(3, 3, 64, ActivationLayer.Mode.RELU, "layer_1", pipeline);
   }
 
@@ -167,41 +169,64 @@ class VGG19_HDF5 {
     addPoolingLayer(2, pipeline);
     add(new ImgModulusPaddingLayer(7, 7), pipeline);
 
-    add(new ConvolutionLayer(7, 7, 512, 4096).setStrideXY(1, 1).setPaddingXY(0, 0).set(
-        hdf5.readDataSet("param_0", "layer_38").reshapeCast(7, 7, 512, 4096).permuteDimensions(0, 1, 3, 2)), pipeline);
+    ConvolutionLayer convolutionLayer = new ConvolutionLayer(7, 7, 512, 4096).setStrideXY(1, 1).setPaddingXY(0, 0);
+    convolutionLayer.set(hdf5.readDataSet("param_0", "layer_38").reshapeCast(7, 7, 512, 4096).permuteDimensions(0, 1, 3, 2));
+    add(convolutionLayer.addRef(), pipeline);
 
-    add(new ImgBandBiasLayer(4096).set((hdf5.readDataSet("param_1", "layer_38"))), pipeline);
+    ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(4096);
+    imgBandBiasLayer.set((hdf5.readDataSet("param_1", "layer_38")));
+    add(imgBandBiasLayer.addRef(), pipeline);
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
 
   public void phase3a(@Nonnull PipelineNetwork pipeline) {
-    add(new ConvolutionLayer(1, 1, 4096, 4096).setPaddingXY(0, 0)
-        .set(hdf5.readDataSet("param_0", "layer_40").permuteDimensions(fullyconnectedOrder)), pipeline);
-    add(new ImgBandBiasLayer(4096).set((hdf5.readDataSet("param_1", "layer_40"))), pipeline);
+    ConvolutionLayer convolutionLayer = new ConvolutionLayer(1, 1, 4096, 4096).setPaddingXY(0, 0);
+    convolutionLayer.set(hdf5.readDataSet("param_0", "layer_40").permuteDimensions(fullyconnectedOrder));
+    add(convolutionLayer.addRef(), pipeline);
+    ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(4096);
+    imgBandBiasLayer.set((hdf5.readDataSet("param_1", "layer_40")));
+    add(imgBandBiasLayer.addRef(), pipeline);
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
 
   public void addPoolingLayer(final int size, @Nonnull PipelineNetwork pipeline) {
     add(new ImgModulusPaddingLayer(size, size), pipeline);
-    add(new PoolingLayer().setMode(PoolingLayer.PoolingMode.Max).setWindowXY(size, size).setStrideXY(size, size),
+    PoolingLayer poolingLayer = new PoolingLayer();
+    poolingLayer.setMode(PoolingLayer.PoolingMode.Max);
+    PoolingLayer poolingLayer2 = poolingLayer.addRef();
+    poolingLayer2.setWindowXY(size, size);
+    PoolingLayer poolingLayer1 = poolingLayer2.addRef();
+    poolingLayer1.setStrideXY(size, size);
+    add(poolingLayer1.addRef(),
         pipeline);
   }
 
   public void addConvolutionLayer(final int radius, final int inputBands, final int outputBands,
                                   @Nonnull final ActivationLayer.Mode activationMode, final String hdf_group, @Nonnull PipelineNetwork pipeline) {
-    add(new ConvolutionLayer(radius, radius, inputBands, outputBands).setPaddingXY(0, 0)
-        .set(hdf5.readDataSet("param_0", hdf_group).permuteDimensions(convolutionOrder)), pipeline);
-    add(new ImgBandBiasLayer(outputBands).set((hdf5.readDataSet("param_1", hdf_group))), pipeline);
+    ConvolutionLayer convolutionLayer = new ConvolutionLayer(radius, radius, inputBands, outputBands).setPaddingXY(0, 0);
+    convolutionLayer.set(hdf5.readDataSet("param_0", hdf_group).permuteDimensions(convolutionOrder));
+    add(convolutionLayer.addRef(), pipeline);
+    ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(outputBands);
+    imgBandBiasLayer.set((hdf5.readDataSet("param_1", hdf_group)));
+    add(imgBandBiasLayer.addRef(), pipeline);
     add(new ActivationLayer(activationMode), pipeline);
   }
 
   public void phase3b(@Nonnull PipelineNetwork pipeline) {
-    add(new ConvolutionLayer(1, 1, 4096, 1000).setPaddingXY(0, 0)
-        .set(hdf5.readDataSet("param_0", "layer_42").permuteDimensions(fullyconnectedOrder)), pipeline);
-    add(new ImgBandBiasLayer(1000).set((hdf5.readDataSet("param_1", "layer_42"))), pipeline);
-    add(new SoftmaxActivationLayer().setAlgorithm(SoftmaxActivationLayer.SoftmaxAlgorithm.ACCURATE)
-        .setMode(SoftmaxActivationLayer.SoftmaxMode.CHANNEL), pipeline);
-    add(new BandReducerLayer().setMode(PoolingLayer.PoolingMode.Max), pipeline);
+    ConvolutionLayer convolutionLayer = new ConvolutionLayer(1, 1, 4096, 1000).setPaddingXY(0, 0);
+    convolutionLayer.set(hdf5.readDataSet("param_0", "layer_42").permuteDimensions(fullyconnectedOrder));
+    add(convolutionLayer.addRef(), pipeline);
+    ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(1000);
+    imgBandBiasLayer.set((hdf5.readDataSet("param_1", "layer_42")));
+    add(imgBandBiasLayer.addRef(), pipeline);
+    SoftmaxActivationLayer softmaxActivationLayer = new SoftmaxActivationLayer();
+    softmaxActivationLayer.setAlgorithm(SoftmaxActivationLayer.SoftmaxAlgorithm.ACCURATE);
+    SoftmaxActivationLayer softmaxActivationLayer1 = softmaxActivationLayer.addRef();
+    softmaxActivationLayer1.setMode(SoftmaxActivationLayer.SoftmaxMode.CHANNEL);
+    add(softmaxActivationLayer1.addRef(), pipeline);
+    BandReducerLayer bandReducerLayer = new BandReducerLayer();
+    bandReducerLayer.setMode(PoolingLayer.PoolingMode.Max);
+    add(bandReducerLayer.addRef(), pipeline);
   }
 
 }

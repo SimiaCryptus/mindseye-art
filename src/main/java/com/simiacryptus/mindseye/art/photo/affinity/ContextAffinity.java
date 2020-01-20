@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.art.photo.topology.IteratedRasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.*;
 import org.ejml.simple.SimpleMatrix;
@@ -145,10 +146,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
   @Nullable
   public static @SuppressWarnings("unused")
   ContextAffinity[][] addRefs(@Nullable ContextAffinity[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(ContextAffinity::addRefs)
-        .toArray((x) -> new ContextAffinity[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Nonnull

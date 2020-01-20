@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefStream;
 
@@ -78,10 +79,7 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
   public static @SuppressWarnings("unused")
   PrependVisionPipelineLayer[][] addRefs(
       @Nullable PrependVisionPipelineLayer[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(PrependVisionPipelineLayer::addRefs)
-        .toArray((x) -> new PrependVisionPipelineLayer[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Nonnull

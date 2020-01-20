@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.UUID;
 
 public class SumTrainable extends ReferenceCountingBase implements Trainable {
@@ -62,18 +61,13 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
   @Nullable
   public static @SuppressWarnings("unused")
   SumTrainable[] addRefs(@Nullable SumTrainable[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(SumTrainable::addRef).toArray((x) -> new SumTrainable[x]);
+    return RefUtil.addRefs(array);
   }
 
   @Nullable
   public static @SuppressWarnings("unused")
   SumTrainable[][] addRefs(@Nullable SumTrainable[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(SumTrainable::addRefs)
-        .toArray((x) -> new SumTrainable[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Nonnull
@@ -82,7 +76,8 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
     RefList<PointSample> results = RefArrays.stream(getInner()).map(x -> x.measure(monitor))
         .collect(RefCollectors.toList());
     DeltaSet<UUID> delta = RefUtil.get(results.stream().map(x -> x.delta.addRef()).reduce((a, b) -> {
-      DeltaSet<UUID> c = a.addInPlace(b);
+      a.addInPlace(b);
+      DeltaSet<UUID> c = a.addRef();
       b.freeRef();
       return c;
     }));

@@ -37,8 +37,12 @@ public class WCTUtil {
 
   @Nonnull
   public static PipelineNetwork renormalizer(Tensor encodedStyle, double styleDensity) {
-    final Tensor meanSignal = means(encodedStyle).scaleInPlace(1.0 / styleDensity);
-    final Tensor signalPower = rms(encodedStyle, meanSignal).scaleInPlace(Math.sqrt(1.0 / styleDensity));
+    Tensor tensor1 = means(encodedStyle);
+    tensor1.scaleInPlace(1.0 / styleDensity);
+    final Tensor meanSignal = tensor1.addRef();
+    Tensor tensor = rms(encodedStyle, meanSignal);
+    tensor.scaleInPlace(Math.sqrt(1.0 / styleDensity));
+    final Tensor signalPower = tensor.addRef();
     final PipelineNetwork renormalizer = new PipelineNetwork(1);
     renormalizer
         .add(new ImgBandBiasLayer(meanSignal),
@@ -55,12 +59,15 @@ public class WCTUtil {
     final InnerNode avgNode = normalizer.add(new BandAvgReducerLayer());
     final InnerNode centered = normalizer.add(new ImgBandDynamicBiasLayer(), normalizer.getInput(0),
         normalizer.add(new ScaleLayer(-1 / maskFactor), avgNode));
+    NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
+    nthPowerActivationLayer.setPower(-0.5);
     final InnerNode scales = normalizer.add(PipelineNetwork.build(1, new SquareActivationLayer(),
-        new BandAvgReducerLayer(), new ScaleLayer(1 / maskFactor), new NthPowerActivationLayer().setPower(-0.5)),
+        new BandAvgReducerLayer(), new ScaleLayer(1 / maskFactor), nthPowerActivationLayer.addRef()),
         centered.addRef());
     final InnerNode rescaled = normalizer.add(new ProductLayer(), centered, scales);
     rescaled.freeRef();
-    return normalizer.freeze();
+    normalizer.freeze();
+    return normalizer.addRef();
   }
 
   @Nonnull
@@ -74,8 +81,10 @@ public class WCTUtil {
   @Nonnull
   public static Tensor rms(Tensor normalFeatures, @Nonnull Tensor normalMeanSignal) {
     final Tensor scale = normalMeanSignal.scale(-1);
+    NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
+    nthPowerActivationLayer.setPower(0.5);
     final PipelineNetwork wrap = PipelineNetwork.build(1, new ImgBandBiasLayer(scale), new SquareActivationLayer(),
-        new BandAvgReducerLayer(), new NthPowerActivationLayer().setPower(0.5));
+        new BandAvgReducerLayer(), nthPowerActivationLayer.addRef());
     scale.freeRef();
     final Tensor tensor = wrap.eval(normalFeatures).getData().get(0);
     wrap.freeRef();

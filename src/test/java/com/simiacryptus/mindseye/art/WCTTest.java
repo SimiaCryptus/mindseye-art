@@ -49,11 +49,9 @@ import com.simiacryptus.util.Util;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipFile;
 
@@ -92,21 +90,6 @@ public class WCTTest extends NotebookReportBase {
     return FastPhotoStyleTransfer.class;
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  WCTTest[] addRefs(@Nullable WCTTest[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(WCTTest::addRef).toArray((x) -> new WCTTest[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  WCTTest[][] addRefs(@Nullable WCTTest[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(WCTTest::addRefs).toArray((x) -> new WCTTest[x][]);
-  }
 
   @Test
   public void test0() {
@@ -268,7 +251,6 @@ public class WCTTest extends NotebookReportBase {
       final MattingAffinity affinity = new MattingAffinity(contentImage);
       return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(content_1));
     });
-
   }
 
   private void wct_api(@Nonnull NotebookOutput log) {
@@ -386,11 +368,9 @@ public class WCTTest extends NotebookReportBase {
                   .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
             return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
           }), tensors);
-
         }
       }
     }
-
   }
 
   private void photoBlur_Survey(@Nonnull NotebookOutput log) {
@@ -444,15 +424,12 @@ public class WCTTest extends NotebookReportBase {
           //            if (sqrt) affinity = affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
           //            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
           //          }), tensors);
-
         }
       }
     }
-
   }
 
   private Tensor rawStyledContent(Tensor content, @Nonnull NotebookOutput log) {
-    Tensor styled;
     Tensor styleImage = styleImage();
     log.eval(() -> {
       return styleImage.toImage();
@@ -463,7 +440,7 @@ public class WCTTest extends NotebookReportBase {
       styledImage.set(fastPhotoStyleTransfer.setLambda(1e-4).setEpsilon(1e-4).photoWCT(styleImage, content));
       return styledImage.get().toImage();
     });
-    styled = styledImage.get();
+    Tensor styled = styledImage.get();
     return styled;
   }
 

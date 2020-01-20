@@ -143,7 +143,6 @@ public class ImageArtUtil {
         handler_stats.close();
       }
     };
-
   }
 
   @Nonnull

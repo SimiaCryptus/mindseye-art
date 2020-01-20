@@ -31,14 +31,13 @@ import com.simiacryptus.mindseye.layers.java.LayerTestBase;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
+import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.notebook.NullNotebookOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.Random;
 
 public class NetworkTest extends LayerTestBase {
@@ -58,30 +57,18 @@ public class NetworkTest extends LayerTestBase {
     testingBatchSize = 1;
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  NetworkTest[] addRefs(@Nullable NetworkTest[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRef).toArray((x) -> new NetworkTest[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  NetworkTest[][] addRefs(@Nullable NetworkTest[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(NetworkTest::addRefs).toArray((x) -> new NetworkTest[x][]);
-  }
 
   private static DAGNetwork build() {
     Tensor styleTensor = Tensor.fromRGB(styleImage);
-    DAGNetwork dagNetwork = MultiPrecision.setPrecision(
-        SumInputsLayer.combine(new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleTensor),
-            new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleTensor),
-            new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, Tensor.fromRGB(contentImage))
-                .andThenWrap(new LinearActivationLayer().setScale(1e-1).freeze())),
-        Precision.Float);
+    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+    linearActivationLayer.setScale(1e-1);
+    Layer layer1 = linearActivationLayer.addRef();
+    layer1.freeze();
+    DAGNetwork dagNetwork = SumInputsLayer.combine(new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleTensor),
+        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleTensor),
+        new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, Tensor.fromRGB(contentImage))
+            .andThen(layer1.addRef()));
+    MultiPrecision.setPrecision(dagNetwork, Precision.Float);
     styleTensor.freeRef();
     return dagNetwork;
   }

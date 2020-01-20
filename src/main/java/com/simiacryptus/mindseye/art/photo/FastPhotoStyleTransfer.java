@@ -30,6 +30,7 @@ import com.simiacryptus.mindseye.lang.SerialPrecision;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.ZipSerializable;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
@@ -163,10 +164,7 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   @Nullable
   public static @SuppressWarnings("unused")
   FastPhotoStyleTransfer[][] addRefs(@Nullable FastPhotoStyleTransfer[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(FastPhotoStyleTransfer::addRefs)
-        .toArray((x) -> new FastPhotoStyleTransfer[x][]);
+    return RefUtil.addRefs(array);
   }
 
   public void _free() {

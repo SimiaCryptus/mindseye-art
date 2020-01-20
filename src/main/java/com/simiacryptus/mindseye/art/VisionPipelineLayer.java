@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
 import static com.simiacryptus.mindseye.layers.cudnn.PoolingLayer.getPoolingLayer;
 
 public interface VisionPipelineLayer {
-  final VisionPipelineLayer.Noop NOOP = new VisionPipelineLayer.Noop();
+  VisionPipelineLayer.Noop NOOP = new VisionPipelineLayer.Noop();
 
   @Nonnull
   Layer getLayer();
@@ -92,7 +92,7 @@ public interface VisionPipelineLayer {
     return new AppendVisionPipelineLayer(this, layer);
   }
 
-  public static class Noop implements VisionPipelineLayer {
+  class Noop implements VisionPipelineLayer {
 
     @Nonnull
     @Override

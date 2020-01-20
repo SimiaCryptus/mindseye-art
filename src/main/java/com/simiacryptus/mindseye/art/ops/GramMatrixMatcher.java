@@ -30,6 +30,7 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefString;
 import org.slf4j.Logger;
@@ -78,10 +79,15 @@ public class GramMatrixMatcher implements VisualModifier {
 
   @Nonnull
   public static Layer loss(@Nonnull Tensor result, double mag, boolean averaging) {
-    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.scaleInPlace(-1)), new SquareActivationLayer(),
+    result.scaleInPlace(-1);
+    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+    linearActivationLayer.setScale(Math.pow(mag, -2));
+    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(result.addRef()), new SquareActivationLayer(),
         averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))};
-    Layer layer = PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", mag));
+        linearActivationLayer.addRef()};
+    Layer layer1 = PipelineNetwork.build(1, layers);
+    layer1.setName(RefString.format("RMS[x-C] / %.0E", mag));
+    Layer layer = layer1.addRef();
     result.freeRef();
     return layer;
   }
@@ -96,7 +102,9 @@ public class GramMatrixMatcher implements VisualModifier {
             Tensor tile = selector.eval(img).getData().get(0);
             selector.freeRef();
             int[] tileDimensions = tile.getDimensions();
-            Tensor component = network.eval(tile).getData().get(0).scaleInPlace(tileDimensions[0] * tileDimensions[1]);
+            Tensor tensor1 = network.eval(tile).getData().get(0);
+            tensor1.scaleInPlace(tileDimensions[0] * tileDimensions[1]);
+            Tensor component = tensor1.addRef();
             tile.freeRef();
             return component;
           });
@@ -107,7 +115,8 @@ public class GramMatrixMatcher implements VisualModifier {
     }).orElse(null);
     if (null == tensor)
       return null;
-    return tensor.scaleInPlace(1.0 / pixels).map(x -> {
+    tensor.scaleInPlace(1.0 / pixels);
+    return tensor.addRef().map(x -> {
       if (Double.isFinite(x)) {
         return x;
       } else {
@@ -137,7 +146,8 @@ public class GramMatrixMatcher implements VisualModifier {
 
   @Nonnull
   public PipelineNetwork buildWithModel(PipelineNetwork network, @Nullable Tensor mask, @Nullable Tensor model, @Nonnull Tensor... image) {
-    network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
+    network = network.copyPipeline();
+    MultiPrecision.setPrecision(network, precision);
     int pixels = RefArrays.stream(image).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       return dimensions[0] * dimensions[1];
@@ -145,8 +155,10 @@ public class GramMatrixMatcher implements VisualModifier {
     if (null != mask) {
       if (null == model) {
         assert network != null;
+        MultiPrecision gramianLayerMultiPrecision = new GramianLayer(getAppendUUID(network, GramianLayer.class));
+        gramianLayerMultiPrecision.setPrecision(precision);
         final PipelineNetwork build = PipelineNetwork.build(1, network.addRef(),
-            new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision));
+            (GramianLayer) RefUtil.addRef(gramianLayerMultiPrecision));
         model = eval(pixels == 0 ? 1 : pixels, build, getTileSize(), 8, image);
         build.freeRef();
       }
@@ -155,18 +167,24 @@ public class GramMatrixMatcher implements VisualModifier {
       final DAGNode head = network.getHead();
       network.add(new ProductLayer(getAppendUUID(network, ProductLayer.class)), head, network.constValue(boolMask))
           .freeRef();
-      network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)
-          .setAlpha(1.0 / RefArrays.stream(boolMask.getData()).average().getAsDouble())).freeRef();
+      MultiPrecision gramianLayerMultiPrecision = new GramianLayer(getAppendUUID(network, GramianLayer.class));
+      gramianLayerMultiPrecision.setPrecision(precision);
+      GramianLayer gramianLayer = ((GramianLayer) RefUtil.addRef(gramianLayerMultiPrecision));
+      gramianLayer.setAlpha(1.0 / RefArrays.stream(boolMask.getData()).average().getAsDouble());
+      network.add(gramianLayer.addRef()).freeRef();
       boolMask.freeRef();
     } else {
       assert network != null;
-      network.add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(precision)).freeRef();
+      MultiPrecision gramianLayerMultiPrecision = new GramianLayer(getAppendUUID(network, GramianLayer.class));
+      gramianLayerMultiPrecision.setPrecision(precision);
+      network.add((GramianLayer) RefUtil.addRef(gramianLayerMultiPrecision)).freeRef();
       if (null == model)
         model = eval(pixels == 0 ? 1 : pixels, network, getTileSize(), 8, image);
     }
     assert model != null;
     double mag = balanced ? model.rms() : 1;
     network.add(loss(model, mag, isAveraging())).freeRef();
-    return (PipelineNetwork) network.freeze();
+    network.freeze();
+    return network.addRef();
   }
 }

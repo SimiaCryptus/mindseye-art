@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
@@ -82,10 +83,7 @@ public class CudaMatrixSolver extends ReferenceCountingBase implements RefOperat
   @Nullable
   public static @SuppressWarnings("unused")
   CudaMatrixSolver[][] addRefs(@Nullable CudaMatrixSolver[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRefs)
-        .toArray((x) -> new CudaMatrixSolver[x][]);
+    return RefUtil.addRefs(array);
   }
 
   public void _free() {

@@ -115,25 +115,37 @@ public class ContentConvolutionMatcher implements VisualModifier {
     double mag = balanced ? baseContent.rms() : 1;
     int[] baseContentDimensions = baseContent.getDimensions();
     int patternSize = (int) Math.ceil(Math.sqrt(getPatternSize() / baseContentDimensions[2]));
-    PoolingLayer poolingLayer = new PoolingLayer().setMode(getPoolingMode())
-        .setStrideXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)),
-            (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)))
-        .setWindowXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)),
-            (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)));
+    PoolingLayer poolingLayer1 = new PoolingLayer();
+    poolingLayer1.setMode(getPoolingMode());
+    PoolingLayer poolingLayer2 = poolingLayer1.addRef();
+    poolingLayer2.setStrideXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)));
+    PoolingLayer poolingLayer3 = poolingLayer2.addRef();
+    poolingLayer3.setWindowXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)));
+    PoolingLayer poolingLayer = poolingLayer3.addRef();
     Tensor pooledContent = poolingLayer.eval(baseContent).getData().get(0);
     baseContent.freeRef();
     network.add(poolingLayer).freeRef();
     int[] pooledContentDimensions = pooledContent.getDimensions();
+    pooledContent.scaleInPlace(Math.pow(pooledContent.rms(), -2));
+    ConvolutionLayer convolutionLayer = new ConvolutionLayer(pooledContentDimensions[0], pooledContentDimensions[1], pooledContentDimensions[2], 1)
+        .setPaddingXY(0, 0);
+    convolutionLayer.set(pooledContent.addRef()
+                .permuteDimensions(Integer.MAX_VALUE, -1, 2));
     network
-        .add(new ConvolutionLayer(pooledContentDimensions[0], pooledContentDimensions[1], pooledContentDimensions[2], 1)
-            .setPaddingXY(0, 0).set(pooledContent.scaleInPlace(Math.pow(pooledContent.rms(), -2))
-                .permuteDimensions(Integer.MAX_VALUE, -1, 2))
+        .add(convolutionLayer.addRef()
             .explode())
         .freeRef();
+    BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
+    boundedActivationLayer1.setMinValue(getMinValue());
+    BoundedActivationLayer boundedActivationLayer = boundedActivationLayer1.addRef();
+    boundedActivationLayer.setMaxValue(getMaxValue());
     final Layer[] layers = new Layer[]{
-        new BoundedActivationLayer().setMinValue(getMinValue()).setMaxValue(getMaxValue()), new SquareActivationLayer(),
+        boundedActivationLayer.addRef(), new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
-    network.add(PipelineNetwork.build(1, layers).setName(RefString.format("-RMS / %.0E", mag))).freeRef();
-    return (PipelineNetwork) network.freeze();
+    Layer layer = PipelineNetwork.build(1, layers);
+    layer.setName(RefString.format("-RMS / %.0E", mag));
+    network.add(layer.addRef()).freeRef();
+    network.freeze();
+    return network.addRef();
   }
 }

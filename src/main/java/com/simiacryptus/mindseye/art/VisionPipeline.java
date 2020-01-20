@@ -19,7 +19,9 @@
 
 package com.simiacryptus.mindseye.art;
 
+import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefLinkedHashMap;
 import org.slf4j.Logger;
@@ -41,7 +43,9 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
     PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
     for (T value : values) {
       pipelineNetwork.add(value.getLayer()).freeRef();
-      layers.put(value, (PipelineNetwork) pipelineNetwork.copyPipeline().freeze());
+      Layer layer = pipelineNetwork.copyPipeline();
+      layer.freeze();
+      layers.put(value, (PipelineNetwork) layer.addRef());
     }
     pipelineNetwork.freeRef();
   }
@@ -63,10 +67,7 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
   @Nullable
   public static @SuppressWarnings("unused")
   VisionPipeline[][] addRefs(@Nullable VisionPipeline[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRefs)
-        .toArray((x) -> new VisionPipeline[x][]);
+    return RefUtil.addRefs(array);
   }
 
   public void _free() {

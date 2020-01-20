@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.ref.lang.LazyVal;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import jcuda.Pointer;
 import jcuda.Sizeof;
@@ -96,10 +97,7 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
   @Nullable
   public static @SuppressWarnings("unused")
   CudaSparseMatrix[][] addRefs(@Nullable CudaSparseMatrix[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(CudaSparseMatrix::addRefs)
-        .toArray((x) -> new CudaSparseMatrix[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Override
@@ -140,9 +138,7 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
     @Nullable
     public static @SuppressWarnings("unused")
     GpuCopy[] addRefs(@Nullable GpuCopy[] array) {
-      if (array == null)
-        return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(GpuCopy::addRef).toArray((x) -> new GpuCopy[x]);
+      return RefUtil.addRefs(array);
     }
 
     @Nonnull
@@ -166,6 +162,5 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
     GpuCopy addRef() {
       return (GpuCopy) super.addRef();
     }
-
   }
 }

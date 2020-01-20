@@ -79,13 +79,22 @@ public class ContentMatcher implements VisualModifier {
     if (!Double.isFinite(mag) || mag < 0)
       throw new RuntimeException("RMS = " + mag);
     DAGNode head = network.getHead();
-    DAGNode constNode = network.constValueWrap(baseContent.scaleInPlace(-1));
+    baseContent.scaleInPlace(-1);
+    DAGNode constNode = network.constValueWrap(baseContent.addRef());
     assert constNode != null;
     constNode.getLayer().setName(name);
-    network.add(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
-    final Layer[] layers = new Layer[]{new LinearActivationLayer().setScale(0 == mag ? 1 : Math.pow(mag, -1)),
+    Layer layer2 = new SumInputsLayer();
+    layer2.setName("Difference");
+    network.add(layer2.addRef(), head, constNode).freeRef();
+    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+    final double scale = 0 == mag ? 1 : Math.pow(mag, -1);
+    linearActivationLayer.setScale(scale);
+    final Layer[] layers = new Layer[]{linearActivationLayer.addRef(),
         new SquareActivationLayer(), isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
-    network.add(PipelineNetwork.build(1, layers).setName(RefString.format("RMS / %.0E", mag))).freeRef();
-    return (PipelineNetwork) network.freeze();
+    Layer layer1 = PipelineNetwork.build(1, layers);
+    layer1.setName(RefString.format("RMS / %.0E", mag));
+    network.add(layer1.addRef()).freeRef();
+    network.freeze();
+    return network.addRef();
   }
 }

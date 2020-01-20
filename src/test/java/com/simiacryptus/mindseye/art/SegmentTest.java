@@ -65,21 +65,6 @@ public class SegmentTest extends NotebookReportBase {
     return FastPhotoStyleTransfer.class;
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  SegmentTest[] addRefs(@Nullable SegmentTest[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRef).toArray((x) -> new SegmentTest[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  SegmentTest[][] addRefs(@Nullable SegmentTest[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(SegmentTest::addRefs).toArray((x) -> new SegmentTest[x][]);
-  }
 
   @Test
   public void segment_volumeEntropy() {

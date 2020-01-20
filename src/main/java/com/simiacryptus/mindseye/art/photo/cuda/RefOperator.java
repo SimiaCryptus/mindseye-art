@@ -33,30 +33,15 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
     return new RefOperatorWrapper<T>(inner);
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  RefOperator[] addRefs(@Nullable RefOperator[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRef).toArray((x) -> new RefOperator[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  RefOperator[][] addRefs(@Nullable RefOperator[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(RefOperator::addRefs).toArray((x) -> new RefOperator[x][]);
-  }
 
   default T iterate(int n, T obj) {
     return n <= 1 ? apply(obj) : this.iterate(n - 1, apply(obj));
   }
 
-  public void _free();
+  void _free();
 
   @Nonnull
-  public RefOperator<T> addRef();
+  RefOperator<T> addRef();
 
   class RefOperatorWrapper<T> extends ReferenceCountingBase implements RefOperator<T> {
 

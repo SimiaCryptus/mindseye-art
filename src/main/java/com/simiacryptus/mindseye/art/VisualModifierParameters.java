@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.util.ImageUtil;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
@@ -64,10 +65,7 @@ public class VisualModifierParameters extends ReferenceCountingBase {
   @Nullable
   public static @SuppressWarnings("unused")
   VisualModifierParameters[][] addRefs(@Nullable VisualModifierParameters[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRefs)
-        .toArray((x) -> new VisualModifierParameters[x][]);
+    return RefUtil.addRefs(array);
   }
 
   public void _free() {

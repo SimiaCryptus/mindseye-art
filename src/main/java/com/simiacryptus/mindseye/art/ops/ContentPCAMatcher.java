@@ -103,7 +103,8 @@ public class ContentPCAMatcher implements VisualModifier {
       assert channelRms != null;
       double[] covariance = PCA.bandCovariance(baseContent.getPixelStream(), PCA.countPixels(baseContent),
           channelMeans.getData(), channelRms.getData());
-      signalProjection = PipelineNetwork.build(1, new ImgBandBiasLayer(channelMeans.scaleInPlace(-1)),
+      channelMeans.scaleInPlace(-1);
+      signalProjection = PipelineNetwork.build(1, new ImgBandBiasLayer(channelMeans.addRef()),
           new ImgBandScaleLayer(channelRms.map(x -> 1 / x).getData()));
       channelMeans.freeRef();
       components = PCA.pca(covariance, pca.getEigenvaluePower()).stream().collect(RefCollectors.toList());
@@ -129,15 +130,24 @@ public class ContentPCAMatcher implements VisualModifier {
 
     double mag = spacialPattern.rms();
     DAGNode head = signalProjection.getHead();
-    DAGNode constNode = signalProjection.constValueWrap(spacialPattern.scaleInPlace(-1));
-    signalProjection.add(new SumInputsLayer().setName("Difference"), head, constNode).freeRef();
+    spacialPattern.scaleInPlace(-1);
+    DAGNode constNode = signalProjection.constValueWrap(spacialPattern.addRef());
+    Layer layer1 = new SumInputsLayer();
+    layer1.setName("Difference");
+    signalProjection.add(layer1.addRef(), head, constNode).freeRef();
+    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+    linearActivationLayer.setScale(Math.pow(mag, -2));
     final Layer[] layers = new Layer[]{new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        new LinearActivationLayer().setScale(Math.pow(mag, -2))};
-    signalProjection.add(PipelineNetwork.build(1, layers).setName(RefString.format("RMS / %.0E", mag)));
+        linearActivationLayer.addRef()};
+    Layer layer = PipelineNetwork.build(1, layers);
+    layer.setName(RefString.format("RMS / %.0E", mag));
+    signalProjection.add(layer.addRef());
 
-    network.add(signalProjection.setName(RefString.format("PCA Content Match"))).freeRef();
-    return (PipelineNetwork) network.freeze();
+    signalProjection.setName(RefString.format("PCA Content Match"));
+    network.add(signalProjection.addRef()).freeRef();
+    network.freeze();
+    return network.addRef();
   }
 
   public void channelStats(@Nonnull Tensor spacialPattern, int bands) {

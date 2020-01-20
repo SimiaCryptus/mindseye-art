@@ -20,6 +20,7 @@
 package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
 
 import javax.annotation.Nonnull;
@@ -141,10 +142,7 @@ public class SearchRadiusTopology extends ContentTopology {
   @Nullable
   public static @SuppressWarnings("unused")
   SearchRadiusTopology[][] addRefs(@Nullable SearchRadiusTopology[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(SearchRadiusTopology::addRefs)
-        .toArray((x) -> new SearchRadiusTopology[x][]);
+    return RefUtil.addRefs(array);
   }
 
   private static double median(@Nonnull RefDoubleStream doubleStream) {

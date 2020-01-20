@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art.photo.affinity;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
@@ -73,10 +74,7 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
   @Nullable
   public static @SuppressWarnings("unused")
   GaussianAffinity[][] addRefs(@Nullable GaussianAffinity[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(GaussianAffinity::addRefs)
-        .toArray((x) -> new GaussianAffinity[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Override

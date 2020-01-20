@@ -109,10 +109,22 @@ public class MomentMatcher implements VisualModifier {
   public static Layer lossSq(Precision precision, @Nonnull Tensor target) {
     double rms = target.rms();
     final Tensor bias = target.scale(0 == rms ? 1 : -Math.pow(rms, -1));
-    final Layer[] layers = new Layer[]{new LinearActivationLayer().setScale(0 == rms ? 1 : Math.pow(rms, -1)),
-        new ImgBandBiasLayer(bias).setPrecision(precision), new SquareActivationLayer().setPrecision(precision),
-        new AvgReducerLayer().setPrecision(precision)};
-    return PipelineNetwork.build(1, layers).setName(RefString.format("RMS[x-C] / %.0E", 0 == rms ? 1 : rms));
+    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+    final double scale = 0 == rms ? 1 : Math.pow(rms, -1);
+    linearActivationLayer.setScale(scale);
+    MultiPrecision avgReducerLayerMultiPrecision = new AvgReducerLayer();
+    avgReducerLayerMultiPrecision.setPrecision(precision);
+    MultiPrecision squareActivationLayerMultiPrecision = new SquareActivationLayer();
+    squareActivationLayerMultiPrecision.setPrecision(precision);
+    MultiPrecision imgBandBiasLayerMultiPrecision = new ImgBandBiasLayer(bias);
+    imgBandBiasLayerMultiPrecision.setPrecision(precision);
+    final Layer[] layers = new Layer[]{linearActivationLayer.addRef(),
+        (ImgBandBiasLayer) RefUtil.addRef(imgBandBiasLayerMultiPrecision), (SquareActivationLayer) RefUtil.addRef(squareActivationLayerMultiPrecision),
+        (AvgReducerLayer) RefUtil.addRef(avgReducerLayerMultiPrecision)};
+    Layer layer = PipelineNetwork.build(1, layers);
+    final String name = RefString.format("RMS[x-C] / %.0E", 0 == rms ? 1 : rms);
+    layer.setName(name);
+    return layer.addRef();
   }
 
   @Nonnull
@@ -136,7 +148,8 @@ public class MomentMatcher implements VisualModifier {
 
   @Nonnull
   public static Tensor transform(PipelineNetwork network, Tensor in, Precision precision) {
-    network = MultiPrecision.setPrecision(network.copyPipeline(), precision);
+    network = network.copyPipeline();
+    MultiPrecision.setPrecision(network, precision);
     assert network != null;
     network.visitLayers(layer -> {
       if (layer instanceof ImgBandBiasLayer) {
@@ -200,12 +213,15 @@ public class MomentMatcher implements VisualModifier {
         selector.freeRef();
         int[] tileDimensions = tile.getDimensions();
         int tilePixels = tileDimensions[0] * tileDimensions[1];
-        Tensor component = network.eval(tile).getData().get(0).map(x -> Math.pow(x, power)).scaleInPlace(tilePixels);
+        Tensor tensor = network.eval(tile).getData().get(0).map(x -> Math.pow(x, power));
+        tensor.scaleInPlace(tilePixels);
+        Tensor component = tensor.addRef();
         tile.freeRef();
         return component;
       });
     }));
-    return sum.scaleInPlace(1.0 / pixels).map(x -> Math.pow(x, 0 == power ? 1 : (1.0 / power))).map(x -> {
+    sum.scaleInPlace(1.0 / pixels);
+    return sum.addRef().map(x -> Math.pow(x, 0 == power ? 1 : (1.0 / power))).map(x -> {
       if (Double.isFinite(x)) {
         return x;
       } else {
@@ -219,7 +235,8 @@ public class MomentMatcher implements VisualModifier {
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.network;
     assert network != null;
-    network = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
+    network = network.copyPipeline();
+    MultiPrecision.setPrecision(network, precision);
 
     assert network != null;
     Tensor evalRoot = avg(network, getPixels(visualModifierParameters.style), visualModifierParameters.style);
@@ -233,7 +250,8 @@ public class MomentMatcher implements VisualModifier {
     final Tensor boolMask = toMask(transform(network, visualModifierParameters.mask, getPrecision()));
     log.info("Mask: " + RefArrays.toString(boolMask.getDimensions()));
     final double maskFactor = RefArrays.stream(boolMask.getData()).average().getAsDouble();
-    PipelineNetwork maskedNetwork = MultiPrecision.setPrecision(network.copyPipeline(), getPrecision());
+    PipelineNetwork maskedNetwork = network.copyPipeline();
+    MultiPrecision.setPrecision(maskedNetwork, getPrecision());
     assert maskedNetwork != null;
     assert test(maskedNetwork, visualModifierParameters.mask);
     final MomentParams params = getMomentParams(network, maskFactor, visualModifierParameters.style);
@@ -253,8 +271,8 @@ public class MomentMatcher implements VisualModifier {
     assert test(maskedNetwork, visualModifierParameters.mask);
     visualModifierParameters.freeRef();
     MultiPrecision.setPrecision(maskedNetwork, getPrecision());
-    return (PipelineNetwork) maskedNetwork.freeze();
-
+    maskedNetwork.freeze();
+    return maskedNetwork.addRef();
   }
 
   public int getPixels(@Nonnull Tensor[] images) {
@@ -268,23 +286,49 @@ public class MomentMatcher implements VisualModifier {
   public MomentMatcher.MomentParams getMomentParams(@Nonnull PipelineNetwork network, double maskFactor, @Nonnull Tensor... images) {
     int pixels = getPixels(images);
     DAGNode mainIn = network.getHead();
-    InnerNode avgNode = network.add(new BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef()); // Scale the average metrics by 1/x
+    MultiPrecision bandAvgReducerLayerMultiPrecision1 = new BandAvgReducerLayer();
+    bandAvgReducerLayerMultiPrecision1.setPrecision(getPrecision());
+    InnerNode avgNode = network.add((BandAvgReducerLayer) RefUtil.addRef(bandAvgReducerLayerMultiPrecision1), mainIn.addRef()); // Scale the average metrics by 1/x
     Tensor avgValue = eval(pixels, network, getTileSize(), 1.0, images);
 
-    InnerNode recentered = network.add(new ImgBandDynamicBiasLayer().setPrecision(getPrecision()), mainIn,
-        network.add(new ScaleLayer(-1 / maskFactor).setPrecision(getPrecision()), avgNode.addRef()));
-    InnerNode rmsNode = network.add(new NthPowerActivationLayer().setPower(0.5),
-        network.add(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()),
-            network.add(new BandAvgReducerLayer().setPrecision(getPrecision()),
-                network.add(new SquareActivationLayer().setPrecision(getPrecision()), recentered.addRef()))));
+    MultiPrecision scaleLayerMultiPrecision2 = new ScaleLayer(-1 / maskFactor);
+    scaleLayerMultiPrecision2.setPrecision(getPrecision());
+    MultiPrecision imgBandDynamicBiasLayerMultiPrecision = new ImgBandDynamicBiasLayer();
+    imgBandDynamicBiasLayerMultiPrecision.setPrecision(getPrecision());
+    InnerNode recentered = network.add((ImgBandDynamicBiasLayer) RefUtil.addRef(imgBandDynamicBiasLayerMultiPrecision), mainIn,
+        network.add((ScaleLayer) RefUtil.addRef(scaleLayerMultiPrecision2), avgNode.addRef()));
+    NthPowerActivationLayer nthPowerActivationLayer1 = new NthPowerActivationLayer();
+    nthPowerActivationLayer1.setPower(0.5);
+    MultiPrecision squareActivationLayerMultiPrecision = new SquareActivationLayer();
+    squareActivationLayerMultiPrecision.setPrecision(getPrecision());
+    MultiPrecision bandAvgReducerLayerMultiPrecision = new BandAvgReducerLayer();
+    bandAvgReducerLayerMultiPrecision.setPrecision(getPrecision());
+    MultiPrecision scaleLayerMultiPrecision1 = new ScaleLayer(1 / maskFactor);
+    scaleLayerMultiPrecision1.setPrecision(getPrecision());
+    InnerNode rmsNode = network.add(nthPowerActivationLayer1.addRef(),
+        network.add((ScaleLayer) RefUtil.addRef(scaleLayerMultiPrecision1),
+            network.add((BandAvgReducerLayer) RefUtil.addRef(bandAvgReducerLayerMultiPrecision),
+                network.add((SquareActivationLayer) RefUtil.addRef(squareActivationLayerMultiPrecision), recentered.addRef()))));
     Tensor rmsValue = eval(pixels, network, getTileSize(), 2.0, images);
 
-    InnerNode rescaled = network.add(new ProductLayer().setPrecision(getPrecision()), recentered,
-        network.add(new BoundedActivationLayer().setMinValue(0.0).setMaxValue(1e4),
-            network.add(new NthPowerActivationLayer().setPower(-1), rmsNode.addRef())));
+    BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
+    boundedActivationLayer1.setMinValue(0.0);
+    BoundedActivationLayer boundedActivationLayer = boundedActivationLayer1.addRef();
+    boundedActivationLayer.setMaxValue(1e4);
+    NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
+    nthPowerActivationLayer.setPower(-1);
+    MultiPrecision productLayerMultiPrecision = new ProductLayer();
+    productLayerMultiPrecision.setPrecision(getPrecision());
+    InnerNode rescaled = network.add((ProductLayer) RefUtil.addRef(productLayerMultiPrecision), recentered,
+        network.add(boundedActivationLayer.addRef(),
+            network.add(nthPowerActivationLayer.addRef(), rmsNode.addRef())));
 
-    InnerNode covNode = network.add(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()), network
-        .add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(getPrecision()), rescaled)); // Scale the gram matrix by 1/x (elements are averages)
+    MultiPrecision gramianLayerMultiPrecision = new GramianLayer(getAppendUUID(network, GramianLayer.class));
+    gramianLayerMultiPrecision.setPrecision(getPrecision());
+    MultiPrecision scaleLayerMultiPrecision = new ScaleLayer(1 / maskFactor);
+    scaleLayerMultiPrecision.setPrecision(getPrecision());
+    InnerNode covNode = network.add((ScaleLayer) RefUtil.addRef(scaleLayerMultiPrecision), network
+        .add((GramianLayer) RefUtil.addRef(gramianLayerMultiPrecision), rescaled)); // Scale the gram matrix by 1/x (elements are averages)
     Tensor covValue = eval(pixels, network, getTileSize(), 1.0, images);
 
     return new MomentParams(avgNode, avgValue, rmsNode, rmsValue, covNode, covValue, MomentMatcher.this);
@@ -293,21 +337,47 @@ public class MomentMatcher implements VisualModifier {
   @Nonnull
   public MomentMatcher.MomentParams getMomentNodes(@Nonnull PipelineNetwork network, double maskFactor) {
     DAGNode mainIn = network.getHead();
-    InnerNode avgNode = network.add(new BandAvgReducerLayer().setPrecision(getPrecision()), mainIn.addRef()); // Scale the average metrics by 1/x
+    MultiPrecision bandAvgReducerLayerMultiPrecision1 = new BandAvgReducerLayer();
+    bandAvgReducerLayerMultiPrecision1.setPrecision(getPrecision());
+    InnerNode avgNode = network.add((BandAvgReducerLayer) RefUtil.addRef(bandAvgReducerLayerMultiPrecision1), mainIn.addRef()); // Scale the average metrics by 1/x
 
-    InnerNode recentered = network.add(new ImgBandDynamicBiasLayer().setPrecision(getPrecision()), mainIn,
-        network.add(new ScaleLayer(-1 / maskFactor).setPrecision(getPrecision()), avgNode.addRef()));
-    InnerNode rmsNode = network.add(new NthPowerActivationLayer().setPower(0.5),
-        network.add(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()),
-            network.add(new BandAvgReducerLayer().setPrecision(getPrecision()),
-                network.add(new SquareActivationLayer().setPrecision(getPrecision()), recentered.addRef()))));
+    MultiPrecision scaleLayerMultiPrecision2 = new ScaleLayer(-1 / maskFactor);
+    scaleLayerMultiPrecision2.setPrecision(getPrecision());
+    MultiPrecision imgBandDynamicBiasLayerMultiPrecision = new ImgBandDynamicBiasLayer();
+    imgBandDynamicBiasLayerMultiPrecision.setPrecision(getPrecision());
+    InnerNode recentered = network.add((ImgBandDynamicBiasLayer) RefUtil.addRef(imgBandDynamicBiasLayerMultiPrecision), mainIn,
+        network.add((ScaleLayer) RefUtil.addRef(scaleLayerMultiPrecision2), avgNode.addRef()));
+    NthPowerActivationLayer nthPowerActivationLayer1 = new NthPowerActivationLayer();
+    nthPowerActivationLayer1.setPower(0.5);
+    MultiPrecision squareActivationLayerMultiPrecision = new SquareActivationLayer();
+    squareActivationLayerMultiPrecision.setPrecision(getPrecision());
+    MultiPrecision bandAvgReducerLayerMultiPrecision = new BandAvgReducerLayer();
+    bandAvgReducerLayerMultiPrecision.setPrecision(getPrecision());
+    MultiPrecision scaleLayerMultiPrecision1 = new ScaleLayer(1 / maskFactor);
+    scaleLayerMultiPrecision1.setPrecision(getPrecision());
+    InnerNode rmsNode = network.add(nthPowerActivationLayer1.addRef(),
+        network.add((ScaleLayer) RefUtil.addRef(scaleLayerMultiPrecision1),
+            network.add((BandAvgReducerLayer) RefUtil.addRef(bandAvgReducerLayerMultiPrecision),
+                network.add((SquareActivationLayer) RefUtil.addRef(squareActivationLayerMultiPrecision), recentered.addRef()))));
 
-    InnerNode rescaled = network.add(new ProductLayer().setPrecision(getPrecision()), recentered,
-        network.add(new BoundedActivationLayer().setMinValue(0.0).setMaxValue(1e4),
-            network.add(new NthPowerActivationLayer().setPower(-1), rmsNode.addRef())));
+    BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
+    boundedActivationLayer1.setMinValue(0.0);
+    BoundedActivationLayer boundedActivationLayer = boundedActivationLayer1.addRef();
+    boundedActivationLayer.setMaxValue(1e4);
+    NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
+    nthPowerActivationLayer.setPower(-1);
+    MultiPrecision productLayerMultiPrecision = new ProductLayer();
+    productLayerMultiPrecision.setPrecision(getPrecision());
+    InnerNode rescaled = network.add((ProductLayer) RefUtil.addRef(productLayerMultiPrecision), recentered,
+        network.add(boundedActivationLayer.addRef(),
+            network.add(nthPowerActivationLayer.addRef(), rmsNode.addRef())));
 
-    InnerNode covNode = network.add(new ScaleLayer(1 / maskFactor).setPrecision(getPrecision()), network
-        .add(new GramianLayer(getAppendUUID(network, GramianLayer.class)).setPrecision(getPrecision()), rescaled)); // Scale the gram matrix by 1/x (elements are averages)
+    MultiPrecision gramianLayerMultiPrecision = new GramianLayer(getAppendUUID(network, GramianLayer.class));
+    gramianLayerMultiPrecision.setPrecision(getPrecision());
+    MultiPrecision scaleLayerMultiPrecision = new ScaleLayer(1 / maskFactor);
+    scaleLayerMultiPrecision.setPrecision(getPrecision());
+    InnerNode covNode = network.add((ScaleLayer) RefUtil.addRef(scaleLayerMultiPrecision), network
+        .add((GramianLayer) RefUtil.addRef(gramianLayerMultiPrecision), rescaled)); // Scale the gram matrix by 1/x (elements are averages)
 
     return new MomentParams(avgNode, null, rmsNode, null, covNode, null, MomentMatcher.this);
   }
@@ -368,12 +438,20 @@ public class MomentMatcher implements VisualModifier {
 
     @Nullable
     public InnerNode addLoss(@Nonnull PipelineNetwork network) {
-      final InnerNode wrap = network.add(new SumInputsLayer().setPrecision(parent.getPrecision()),
-          network.add(new ScaleLayer(parent.getPosCoeff()).setPrecision(parent.getPrecision()),
+      MultiPrecision scaleLayerMultiPrecision = new ScaleLayer(parent.getCovCoeff());
+      scaleLayerMultiPrecision.setPrecision(parent.getPrecision());
+      MultiPrecision scaleLayerMultiPrecision1 = new ScaleLayer(parent.getScaleCoeff());
+      scaleLayerMultiPrecision1.setPrecision(parent.getPrecision());
+      MultiPrecision scaleLayerMultiPrecision2 = new ScaleLayer(parent.getPosCoeff());
+      scaleLayerMultiPrecision2.setPrecision(parent.getPrecision());
+      MultiPrecision sumInputsLayerMultiPrecision = new SumInputsLayer();
+      sumInputsLayerMultiPrecision.setPrecision(parent.getPrecision());
+      final InnerNode wrap = network.add((SumInputsLayer) RefUtil.addRef(sumInputsLayerMultiPrecision),
+          network.add((ScaleLayer) RefUtil.addRef(scaleLayerMultiPrecision2),
               network.add(lossSq(parent.getPrecision(), avgValue), avgNode.addRef())),
-          network.add(new ScaleLayer(parent.getScaleCoeff()).setPrecision(parent.getPrecision()),
+          network.add((ScaleLayer) RefUtil.addRef(scaleLayerMultiPrecision1),
               network.add(lossSq(parent.getPrecision(), rmsValue), rmsNode.addRef())),
-          network.add(new ScaleLayer(parent.getCovCoeff()).setPrecision(parent.getPrecision()),
+          network.add((ScaleLayer) RefUtil.addRef(scaleLayerMultiPrecision),
               network.add(lossSq(parent.getPrecision(), covValue), covNode.addRef())));
       freeRef();
       return wrap;
@@ -385,6 +463,5 @@ public class MomentMatcher implements VisualModifier {
     MomentParams addRef() {
       return (MomentParams) super.addRef();
     }
-
   }
 }

@@ -71,8 +71,12 @@ public class Plasma {
 
   @Nonnull
   private static Tensor initSquare(final int bands) {
-    Tensor baseColor = new Tensor(1, 1, bands).setByCoord(c -> 100 + 200 * (Math.random() - 0.5));
-    Tensor tensor = new Tensor(2, 2, bands).setByCoord(c -> baseColor.get(0, 0, c.getCoords()[2]));
+    Tensor tensor2 = new Tensor(1, 1, bands);
+    tensor2.setByCoord(c1 -> 100 + 200 * (Math.random() - 0.5));
+    Tensor baseColor = tensor2.addRef();
+    Tensor tensor1 = new Tensor(2, 2, bands);
+    tensor1.setByCoord(c -> baseColor.get(0, 0, c.getCoords()[2]));
+    Tensor tensor = tensor1.addRef();
     baseColor.freeRef();
     return tensor;
   }

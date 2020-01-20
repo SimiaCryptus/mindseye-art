@@ -113,8 +113,9 @@ public class PCA {
     @Nonnull final EigenDecomposition decomposition = new EigenDecomposition(toMatrix(bandCovariance));
     return RefIntStream.range(0, (int) Math.sqrt(bandCovariance.length)).mapToObj(vectorIndex -> {
       double[] data = decomposition.getEigenvector(vectorIndex).toArray();
-      return new Tensor(data, 1, 1, data.length).unit()
-          .scaleInPlace(Math.pow(decomposition.getRealEigenvalue(vectorIndex), eigenPower));
+      Tensor tensor = new Tensor(data, 1, 1, data.length).unit();
+      tensor.scaleInPlace(Math.pow(decomposition.getRealEigenvalue(vectorIndex), eigenPower));
+      return tensor.addRef();
     }).collect(RefCollectors.toList());
   }
 
@@ -147,9 +148,15 @@ public class PCA {
     if (!isRescale()) {
       return meanTensor.map(x -> 1);
     } else {
-      PipelineNetwork network = PipelineNetwork.build(1, new ImgBandBiasLayer(bands).set(meanTensor.scale(-1)),
-          new SquareActivationLayer(), new BandReducerLayer().setMode(PoolingLayer.PoolingMode.Avg),
-          new NthPowerActivationLayer().setPower(0.5));
+      NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
+      nthPowerActivationLayer.setPower(0.5);
+      BandReducerLayer bandReducerLayer = new BandReducerLayer();
+      bandReducerLayer.setMode(PoolingLayer.PoolingMode.Avg);
+      ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(bands);
+      imgBandBiasLayer.set(meanTensor.scale(-1));
+      PipelineNetwork network = PipelineNetwork.build(1, imgBandBiasLayer.addRef(),
+          new SquareActivationLayer(), bandReducerLayer.addRef(),
+          nthPowerActivationLayer.addRef());
       try {
         return network.eval(image).getData().get(0).map(x -> x == 0.0 ? 1.0 : x);
       } finally {
@@ -161,7 +168,8 @@ public class PCA {
   @Nonnull
   public Tensor getChannelMeans(Tensor image) {
     BandReducerLayer bandReducerLayer = new BandReducerLayer();
-    Tensor meanTensor = bandReducerLayer.setMode(PoolingLayer.PoolingMode.Avg).eval(image).getData().get(0);
+    bandReducerLayer.setMode(PoolingLayer.PoolingMode.Avg);
+    Tensor meanTensor = bandReducerLayer.addRef().eval(image).getData().get(0);
     bandReducerLayer.freeRef();
     if (!isRecenter())
       RefArrays.fill(meanTensor.getData(), 0);

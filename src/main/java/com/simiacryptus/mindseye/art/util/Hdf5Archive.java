@@ -366,8 +366,10 @@ public class Hdf5Archive {
           dataset.read(fp, dataType);
           fp.get(dataBuffer);
           data = new Tensor((int) dims[0]);
-          for (int i1 = 0; i1 < dims[0]; i1++)
-            data.set(i1, dataBuffer[j++]);
+          for (int i1 = 0; i1 < dims[0]; i1++) {
+            final double value = dataBuffer[j++];
+            data.set(i1, value);
+          }
           break;
         default:
           throw new RuntimeException("Cannot import weights apply rank " + nbDims);

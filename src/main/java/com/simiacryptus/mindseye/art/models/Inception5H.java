@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art.models;
 import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.art.util.ImageArtUtil;
+import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.wrappers.RefMap;
 import com.simiacryptus.tensorflow.ImageNetworkPipeline;
@@ -47,7 +48,9 @@ public enum Inception5H implements VisionPipelineLayer {
   @Nonnull
   @Override
   public PipelineNetwork getLayer() {
-    return (PipelineNetwork) layerMap().get(this.layerId).copyPipeline().setName(name());
+    Layer layer = layerMap().get(this.layerId).copyPipeline();
+    layer.setName(name());
+    return (PipelineNetwork) layer.addRef();
   }
 
   @Nonnull

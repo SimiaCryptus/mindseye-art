@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefUtil;
 import org.ejml.simple.SimpleMatrix;
 
 import javax.annotation.Nonnull;
@@ -83,10 +84,7 @@ public class RelativeAffinity extends ContextAffinity {
   @Nullable
   public static @SuppressWarnings("unused")
   RelativeAffinity[][] addRefs(@Nullable RelativeAffinity[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRefs)
-        .toArray((x) -> new RelativeAffinity[x][]);
+    return RefUtil.addRefs(array);
   }
 
   public @SuppressWarnings("unused")

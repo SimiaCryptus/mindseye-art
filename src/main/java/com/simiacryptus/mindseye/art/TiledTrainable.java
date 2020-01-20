@@ -196,10 +196,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   @Nullable
   public static @SuppressWarnings("unused")
   TiledTrainable[][] addRefs(@Nullable TiledTrainable[][] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRefs)
-        .toArray((x) -> new TiledTrainable[x][]);
+    return RefUtil.addRefs(array);
   }
 
   @Override
@@ -207,9 +204,10 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     assertAlive();
     final Layer filter = this.filter.addRef();
     if (null == getSelectors() || 0 == getSelectors().length) {
-      Trainable trainable = new BasicTrainable(PipelineNetwork.build(1, filter.addRef(),
-          networkSingleton.getOrInit(() -> getNetwork(filter.addRef())).addRef())).setMask(isMutableCanvas())
-          .setData(RefArrays.asList(new Tensor[][]{{canvas}}));
+      BasicTrainable trainable = new BasicTrainable(PipelineNetwork.build(1, filter.addRef(),
+          networkSingleton.getOrInit(() -> getNetwork(filter.addRef())).addRef()));
+      trainable.setMask(isMutableCanvas());
+      trainable.setData(RefArrays.asList(new Tensor[][]{{canvas}}));
       PointSample measure = trainable.measure(monitor);
       trainable.freeRef();
       filter.freeRef();
@@ -241,6 +239,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
         return deltaSet;
       }).reduce((a, b) -> {
         a.addInPlace(b);
+        this.addRef();
         b.freeRef();
         return a;
       }));
@@ -264,8 +263,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       RefArrays.stream(getSelectors()).forEach(ReferenceCounting::freeRef);
     if (null != networks)
       RefArrays.stream(networks).forEach(ReferenceCounting::freeRef);
-    if (networkSingleton.isDefined())
-      networkSingleton.get().freeRef();
+    networkSingleton.freeRef();
     filter.freeRef();
     super._free();
   }
