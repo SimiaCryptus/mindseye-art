@@ -78,9 +78,7 @@ public class ChannelMeanMatcher implements VisualModifier {
       final PipelineNetwork meanNetwork = PipelineNetwork.build(1,
           new ImgTileSubnetLayer(network.addRef(), tileSize, tileSize), new BandAvgReducerLayer());
       Tensor tensor1 = RefUtil.get(RefArrays.stream(image).map(tensor -> meanNetwork.eval(tensor).getData().get(0)).reduce((a, b) -> {
-        Tensor c = a.addAndFree(b);
-        b.freeRef();
-        return c;
+        return Tensor.add(a,b);
       }));
       tensor1.scaleInPlace(1.0 / image.length);
       meanSignal = tensor1.addRef();

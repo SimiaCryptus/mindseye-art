@@ -130,9 +130,7 @@ public class MomentMatcher implements VisualModifier {
   @Nonnull
   public static Tensor sum(@Nonnull RefStream<Tensor> tensorStream) {
     return tensorStream.reduce((a, b) -> {
-      a.addAndFree(b);
-      b.freeRef();
-      return a;
+      return Tensor.add(a,b);
     }).orElse(null);
   }
 
