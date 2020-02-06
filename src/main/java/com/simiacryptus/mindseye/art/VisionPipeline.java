@@ -60,8 +60,8 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
   VisionPipeline[] addRefs(@Nullable VisionPipeline[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(VisionPipeline::addRef)
-        .toArray((x) -> new VisionPipeline[x]);
+    return Arrays.stream(array).filter(x -> x != null).map((VisionPipeline visionPipeline) -> visionPipeline.addRef())
+        .toArray(x -> new VisionPipeline[x]);
   }
 
   @Nullable
@@ -71,7 +71,7 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
   }
 
   public void _free() {
-    layers.values().stream().forEach(ReferenceCountingBase::freeRef);
+    layers.values().stream().forEach(pipelineNetwork -> pipelineNetwork.freeRef());
     super._free();
   }
 

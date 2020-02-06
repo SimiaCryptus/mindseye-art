@@ -162,7 +162,7 @@ class VGG16_HDF5 {
     convolutionLayer.set(hdf5.readDataSet("param_0", "layer_32").reshapeCast(7, 7, 512, 4096).permuteDimensions(0, 1, 3, 2));
     add(convolutionLayer.addRef(), pipeline);
     ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(4096);
-    imgBandBiasLayer.set((hdf5.readDataSet("param_1", "layer_32")));
+    imgBandBiasLayer.set(hdf5.readDataSet("param_1", "layer_32"));
     add(imgBandBiasLayer.addRef(), pipeline);
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
@@ -172,7 +172,7 @@ class VGG16_HDF5 {
     convolutionLayer.set(hdf5.readDataSet("param_0", "layer_34").permuteDimensions(fullyconnectedOrder));
     add(convolutionLayer.addRef(), pipeline);
     ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(4096);
-    imgBandBiasLayer.set((hdf5.readDataSet("param_1", "layer_34")));
+    imgBandBiasLayer.set(hdf5.readDataSet("param_1", "layer_34"));
     add(imgBandBiasLayer.addRef(), pipeline);
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
@@ -195,7 +195,7 @@ class VGG16_HDF5 {
     convolutionLayer.set(hdf5.readDataSet("param_0", hdf_group).permuteDimensions(convolutionOrder));
     add(convolutionLayer.addRef(), pipeline);
     ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(outputBands);
-    imgBandBiasLayer.set((hdf5.readDataSet("param_1", hdf_group)));
+    imgBandBiasLayer.set(hdf5.readDataSet("param_1", hdf_group));
     add(imgBandBiasLayer.addRef(), pipeline);
     add(new ActivationLayer(activationMode), pipeline);
   }
@@ -205,7 +205,7 @@ class VGG16_HDF5 {
     convolutionLayer.set(hdf5.readDataSet("param_0", "layer_36").permuteDimensions(fullyconnectedOrder));
     add(convolutionLayer.addRef(), pipeline);
     ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(1000);
-    imgBandBiasLayer.set((hdf5.readDataSet("param_1", "layer_36")));
+    imgBandBiasLayer.set(hdf5.readDataSet("param_1", "layer_36"));
     add(imgBandBiasLayer.addRef(), pipeline);
   }
 

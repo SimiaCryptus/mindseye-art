@@ -31,12 +31,41 @@ import java.util.UUID;
 
 public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
   VGG19_0a(p -> {
-  }), VGG19_0b(getVGG19_hdf5()::phase0), VGG19_1a(getVGG19_hdf5()::phase1a), VGG19_1b1(getVGG19_hdf5()::phase1b1),
-  VGG19_1b2(getVGG19_hdf5()::phase1b2), VGG19_1c1(getVGG19_hdf5()::phase1c1), VGG19_1c2(getVGG19_hdf5()::phase1c2),
-  VGG19_1c3(getVGG19_hdf5()::phase1c3), VGG19_1c4(getVGG19_hdf5()::phase1c4), VGG19_1d1(getVGG19_hdf5()::phase1d1),
-  VGG19_1d2(getVGG19_hdf5()::phase1d2), VGG19_1d3(getVGG19_hdf5()::phase1d3), VGG19_1d4(getVGG19_hdf5()::phase1d4),
-  VGG19_1e1(getVGG19_hdf5()::phase1e1), VGG19_1e2(getVGG19_hdf5()::phase1e2), VGG19_1e3(getVGG19_hdf5()::phase1e3),
-  VGG19_1e4(getVGG19_hdf5()::phase1e4), VGG19_2(getVGG19_hdf5()::phase2);
+  }), VGG19_0b(pipeline -> {
+    getVGG19_hdf5().phase0(pipeline);
+  }), VGG19_1a(pipeline -> {
+    getVGG19_hdf5().phase1a(pipeline);
+  }), VGG19_1b1(pipeline -> {
+    getVGG19_hdf5().phase1b1(pipeline);
+  }), VGG19_1b2(pipeline -> {
+    getVGG19_hdf5().phase1b2(pipeline);
+  }), VGG19_1c1(pipeline -> {
+    getVGG19_hdf5().phase1c1(pipeline);
+  }), VGG19_1c2(pipeline -> {
+    getVGG19_hdf5().phase1c2(pipeline);
+  }), VGG19_1c3(pipeline -> {
+    getVGG19_hdf5().phase1c3(pipeline);
+  }), VGG19_1c4(pipeline -> {
+    getVGG19_hdf5().phase1c4(pipeline);
+  }), VGG19_1d1(pipeline -> {
+    getVGG19_hdf5().phase1d1(pipeline);
+  }), VGG19_1d2(pipeline -> {
+    getVGG19_hdf5().phase1d2(pipeline);
+  }), VGG19_1d3(pipeline -> {
+    getVGG19_hdf5().phase1d3(pipeline);
+  }), VGG19_1d4(pipeline -> {
+    getVGG19_hdf5().phase1d4(pipeline);
+  }), VGG19_1e1(pipeline -> {
+    getVGG19_hdf5().phase1e1(pipeline);
+  }), VGG19_1e2(pipeline -> {
+    getVGG19_hdf5().phase1e2(pipeline);
+  }), VGG19_1e3(pipeline -> {
+    getVGG19_hdf5().phase1e3(pipeline);
+  }), VGG19_1e4(pipeline -> {
+    getVGG19_hdf5().phase1e4(pipeline);
+  }), VGG19_2(pipeline -> {
+    getVGG19_hdf5().phase2(pipeline);
+  });
   //  VGG19_3a(getVGG19_hdf5()::phase3a),
   //  VGG19_3b(getVGG19_hdf5()::phase3b);
 

@@ -89,7 +89,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     if (cols != 1 || rows != 1) {
       this.selectors = selectors(padding, width, height, tileSize, fade);
       networks = RefArrays.stream(this.getSelectors())
-          .map(selector -> PipelineNetwork.build(1, filter.addRef(), selector)).map(this::getNetwork)
+          .map(selector -> PipelineNetwork.build(1, filter.addRef(), selector)).map(regionSelector -> getNetwork(regionSelector))
           .toArray(i -> new PipelineNetwork[i]);
     } else {
       selectors = null;
@@ -133,8 +133,8 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   public static Layer[] selectors(int padding, int width, int height, int tileSize, boolean fade) {
     int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
-    int tileSizeX = (cols <= 1) ? width : (int) Math.ceil(((double) (width - padding) / cols) + padding);
-    int tileSizeY = (rows <= 1) ? height : (int) Math.ceil(((double) (height - padding) / rows) + padding);
+    int tileSizeX = cols <= 1 ? width : (int) Math.ceil((double) (width - padding) / cols + padding);
+    int tileSizeY = rows <= 1 ? height : (int) Math.ceil((double) (height - padding) / rows + padding);
     //    logger.info(String.format(
     //        "Using Tile Size %s x %s to partition %s x %s png into %s x %s tiles",
     //        tileSizeX,
@@ -163,12 +163,12 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
               double v = 1.0;
               if (coords[0] < padding && finalCol > 0) {
                 v *= coords[0] / padding;
-              } else if ((tileSizeX - coords[0]) < padding && finalCol < (cols - 1)) {
+              } else if (tileSizeX - coords[0] < padding && finalCol < cols - 1) {
                 v *= (double) (tileSizeX - coords[0]) / padding;
               }
               if (coords[1] < padding && finalRow > 0) {
                 v *= (double) coords[1] / padding;
-              } else if ((tileSizeY - coords[1]) < padding && finalRow < (rows - 1)) {
+              } else if (tileSizeY - coords[1] < padding && finalRow < rows - 1) {
                 v *= (double) (tileSizeY - coords[1]) / padding;
               }
               return v;
@@ -189,8 +189,8 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   TiledTrainable[] addRefs(@Nullable TiledTrainable[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(TiledTrainable::addRef)
-        .toArray((x) -> new TiledTrainable[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(tiledTrainable -> tiledTrainable.addRef())
+        .toArray(x -> new TiledTrainable[x]);
   }
 
   @Nullable
@@ -260,9 +260,9 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
 
   public void _free() {
     if (null != getSelectors())
-      RefArrays.stream(getSelectors()).forEach(ReferenceCounting::freeRef);
+      RefArrays.stream(getSelectors()).forEach(layer -> layer.freeRef());
     if (null != networks)
-      RefArrays.stream(networks).forEach(ReferenceCounting::freeRef);
+      RefArrays.stream(networks).forEach(pipelineNetwork -> pipelineNetwork.freeRef());
     networkSingleton.freeRef();
     filter.freeRef();
     super._free();

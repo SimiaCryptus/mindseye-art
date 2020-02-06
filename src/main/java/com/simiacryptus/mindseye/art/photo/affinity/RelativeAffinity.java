@@ -77,8 +77,8 @@ public class RelativeAffinity extends ContextAffinity {
   RelativeAffinity[] addRefs(@Nullable RelativeAffinity[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(RelativeAffinity::addRef)
-        .toArray((x) -> new RelativeAffinity[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(relativeAffinity -> relativeAffinity.addRef())
+        .toArray(x -> new RelativeAffinity[x]);
   }
 
   @Nullable

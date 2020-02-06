@@ -46,8 +46,8 @@ public class TensorOperator extends ReferenceCountingBase implements RefOperator
   TensorOperator[] addRefs(@Nullable TensorOperator[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(TensorOperator::addRef)
-        .toArray((x) -> new TensorOperator[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(tensorOperator -> tensorOperator.addRef())
+        .toArray(x -> new TensorOperator[x]);
   }
 
   @Nullable

@@ -62,9 +62,9 @@ public class SegmentUtil {
   public static void printHistogram(@Nonnull int[] islands) {
     RefArrays.stream(islands).mapToObj(x -> x).collect(RefCollectors.groupingBy(x -> x, RefCollectors.counting()))
         .values().stream().collect(RefCollectors.groupingBy(x -> x, RefCollectors.counting())).entrySet().stream()
-        .sorted(RefComparator.comparing(x -> -x.getValue() * x.getKey()))
+        .sorted(RefComparator.comparingDouble(x -> -x.getValue() * x.getKey()))
         .map(x -> RefString.format("%d regions of size %s", x.getValue(), x.getKey()))
-        .forEach(RefSystem.out::println);
+        .forEach(x1 -> RefSystem.out.println(x1));
   }
 
   @Nonnull
@@ -73,7 +73,7 @@ public class SegmentUtil {
     int[] marks = new int[rows];
     AtomicInteger islandNumber = new AtomicInteger(0);
     int[] dimensions = topology.getDimensions();
-    range(0, dimensions[0]).parallel().mapToObj(x -> x).sorted(RefComparator.comparing(x -> x.hashCode()))
+    range(0, dimensions[0]).parallel().mapToObj(x -> x).sorted(RefComparator.comparingInt(x -> x.hashCode()))
         .mapToInt(x -> x).forEach(x -> range(0, dimensions[1]).mapToObj(y -> y)
         .sorted(RefComparator.comparing(y -> y.hashCode())).mapToInt(y -> y).forEach(y -> {
           int row = topology.getIndexFromCoords(x, y);
@@ -199,7 +199,7 @@ public class SegmentUtil {
           final double[] average = range(0, 3)
               .mapToDouble(i -> -neighborColors.stream().mapToDouble(j -> j[i] - 127).average().orElse(0.0)).toArray();
           final double rms = Math.sqrt(RefArrays.stream(average).map(x -> x * x).average().getAsDouble());
-          return RefArrays.stream(average).map(x -> Math.min(Math.max((x / rms) * 64 + 127, 0), 255)).toArray();
+          return RefArrays.stream(average).map(x -> Math.min(Math.max(x / rms * 64 + 127, 0), 255)).toArray();
         }));
   }
 

@@ -63,8 +63,8 @@ public class StaticVisionPipelineLayer extends ReferenceCountingBase implements 
   StaticVisionPipelineLayer[] addRefs(@Nullable StaticVisionPipelineLayer[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(StaticVisionPipelineLayer::addRef)
-        .toArray((x) -> new StaticVisionPipelineLayer[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(staticVisionPipelineLayer -> staticVisionPipelineLayer.addRef())
+        .toArray(x -> new StaticVisionPipelineLayer[x]);
   }
 
   @Nullable

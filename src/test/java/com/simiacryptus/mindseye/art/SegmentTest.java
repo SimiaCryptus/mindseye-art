@@ -68,23 +68,12 @@ public class SegmentTest extends NotebookReportBase {
 
   @Test
   public void segment_volumeEntropy() {
-    run(this::segment_volumeEntropy);
+    run(log -> segment_volumeEntropy(log));
   }
 
   @Test
   public void segment_minCut() {
-    run(this::segment_minCut);
-  }
-
-  public @SuppressWarnings("unused")
-  void _free() {
-  }
-
-  @Nonnull
-  public @Override
-  @SuppressWarnings("unused")
-  SegmentTest addRef() {
-    return (SegmentTest) super.addRef();
+    run(log -> segment_minCut(log));
   }
 
   @Nonnull
@@ -126,7 +115,7 @@ public class SegmentTest extends NotebookReportBase {
       final Tensor flattenedTensor = Tensor.fromRGB(flattenedColors);
       final int[] dimensions = topology.getDimensions();
       final int pixels = dimensions[0] * dimensions[1];
-      final int[] islands = markIslands(topology, flattenedTensor::getPixel, (a, b) -> RefIntStream.range(0, a.length)
+      final int[] islands = markIslands(topology, coords -> flattenedTensor.getPixel(coords), (a, b) -> RefIntStream.range(0, a.length)
           .mapToDouble(i -> a[i] - b[i]).map(x -> x * x).average().getAsDouble() < 0.2, 128, pixels);
       pixelMap.set(islands);
       return flattenedColors;
@@ -153,8 +142,8 @@ public class SegmentTest extends NotebookReportBase {
     Assemble_minCut[] addRefs(@Nullable Assemble_minCut[] array) {
       if (array == null)
         return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(Assemble_minCut::addRef)
-          .toArray((x) -> new Assemble_minCut[x]);
+      return Arrays.stream(array).filter(x -> x != null).map(assemble_minCut -> assemble_minCut.addRef())
+          .toArray(x -> new Assemble_minCut[x]);
     }
 
     public void run(@Nonnull NotebookOutput log) {
@@ -175,13 +164,13 @@ public class SegmentTest extends NotebookReportBase {
       final RefMap<float[], Float> eigensystem = log.eval(() -> this.graph.dense_graph_eigensys());
       log.run(() -> {
         RefSystem.out.println("Sorted Eigenvalues: "
-            + RefArrays.toString(eigensystem.values().stream().mapToDouble(Float::doubleValue).toArray()));
+            + RefArrays.toString(eigensystem.values().stream().mapToDouble(aFloat -> aFloat.doubleValue()).toArray()));
       });
       final int sampleEigenvectors = 20;
       log.h2("Smallest Eigenvectors");
       int index = 0;
       for (Map.Entry<float[], Float> tuple : eigensystem.entrySet().stream()
-          .sorted(RefComparator.comparing(x -> x.getValue())).limit(sampleEigenvectors)
+          .sorted(RefComparator.comparingDouble(x -> x.getValue())).limit(sampleEigenvectors)
           .collect(RefCollectors.toList())) {
         log.h3("Eigenvector " + index++);
         log.eval(() -> tuple.getValue());
@@ -271,8 +260,8 @@ public class SegmentTest extends NotebookReportBase {
     Assemble_volumeEntropy[] addRefs(@Nullable Assemble_volumeEntropy[] array) {
       if (array == null)
         return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(Assemble_volumeEntropy::addRef)
-          .toArray((x) -> new Assemble_volumeEntropy[x]);
+      return Arrays.stream(array).filter(x -> x != null).map(assemble_volumeEntropy -> assemble_volumeEntropy.addRef())
+          .toArray(x -> new Assemble_volumeEntropy[x]);
     }
 
     public void run(@Nonnull NotebookOutput log) {

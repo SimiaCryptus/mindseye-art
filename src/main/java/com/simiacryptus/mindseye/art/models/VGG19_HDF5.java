@@ -174,7 +174,7 @@ class VGG19_HDF5 {
     add(convolutionLayer.addRef(), pipeline);
 
     ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(4096);
-    imgBandBiasLayer.set((hdf5.readDataSet("param_1", "layer_38")));
+    imgBandBiasLayer.set(hdf5.readDataSet("param_1", "layer_38"));
     add(imgBandBiasLayer.addRef(), pipeline);
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
@@ -184,7 +184,7 @@ class VGG19_HDF5 {
     convolutionLayer.set(hdf5.readDataSet("param_0", "layer_40").permuteDimensions(fullyconnectedOrder));
     add(convolutionLayer.addRef(), pipeline);
     ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(4096);
-    imgBandBiasLayer.set((hdf5.readDataSet("param_1", "layer_40")));
+    imgBandBiasLayer.set(hdf5.readDataSet("param_1", "layer_40"));
     add(imgBandBiasLayer.addRef(), pipeline);
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
@@ -207,7 +207,7 @@ class VGG19_HDF5 {
     convolutionLayer.set(hdf5.readDataSet("param_0", hdf_group).permuteDimensions(convolutionOrder));
     add(convolutionLayer.addRef(), pipeline);
     ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(outputBands);
-    imgBandBiasLayer.set((hdf5.readDataSet("param_1", hdf_group)));
+    imgBandBiasLayer.set(hdf5.readDataSet("param_1", hdf_group));
     add(imgBandBiasLayer.addRef(), pipeline);
     add(new ActivationLayer(activationMode), pipeline);
   }
@@ -217,7 +217,7 @@ class VGG19_HDF5 {
     convolutionLayer.set(hdf5.readDataSet("param_0", "layer_42").permuteDimensions(fullyconnectedOrder));
     add(convolutionLayer.addRef(), pipeline);
     ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(1000);
-    imgBandBiasLayer.set((hdf5.readDataSet("param_1", "layer_42")));
+    imgBandBiasLayer.set(hdf5.readDataSet("param_1", "layer_42"));
     add(imgBandBiasLayer.addRef(), pipeline);
     SoftmaxActivationLayer softmaxActivationLayer = new SoftmaxActivationLayer();
     softmaxActivationLayer.setAlgorithm(SoftmaxActivationLayer.SoftmaxAlgorithm.ACCURATE);

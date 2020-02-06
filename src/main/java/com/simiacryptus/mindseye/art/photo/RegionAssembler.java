@@ -71,8 +71,8 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       }
       final List<Integer> pixels = pixelAssignmentMap.get(row);
       if (pixels != null) {
-        pixels.stream().map(pixelFunction::apply).collect(Collectors.toList()).forEach(region.colorStats::accept);
-        pixels.stream().map(coordFunction::apply).collect(Collectors.toList()).forEach(region.spacialStats::accept);
+        pixels.stream().map(value1 -> pixelFunction.apply(value1)).collect(Collectors.toList()).forEach(doubles1 -> region.colorStats.accept(doubles1));
+        pixels.stream().map(value -> coordFunction.apply(value)).collect(Collectors.toList()).forEach(doubles -> region.spacialStats.accept(doubles));
         region.pixels.addAll(pixels);
       }
       region.original_regions.add(row);
@@ -278,10 +278,10 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
 
   @Nonnull
   public RegionAssembler reduceTo(int count) {
-    while (regions.parallelStream().map(Region::connections_stream)
+    while (regions.parallelStream().map(region1 -> region1.connections_stream())
         .filter(stream -> stream.filter(connectionFilter).count() > 0).limit(count + 1).count() > count) {
       final int limit = Math.max(1, (regions.size() - count) / 100);
-      List<Connection> first = regions.parallelStream().flatMap(Region::connections_stream_parallel)
+      List<Connection> first = regions.parallelStream().flatMap(region -> region.connections_stream_parallel())
           .filter(connectionFilter).sorted(this).limit(limit).collect(Collectors.toList());
       if (first.isEmpty()) {
         RefSystem.out.println("No connections left");
@@ -289,7 +289,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       } else {
         final HashSet<Region> touched = new HashSet<>();
         first.stream().filter(connection -> touched.add(connection.to) && touched.add(connection.from))
-            .forEach(Connection::join);
+            .forEach(connection1 -> connection1.join());
       }
     }
     return this;
@@ -368,7 +368,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     public Region(int id, @Nonnull Connection... connections) {
       this.original_regions.add(id);
       tree = new RegionTree(id);
-      Arrays.stream(connections).forEach(this::connections_add);
+      Arrays.stream(connections).forEach(connection -> connections_add(connection));
     }
 
     public double getConnectionWeight() {
@@ -404,7 +404,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }
 
     public boolean connections_addAll(@Nonnull Collection<? extends Connection> connections) {
-      return connections.stream().filter(x -> !this.connections_add(x)).allMatch(this::connections_add);
+      return connections.stream().filter(x -> !this.connections_add(x)).allMatch(connection -> connections_add(connection));
     }
 
     public int minId() {
@@ -419,7 +419,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
             assert b.from == this || b.from == other;
             assert a.to == b.to;
             return new Connection(a.from, a.to, a.value + b.value);
-          }))).values().stream().map(RefUtil::get).map(c -> new Connection(this, c.to, c.value))
+          }))).values().stream().map(optional -> RefUtil.get(optional)).map(c -> new Connection(this, c.to, c.value))
           .collect(Collectors.toList());
 
       this.colorStats.combine(other.colorStats);
@@ -431,7 +431,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       connections_clear();
       connections_addAll(newConnections);
 
-      newConnections.stream().allMatch((v) -> {
+      newConnections.stream().allMatch(v -> {
         final Region thirdNode = v.to;
         final List<Connection> connectionsToRemove = thirdNode.connections_stream()
             .filter(x -> x.to == other || x.to == this).collect(Collectors.toList());

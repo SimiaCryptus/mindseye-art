@@ -58,8 +58,8 @@ public class VisualModifierParameters extends ReferenceCountingBase {
   VisualModifierParameters[] addRefs(@Nullable VisualModifierParameters[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(VisualModifierParameters::addRef)
-        .toArray((x) -> new VisualModifierParameters[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(visualModifierParameters -> visualModifierParameters.addRef())
+        .toArray(x -> new VisualModifierParameters[x]);
   }
 
   @Nullable

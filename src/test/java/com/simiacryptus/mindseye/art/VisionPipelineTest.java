@@ -79,28 +79,13 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     return dims;
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  VisionPipelineTest[] addRefs(@Nullable VisionPipelineTest[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(VisionPipelineTest::addRef)
-        .toArray((x) -> new VisionPipelineTest[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  VisionPipelineTest[][] addRefs(@Nullable VisionPipelineTest[][] array) {
-    return RefUtil.addRefs(array);
-  }
-
   public int[] testDims(int... dims) {
     return testDims(getVisionPipeline(), dims);
   }
 
   @Test
   public void inoutDims() {
-    run(this::inoutDims);
+    run(log1 -> inoutDims(log1));
   }
 
   //  @Test
@@ -110,17 +95,17 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
   @Test
   public void pipelineTest() {
-    run(this::pipelineTest);
+    run(log1 -> pipelineTest(log1));
   }
 
   @Test
   public void graphs() {
-    run(this::graphs);
+    run(log1 -> graphs(log1));
   }
 
   @Test
   public void layers() {
-    run(this::layers);
+    run(log1 -> layers(log1));
   }
 
   public abstract void inoutDims(NotebookOutput log);
@@ -128,7 +113,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   public abstract void pipelineTest(NotebookOutput log);
 
   public void graphs(@Nonnull NotebookOutput log) {
-    getVisionPipeline().getLayers().keySet().forEach((e) -> {
+    getVisionPipeline().getLayers().keySet().forEach(e -> {
       log.h1(e.name());
       DAGNetwork layer = (DAGNetwork) e.getLayer();
       TestUtil.graph(log, layer);
@@ -138,7 +123,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
   public void layers(@Nonnull NotebookOutput log) {
     final int[][] dims = {{226, 226, 3}};
-    getVisionPipeline().getLayers().keySet().forEach((e) -> {
+    getVisionPipeline().getLayers().keySet().forEach(e -> {
       log.h1(e.name());
       DAGNetwork layer = (DAGNetwork) e.getLayer();
       log.subreport(sublog -> {
@@ -187,17 +172,6 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     });
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
-  }
-
-  @Nonnull
-  public @Override
-  @SuppressWarnings("unused")
-  VisionPipelineTest addRef() {
-    return (VisionPipelineTest) super.addRef();
-  }
-
   public static class VGG16Test extends VisionPipelineTest {
     @Nonnull
     @Override
@@ -239,16 +213,6 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       });
     }
 
-    public @SuppressWarnings("unused")
-    void _free() {
-    }
-
-    @Nonnull
-    public @Override
-    @SuppressWarnings("unused")
-    VGG16Test addRef() {
-      return (VGG16Test) super.addRef();
-    }
   }
 
   public static class VGG19Test extends VisionPipelineTest {
@@ -292,16 +256,6 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       });
     }
 
-    public @SuppressWarnings("unused")
-    void _free() {
-    }
-
-    @Nonnull
-    public @Override
-    @SuppressWarnings("unused")
-    VGG19Test addRef() {
-      return (VGG19Test) super.addRef();
-    }
   }
 
   public static class Inception5HTest extends VisionPipelineTest {
@@ -315,15 +269,6 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     @Override
     public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
       return Inception5H.getVisionPipeline();
-    }
-
-    @Nullable
-    public static @SuppressWarnings("unused")
-    Inception5HTest[] addRefs(@Nullable Inception5HTest[] array) {
-      if (array == null)
-        return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(Inception5HTest::addRef)
-          .toArray((x) -> new Inception5HTest[x]);
     }
 
     public void inoutDims(@Nonnull NotebookOutput log) {
@@ -357,16 +302,6 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       });
     }
 
-    public @SuppressWarnings("unused")
-    void _free() {
-    }
-
-    @Nonnull
-    public @Override
-    @SuppressWarnings("unused")
-    Inception5HTest addRef() {
-      return (Inception5HTest) super.addRef();
-    }
   }
 
 }

@@ -92,8 +92,8 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
   EigenvectorSolver_Cuda[] addRefs(@Nullable EigenvectorSolver_Cuda[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(EigenvectorSolver_Cuda::addRef)
-        .toArray((x) -> new EigenvectorSolver_Cuda[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(eigenvectorSolver_cuda -> eigenvectorSolver_cuda.addRef())
+        .toArray(x -> new EigenvectorSolver_Cuda[x]);
   }
 
   @Nullable

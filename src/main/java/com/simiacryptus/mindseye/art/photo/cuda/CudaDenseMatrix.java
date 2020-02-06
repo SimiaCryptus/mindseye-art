@@ -90,8 +90,8 @@ public class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
   CudaDenseMatrix[] addRefs(@Nullable CudaDenseMatrix[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(CudaDenseMatrix::addRef)
-        .toArray((x) -> new CudaDenseMatrix[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(cudaDenseMatrix -> cudaDenseMatrix.addRef())
+        .toArray(x -> new CudaDenseMatrix[x]);
   }
 
   @Nullable

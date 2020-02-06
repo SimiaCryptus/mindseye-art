@@ -124,7 +124,8 @@ public class SparseMatrixFloat {
   }
 
   public static int[] index(@Nonnull long[] data) {
-    return RefIntStream.range(0, data.length).mapToObj(x -> x).sorted(RefComparator.comparing(i -> data[i]))
+    return RefIntStream.range(0, data.length).mapToObj(x -> x)
+        .sorted(RefComparator.comparingLong(i -> data[i]))
         .mapToInt(x -> x).toArray();
   }
 
@@ -182,7 +183,7 @@ public class SparseMatrixFloat {
     final MultivariateFrameOfReference globalFOR = new MultivariateFrameOfReference(() -> content.getPixelStream(), 3);
     final RefMap<Integer, MultivariateFrameOfReference> islandDistributions = RefIntStream.range(0, pixelMap.length)
         .mapToObj(x -> x).collect(RefCollectors.groupingBy(x -> pixelMap[x], RefCollectors.toList())).entrySet()
-        .stream().collect(RefCollectors.toMap(Map.Entry::getKey, (Map.Entry<Integer, RefList<Integer>> entry) -> {
+        .stream().collect(RefCollectors.toMap(integerRefListEntry -> integerRefListEntry.getKey(), (Map.Entry<Integer, RefList<Integer>> entry) -> {
           final MultivariateFrameOfReference localFOR = new MultivariateFrameOfReference(() -> entry.getValue().stream()
               .map(pixelIndex -> content.getPixel(topology.getCoordsFromIndex(pixelIndex))), 3);
           return new MultivariateFrameOfReference(globalFOR, localFOR, mixing);

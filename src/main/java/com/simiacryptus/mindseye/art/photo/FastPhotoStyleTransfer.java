@@ -157,8 +157,8 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   FastPhotoStyleTransfer[] addRefs(@Nullable FastPhotoStyleTransfer[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(FastPhotoStyleTransfer::addRef)
-        .toArray((x) -> new FastPhotoStyleTransfer[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(fastPhotoStyleTransfer -> fastPhotoStyleTransfer.addRef())
+        .toArray(x -> new FastPhotoStyleTransfer[x]);
   }
 
   @Nullable
@@ -291,8 +291,8 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     NullOperator[] addRefs(@Nullable NullOperator[] array) {
       if (array == null)
         return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(NullOperator::addRef)
-          .toArray((x) -> new NullOperator[x]);
+      return Arrays.stream(array).filter(x -> x != null).map((NullOperator nullOperator) -> nullOperator.addRef())
+          .toArray(x -> new NullOperator[x]);
     }
 
     @Override
@@ -331,8 +331,8 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     StyleOperator[] addRefs(@Nullable StyleOperator[] array) {
       if (array == null)
         return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(StyleOperator::addRef)
-          .toArray((x) -> new StyleOperator[x]);
+      return Arrays.stream(array).filter(x -> x != null).map(styleOperator -> styleOperator.addRef())
+          .toArray(x -> new StyleOperator[x]);
     }
 
     public void _free() {

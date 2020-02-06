@@ -39,8 +39,8 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
   SingleChannelWrapper[] addRefs(@Nullable SingleChannelWrapper[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(SingleChannelWrapper::addRef)
-        .toArray((x) -> new SingleChannelWrapper[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(singleChannelWrapper -> singleChannelWrapper.addRef())
+        .toArray(x -> new SingleChannelWrapper[x]);
   }
 
   @Nullable

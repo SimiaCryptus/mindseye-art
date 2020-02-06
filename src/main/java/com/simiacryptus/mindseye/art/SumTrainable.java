@@ -90,7 +90,7 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
     double mean = results.stream().mapToDouble(x -> x.getMean()).sum();
     double rate = results.stream().mapToDouble(x -> x.getRate()).average().getAsDouble();
     int sum = results.stream().mapToInt(x -> x.count).sum();
-    results.forEach(ReferenceCountingBase::freeRef);
+    results.forEach(pointSample1 -> pointSample1.freeRef());
     final PointSample pointSample = new PointSample(delta, weights, mean, rate, sum);
     delta.freeRef();
     weights.freeRef();
@@ -99,7 +99,7 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
 
   public void _free() {
     if (null != getInner())
-      RefArrays.stream(getInner()).forEach(ReferenceCounting::freeRef);
+      RefArrays.stream(getInner()).forEach(trainable -> trainable.freeRef());
     super._free();
   }
 

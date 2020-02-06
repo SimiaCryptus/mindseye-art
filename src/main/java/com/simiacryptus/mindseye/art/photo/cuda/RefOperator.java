@@ -56,8 +56,8 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
     RefOperatorWrapper[] addRefs(@Nullable RefOperatorWrapper[] array) {
       if (array == null)
         return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(RefOperatorWrapper::addRef)
-          .toArray((x) -> new RefOperatorWrapper[x]);
+      return Arrays.stream(array).filter(x -> x != null).map((RefOperatorWrapper refOperatorWrapper) -> refOperatorWrapper.addRef())
+          .toArray(x -> new RefOperatorWrapper[x]);
     }
 
     @Override

@@ -71,8 +71,8 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
   PrependVisionPipelineLayer[] addRefs(@Nullable PrependVisionPipelineLayer[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(PrependVisionPipelineLayer::addRef)
-        .toArray((x) -> new PrependVisionPipelineLayer[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(prependVisionPipelineLayer -> prependVisionPipelineLayer.addRef())
+        .toArray(x -> new PrependVisionPipelineLayer[x]);
   }
 
   @Nullable

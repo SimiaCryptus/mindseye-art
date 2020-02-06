@@ -63,8 +63,8 @@ public class MattingAffinity extends ContextAffinity {
   MattingAffinity[] addRefs(@Nullable MattingAffinity[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(MattingAffinity::addRef)
-        .toArray((x) -> new MattingAffinity[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(mattingAffinity -> mattingAffinity.addRef())
+        .toArray(x -> new MattingAffinity[x]);
   }
 
   @Nullable

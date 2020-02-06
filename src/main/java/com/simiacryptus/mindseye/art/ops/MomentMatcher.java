@@ -219,7 +219,7 @@ public class MomentMatcher implements VisualModifier {
       });
     }));
     sum.scaleInPlace(1.0 / pixels);
-    return sum.addRef().map(x -> Math.pow(x, 0 == power ? 1 : (1.0 / power))).map(x -> {
+    return sum.addRef().map(x -> Math.pow(x, 0 == power ? 1 : 1.0 / power)).map(x -> {
       if (Double.isFinite(x)) {
         return x;
       } else {
@@ -414,8 +414,8 @@ public class MomentMatcher implements VisualModifier {
     MomentParams[] addRefs(@Nullable MomentParams[] array) {
       if (array == null)
         return null;
-      return Arrays.stream(array).filter((x) -> x != null).map(MomentParams::addRef)
-          .toArray((x) -> new MomentParams[x]);
+      return Arrays.stream(array).filter(x -> x != null).map(momentParams -> momentParams.addRef())
+          .toArray(x -> new MomentParams[x]);
     }
 
     public void _free() {

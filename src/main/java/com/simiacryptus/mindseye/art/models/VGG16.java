@@ -30,12 +30,39 @@ import java.util.UUID;
 
 public enum VGG16 implements VisionPipelineLayer {
   VGG16_0a(x -> {
-  }), VGG16_0b(getVgg16_hdf5()::phase0b), VGG16_1a(getVgg16_hdf5()::phase1a), VGG16_1b1(getVgg16_hdf5()::phase1b1),
-  VGG16_1b2(getVgg16_hdf5()::phase1b2), VGG16_1c1(getVgg16_hdf5()::phase1c1), VGG16_1c2(getVgg16_hdf5()::phase1c2),
-  VGG16_1c3(getVgg16_hdf5()::phase1c3), VGG16_1d1(getVgg16_hdf5()::phase1d1), VGG16_1d2(getVgg16_hdf5()::phase1d2),
-  VGG16_1d3(getVgg16_hdf5()::phase1d3), VGG16_1e1(getVgg16_hdf5()::phase1e1), VGG16_1e2(getVgg16_hdf5()::phase1e2),
-  VGG16_1e3(getVgg16_hdf5()::phase1e3), VGG16_2(getVgg16_hdf5()::phase2), VGG16_3a(getVgg16_hdf5()::phase3a),
-  VGG16_3b(getVgg16_hdf5()::phase3b);
+  }), VGG16_0b(pipeline -> {
+    getVgg16_hdf5().phase0b(pipeline);
+  }), VGG16_1a(pipeline -> {
+    getVgg16_hdf5().phase1a(pipeline);
+  }), VGG16_1b1(pipeline -> {
+    getVgg16_hdf5().phase1b1(pipeline);
+  }), VGG16_1b2(pipeline -> {
+    getVgg16_hdf5().phase1b2(pipeline);
+  }), VGG16_1c1(pipeline -> {
+    getVgg16_hdf5().phase1c1(pipeline);
+  }), VGG16_1c2(pipeline -> {
+    getVgg16_hdf5().phase1c2(pipeline);
+  }), VGG16_1c3(pipeline -> {
+    getVgg16_hdf5().phase1c3(pipeline);
+  }), VGG16_1d1(pipeline -> {
+    getVgg16_hdf5().phase1d1(pipeline);
+  }), VGG16_1d2(pipeline -> {
+    getVgg16_hdf5().phase1d2(pipeline);
+  }), VGG16_1d3(pipeline -> {
+    getVgg16_hdf5().phase1d3(pipeline);
+  }), VGG16_1e1(pipeline -> {
+    getVgg16_hdf5().phase1e1(pipeline);
+  }), VGG16_1e2(pipeline -> {
+    getVgg16_hdf5().phase1e2(pipeline);
+  }), VGG16_1e3(pipeline -> {
+    getVgg16_hdf5().phase1e3(pipeline);
+  }), VGG16_2(pipeline -> {
+    getVgg16_hdf5().phase2(pipeline);
+  }), VGG16_3a(pipeline -> {
+    getVgg16_hdf5().phase3a(pipeline);
+  }), VGG16_3b(pipeline -> {
+    getVgg16_hdf5().phase3b(pipeline);
+  });
 
   @Nullable
   private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;

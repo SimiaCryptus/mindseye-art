@@ -169,7 +169,7 @@ public class GramMatrixMatcher implements VisualModifier {
           .freeRef();
       MultiPrecision gramianLayerMultiPrecision = new GramianLayer(getAppendUUID(network, GramianLayer.class));
       gramianLayerMultiPrecision.setPrecision(precision);
-      GramianLayer gramianLayer = ((GramianLayer) RefUtil.addRef(gramianLayerMultiPrecision));
+      GramianLayer gramianLayer = (GramianLayer) RefUtil.addRef(gramianLayerMultiPrecision);
       gramianLayer.setAlpha(1.0 / RefArrays.stream(boolMask.getData()).average().getAsDouble());
       network.add(gramianLayer.addRef()).freeRef();
       boolMask.freeRef();

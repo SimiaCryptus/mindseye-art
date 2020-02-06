@@ -98,9 +98,9 @@ public class Hdf5Archive {
       tensor.freeRef();
     }
     hdf5.getAttributes(path).forEach((k, v) -> {
-      log.info((RefString.format("%sAttribute: %s => %s", prefix, k, v)));
+      log.info(RefString.format("%sAttribute: %s => %s", prefix, k, v));
     });
-    for (String t : hdf5.getGroups(path).stream().map(CharSequence::toString).sorted(new RefComparator<String>() {
+    for (String t : hdf5.getGroups(path).stream().map(charSequence -> charSequence.toString()).sorted(new RefComparator<String>() {
       @Override
       public int compare(@Nonnull String o1, @Nonnull String o2) {
         @Nonnull

@@ -76,8 +76,8 @@ public class CudaMatrixSolver extends ReferenceCountingBase implements RefOperat
   CudaMatrixSolver[] addRefs(@Nullable CudaMatrixSolver[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(CudaMatrixSolver::addRef)
-        .toArray((x) -> new CudaMatrixSolver[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(cudaMatrixSolver -> cudaMatrixSolver.addRef())
+        .toArray(x -> new CudaMatrixSolver[x]);
   }
 
   @Nullable

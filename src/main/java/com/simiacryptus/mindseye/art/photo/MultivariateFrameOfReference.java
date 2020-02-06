@@ -73,7 +73,7 @@ public class MultivariateFrameOfReference {
   }
 
   public double[] adjust(@Nonnull double[] pixel) {
-    return RefIntStream.range(0, pixel.length).mapToDouble(c -> ((pixel[c]) - this.means.get(c)) / this.rms.get(c))
+    return RefIntStream.range(0, pixel.length).mapToDouble(c -> (pixel[c] - this.means.get(c)) / this.rms.get(c))
         .toArray();
   }
 
@@ -94,8 +94,8 @@ public class MultivariateFrameOfReference {
     final SimpleMatrix sigma_ = new MultivariateFrameOfReference(this, right, 0.5).rawCov();
     final SimpleMatrix mu_diff = mu0.minus(mu1);
     final SimpleMatrix invert = safeInvert(sigma_, 1e-4);
-    final double offset = (null == invert) ? mu_diff.dot(mu_diff) : mu_diff.dot(invert.mult(mu_diff.transpose()));
+    final double offset = null == invert ? mu_diff.dot(mu_diff) : mu_diff.dot(invert.mult(mu_diff.transpose()));
     final double volume = sigma_.determinant() / Math.sqrt(sigma0.determinant() * sigma1.determinant());
-    return (offset / 8) + (Math.log(volume) / 2);
+    return offset / 8 + Math.log(volume) / 2;
   }
 }

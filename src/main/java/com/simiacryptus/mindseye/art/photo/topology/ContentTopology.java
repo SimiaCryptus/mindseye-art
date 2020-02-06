@@ -79,8 +79,8 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
   ContentTopology[] addRefs(@Nullable ContentTopology[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(ContentTopology::addRef)
-        .toArray((x) -> new ContentTopology[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(contentTopology -> contentTopology.addRef())
+        .toArray(x -> new ContentTopology[x]);
   }
 
   @Nullable
@@ -105,22 +105,22 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
       return RefArrays.stream(graph.get(i)).mapToObj(j -> getCoordsFromIndex(j))
           .mapToDouble(
               posJ -> RefIntStream.range(0, pos.length).mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
-          .map(Math::sqrt).toArray();
-    }).flatMapToDouble(RefArrays::stream).summaryStatistics());
+          .map(a -> Math.sqrt(a)).toArray();
+    }).flatMapToDouble(data2 -> RefArrays.stream(data2)).summaryStatistics());
     out.println("Spatial Distance Histogram: "
         + JsonUtil.toJson(RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final int[] pos = getCoordsFromIndex(i);
       return RefArrays.stream(graph.get(i)).mapToObj(j -> getCoordsFromIndex(j))
           .mapToDouble(
               posJ -> RefIntStream.range(0, pos.length).mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
-          .map(Math::sqrt).map(Math::round).mapToInt(x -> (int) x).toArray();
-    }).flatMapToInt(RefArrays::stream).mapToObj(x -> x)
+          .map(a1 -> Math.sqrt(a1)).map(a -> Math.round(a)).mapToInt(x -> (int) x).toArray();
+    }).flatMapToInt(data1 -> RefArrays.stream(data1)).mapToObj(x -> x)
         .collect(RefCollectors.groupingBy(x -> x, RefCollectors.counting()))));
     out.println("Color Distance Statistics: " + RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final double[] pixel = pixel(i);
-      return RefArrays.stream(graph.get(i)).mapToObj(this::pixel).collect(toList()).stream()
+      return RefArrays.stream(graph.get(i)).mapToObj(i1 -> pixel(i1)).collect(toList()).stream()
           .mapToDouble(p -> chromaDistance(p, pixel)).toArray();
-    }).flatMapToDouble(RefArrays::stream).summaryStatistics());
+    }).flatMapToDouble(data -> RefArrays.stream(data)).summaryStatistics());
   }
 
   public RefList<int[]> dual(@Nonnull RefList<int[]> asymmetric) {

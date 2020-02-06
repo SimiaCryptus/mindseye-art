@@ -67,8 +67,8 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
   GaussianAffinity[] addRefs(@Nullable GaussianAffinity[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(GaussianAffinity::addRef)
-        .toArray((x) -> new GaussianAffinity[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(gaussianAffinity -> gaussianAffinity.addRef())
+        .toArray(x -> new GaussianAffinity[x]);
   }
 
   @Nullable

@@ -93,63 +93,52 @@ public class WCTTest extends NotebookReportBase {
 
   @Test
   public void test0() {
-    run(this::test0);
+    run(log -> test0(log));
   }
 
   @Test
   public void test1() {
-    run(this::test1);
+    run(log -> test1(log));
   }
 
   @Test
   public void test2() {
-    run(this::test2);
+    run(log -> test2(log));
   }
 
   @Test
   public void test3() {
-    run(this::test3);
+    run(log -> test3(log));
   }
 
   @Test
   public void test4() {
-    run(this::test4);
+    run(log -> test4(log));
   }
 
   @Test
   public void test5() {
-    run(this::test5);
+    run(log -> test5(log));
   }
 
   @Test
   public void wct_full() {
-    run(this::wct_full);
+    run(log -> wct_full(log));
   }
 
   @Test
   public void wct_api() {
-    run(this::wct_api);
+    run(log -> wct_api(log));
   }
 
   @Test
   public void photoBlur() {
-    run(this::photoBlur);
+    run(log -> photoBlur(log));
   }
 
   @Test
   public void photoBlur_Survey() {
-    run(this::photoBlur_Survey);
-  }
-
-  public @SuppressWarnings("unused")
-  void _free() {
-  }
-
-  @Nonnull
-  public @Override
-  @SuppressWarnings("unused")
-  WCTTest addRef() {
-    return (WCTTest) super.addRef();
+    run(log -> photoBlur_Survey(log));
   }
 
   private void test0(@Nonnull NotebookOutput log) {
@@ -479,7 +468,7 @@ public class WCTTest extends NotebookReportBase {
 
     log.h2("Encoding");
     log.eval(() -> {
-      return RefUtil.get(RefArrays.stream(originalFeatures.getDimensions()).mapToObj(Integer::toString)
+      return RefUtil.get(RefArrays.stream(originalFeatures.getDimensions()).mapToObj(i -> Integer.toString(i))
           .reduce((a, b) -> a + ", " + b));
     });
     final Tensor encodedStyle = log.eval(() -> {

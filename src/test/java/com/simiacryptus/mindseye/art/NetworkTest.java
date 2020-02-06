@@ -85,14 +85,4 @@ public class NetworkTest extends LayerTestBase {
     return layer.copy();
   }
 
-  public @SuppressWarnings("unused")
-  void _free() {
-  }
-
-  @Nonnull
-  public @Override
-  @SuppressWarnings("unused")
-  NetworkTest addRef() {
-    return (NetworkTest) super.addRef();
-  }
 }

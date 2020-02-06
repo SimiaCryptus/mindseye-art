@@ -60,7 +60,7 @@ public class TextUtil {
       Rectangle2D stringBounds = graphics.getFontMetrics().getStringBounds(line, graphics);
       y += stringBounds.getHeight();
     }
-    y = (int) (initY + (((height - padding) - (y - initY)) / 2));
+    y = (int) (initY + ((height - padding) - (y - initY)) / 2);
     for (final String line : text.split("\n")) {
       Rectangle2D stringBounds = graphics.getFontMetrics().getStringBounds(line, graphics);
       double centeringOffset = (bounds.getWidth() - stringBounds.getWidth()) / 2;
@@ -89,7 +89,7 @@ public class TextUtil {
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
     double width = 0;
     int size = 12;
-    while (width < (resolution - 2 * padding) && size < 1000) {
+    while (width < resolution - 2 * padding && size < 1000) {
       size += 2;
       graphics.setFont(new Font(fontName, style, size));
       width = RefArrays.stream(text.split("\n"))
@@ -105,7 +105,7 @@ public class TextUtil {
                                final int style) {
     double height = 0;
     int size = 12;
-    while (height < (resolution - 2 * padding) && size < 10000) {
+    while (height < resolution - 2 * padding && size < 10000) {
       size += 2;
       height = measure(new Font(fontName, style, size), text).getHeight();
     }
@@ -120,7 +120,7 @@ public class TextUtil {
     double height = 0;
     double width = 0;
     int size = 12;
-    while (height < (max_height - 2 * padding) && width < (max_width - 2 * padding) && size < 10000) {
+    while (height < max_height - 2 * padding && width < max_width - 2 * padding && size < 10000) {
       size += 2;
       Rectangle2D measure = measure(new Font(fontName, style, size), text);
       height = measure.getHeight();

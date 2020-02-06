@@ -90,8 +90,8 @@ public class CudaSparseMatrix extends LazyVal<CudaSparseMatrix.GpuCopy> {
   CudaSparseMatrix[] addRefs(@Nullable CudaSparseMatrix[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(CudaSparseMatrix::addRef)
-        .toArray((x) -> new CudaSparseMatrix[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(cudaSparseMatrix -> cudaSparseMatrix.addRef())
+        .toArray(x -> new CudaSparseMatrix[x]);
   }
 
   @Nullable

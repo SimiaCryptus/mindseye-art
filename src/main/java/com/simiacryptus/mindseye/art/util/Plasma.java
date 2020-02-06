@@ -137,10 +137,10 @@ public class Plasma {
       final DoubleUnaryOperator f2_band = fn2.apply(band);
       for (int x = 1; x < width; x += 2) {
         for (int y = 1; y < height; y += 2) {
-          double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y - 1), band))
-              + (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y + 1), band))
-              + (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y - 1), band))
-              + (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y + 1), band));
+          double value = returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y - 1), band)
+              + returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y + 1), band)
+              + returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y - 1), band)
+              + returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y + 1), band);
           value = f2_band.applyAsDouble(value / 4);
           returnValue.set(x, y, band, value);
         }
@@ -148,20 +148,20 @@ public class Plasma {
       final DoubleUnaryOperator f1_band = fn1.apply(band);
       for (int x = 0; x < width; x += 2) {
         for (int y = 1; y < height; y += 2) {
-          double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y), band))
-              + (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band))
-              + (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band))
-              + (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band));
+          double value = returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y), band)
+              + returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band)
+              + returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band)
+              + returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band);
           value = f1_band.applyAsDouble(value / 4);
           returnValue.set(x, y, band, value);
         }
       }
       for (int x = 1; x < width; x += 2) {
         for (int y = 0; y < height; y += 2) {
-          double value = (returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y), band))
-              + (returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band))
-              + (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band))
-              + (returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band));
+          double value = returnValue.get(addrX.applyAsInt(x - 1), addrY.applyAsInt(y), band)
+              + returnValue.get(addrX.applyAsInt(x + 1), addrY.applyAsInt(y), band)
+              + returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y - 1), band)
+              + returnValue.get(addrX.applyAsInt(x), addrY.applyAsInt(y + 1), band);
           value = f1_band.applyAsDouble(value / 4);
           returnValue.set(x, y, band, value);
         }

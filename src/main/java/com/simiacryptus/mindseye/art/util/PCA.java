@@ -87,7 +87,7 @@ public class PCA {
       int k = 0;
       for (int j = 0; j < pixel.length; j++) {
         for (int i = 0; i < pixel.length; i++) {
-          crossproduct[k++] = ((pixel[i] - mean[i]) / (rms[i] == 0 ? 1 : rms[i]))
+          crossproduct[k++] = (pixel[i] - mean[i]) / (rms[i] == 0 ? 1 : rms[i])
               * ((pixel[j] - mean[j]) / (rms[j] == 0 ? 1 : rms[j]));
         }
       }

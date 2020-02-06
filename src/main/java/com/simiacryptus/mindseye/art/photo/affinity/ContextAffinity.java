@@ -109,7 +109,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
       RefIntStream.range(0, size).forEach(c2 -> {
         final double mean2 = means.get(c2);
         final double rms2 = rms.get(c2);
-        final double covariance = stream.get().mapToDouble(p -> ((p[c1] - mean1) / rms1) * ((p[c2] - mean2) / rms2))
+        final double covariance = stream.get().mapToDouble(p -> (p[c1] - mean1) / rms1 * ((p[c2] - mean2) / rms2))
             .average().getAsDouble();
         cov.set(c1, c2, covariance);
       });
@@ -123,7 +123,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
     RefIntStream.range(0, size).forEach(c -> rms.set(c, 0,
         //        256
         //        1.0 * Math.sqrt(neighborhood.stream().mapToDouble(p -> p[c] - means.get(c)).map(p -> p * p).average().getAsDouble())
-        Math.sqrt(stream.get().mapToDouble(p -> p[c] - means.get(c)).map(Math::abs).max().getAsDouble())));
+        Math.sqrt(stream.get().mapToDouble(p -> p[c] - means.get(c)).map(a -> Math.abs(a)).max().getAsDouble())));
     return rms;
   }
 
@@ -139,8 +139,8 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
   ContextAffinity[] addRefs(@Nullable ContextAffinity[] array) {
     if (array == null)
       return null;
-    return Arrays.stream(array).filter((x) -> x != null).map(ContextAffinity::addRef)
-        .toArray((x) -> new ContextAffinity[x]);
+    return Arrays.stream(array).filter(x -> x != null).map(contextAffinity -> contextAffinity.addRef())
+        .toArray(x -> new ContextAffinity[x]);
   }
 
   @Nullable
@@ -162,7 +162,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
 
   @Nonnull
   private static RefIntStream expand(@Nonnull RefList<int[]> graphEdges, @Nonnull RefIntStream intStream) {
-    return intStream.mapToObj(graphEdges::get).flatMapToInt(RefArrays::stream).distinct();
+    return intStream.mapToObj(index -> graphEdges.get(index)).flatMapToInt(data -> RefArrays.stream(data)).distinct();
   }
 
   @Override
@@ -177,7 +177,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
         return 1;
       } else {
         final RefList<double[]> neighborhood = expand(iteratedGraph, RefIntStream.of(i, j), getGraphPower2())
-            .mapToObj(this::pixel).collect(RefCollectors.toList());
+            .mapToObj(i1 -> pixel(i1)).collect(RefCollectors.toList());
         if (neighborhood.isEmpty())
           return 1;
         MultivariateFrameOfReference mix = new MultivariateFrameOfReference(region_global,
@@ -200,7 +200,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
   }
 
   protected double[] adjust(double[] pixel_i, @Nonnull SimpleMatrix means, @Nonnull SimpleMatrix rms) {
-    return RefIntStream.range(0, dimensions[2]).mapToDouble(c -> ((pixel_i[c]) - means.get(c)) / rms.get(c)).toArray();
+    return RefIntStream.range(0, dimensions[2]).mapToDouble(c -> (pixel_i[c] - means.get(c)) / rms.get(c)).toArray();
   }
 
   protected abstract double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize,

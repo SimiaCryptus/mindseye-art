@@ -772,7 +772,7 @@ public class VGG_WCT_Import {
     if (data instanceof Double) {
       return RefDoubleStream.of((Double) data);
     } else {
-      return RefArrays.stream(((Object[]) data)).flatMapToDouble(x -> toStream(x));
+      return RefArrays.stream((Object[]) data).flatMapToDouble(x -> toStream(x));
     }
   }
 
@@ -781,7 +781,7 @@ public class VGG_WCT_Import {
       return new int[]{};
     } else {
       int length = ((Object[]) data).length;
-      RefList<int[]> childDims = RefArrays.stream(((Object[]) data)).map(x -> dims(x)).collect(RefCollectors.toList());
+      RefList<int[]> childDims = RefArrays.stream((Object[]) data).map(x -> dims(x)).collect(RefCollectors.toList());
       int[] head = childDims.get(0);
       childDims.stream().forEach(d -> RefArrays.equals(head, d));
       return RefIntStream.concat(RefIntStream.of(length), RefArrays.stream(head)).toArray();
@@ -812,7 +812,7 @@ public class VGG_WCT_Import {
         }
       }
       splitBuffer.add(strippedString.substring(lastCut, strippedString.length()));
-      return splitBuffer.stream().map(String::trim).filter(x -> !x.isEmpty()).map(VGG_WCT_Import::parse).toArray();
+      return splitBuffer.stream().map(s -> s.trim()).filter(x -> !x.isEmpty()).map(data1 -> parse(data1)).toArray();
     } else {
       return Double.parseDouble(data);
     }
