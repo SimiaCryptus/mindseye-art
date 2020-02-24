@@ -20,8 +20,12 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefIgnore;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.RefLinkedHashMap;
+import com.simiacryptus.ref.wrappers.RefSet;
 import com.simiacryptus.ref.wrappers.RefStream;
 
 import javax.annotation.Nonnull;
@@ -48,14 +52,20 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
   @Nonnull
   @Override
   public VisionPipeline<VisionPipelineLayer> getPipeline() {
-    StaticVisionPipelineLayer staticVisionPipelineLayer = new StaticVisionPipelineLayer(getPipelineName(), layer);
-    final VisionPipeline<?> innerPipeline = inner.getPipeline();
+    assertAlive();
+    StaticVisionPipelineLayer staticVisionPipelineLayer = new StaticVisionPipelineLayer(getPipelineName(), layer.addRef());
+    final VisionPipeline<? extends VisionPipelineLayer> innerPipeline = inner.getPipeline();
+    RefLinkedHashMap<? extends VisionPipelineLayer, PipelineNetwork> layers = innerPipeline.getLayers();
+    RefSet<? extends VisionPipelineLayer> keySet = layers.keySet();
+    layers.freeRef();
     VisionPipeline<VisionPipelineLayer> visionPipeline = new VisionPipeline<>(getPipelineName(),
         RefStream
-            .concat(RefStream.of(staticVisionPipelineLayer),
-                innerPipeline.getLayers().keySet().stream().map(x -> new PrependVisionPipelineLayer(x, layer)))
+            .concat(RefStream.of(staticVisionPipelineLayer.addRef()),
+                keySet.stream().map(x -> new PrependVisionPipelineLayer(x, layer.addRef())))
             .toArray(i -> new VisionPipelineLayer[i]));
-    staticVisionPipelineLayer.reference.set(visionPipeline);
+    keySet.freeRef();
+    staticVisionPipelineLayer.reference.set(visionPipeline.addRef());
+    staticVisionPipelineLayer.freeRef();
     innerPipeline.freeRef();
     return visionPipeline;
   }
@@ -66,21 +76,6 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
     return inner.getPipelineName() + "/prepend=" + layer.getName();
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  PrependVisionPipelineLayer[] addRefs(@Nullable PrependVisionPipelineLayer[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(prependVisionPipelineLayer -> prependVisionPipelineLayer.addRef())
-        .toArray(x -> new PrependVisionPipelineLayer[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  PrependVisionPipelineLayer[][] addRefs(
-      @Nullable PrependVisionPipelineLayer[][] array) {
-    return RefUtil.addRefs(array);
-  }
 
   @Nonnull
   @Override
@@ -89,6 +84,7 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
   }
 
   @Override
+  @RefIgnore
   public boolean equals(@Nullable Object o) {
     if (this == o)
       return true;
@@ -109,6 +105,8 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
 
   public @SuppressWarnings("unused")
   void _free() {
+    super._free();
+    layer.freeRef();
   }
 
   @Nonnull

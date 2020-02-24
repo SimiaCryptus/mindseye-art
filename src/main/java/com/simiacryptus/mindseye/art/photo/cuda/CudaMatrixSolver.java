@@ -71,21 +71,6 @@ public class CudaMatrixSolver extends ReferenceCountingBase implements RefOperat
     pixels = forwardMatrix.cols;
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  CudaMatrixSolver[] addRefs(@Nullable CudaMatrixSolver[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(cudaMatrixSolver -> cudaMatrixSolver.addRef())
-        .toArray(x -> new CudaMatrixSolver[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  CudaMatrixSolver[][] addRefs(@Nullable CudaMatrixSolver[][] array) {
-    return RefUtil.addRefs(array);
-  }
-
   public void _free() {
     forwardMatrix.freeRef();
     super._free();

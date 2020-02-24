@@ -23,6 +23,8 @@ import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefList;
 import org.ejml.data.DMatrixRMaj;
@@ -33,6 +35,8 @@ import org.ejml.sparse.FillReducing;
 import org.ejml.sparse.csc.factory.LinearSolverFactory_DSCC;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.UnaryOperator;
 
 public class SmoothSolver_EJML implements SmoothSolver {
@@ -52,17 +56,22 @@ public class SmoothSolver_EJML implements SmoothSolver {
   }
 
   @Nonnull
-  public static DMatrixSparseCSC laplacian(@Nonnull RasterAffinity affinity, @Nonnull RasterTopology topology) {
-    return laplacian(topology.connectivity(), affinity.affinityList(topology.connectivity()));
+  public static DMatrixSparseCSC laplacian(@Nonnull @RefAware RasterAffinity affinity, @Nonnull RasterTopology topology) {
+    List<double[]> affinityList = affinity.affinityList(topology.connectivity());
+    RefUtil.freeRef(affinity);
+    return laplacian(topology.connectivity(), affinityList);
   }
 
   @Nonnull
   public static UnaryOperator<Tensor> wrap(@Nonnull UnaryOperator<SimpleMatrix> solver, @Nonnull RasterTopology topology) {
     final int[] dimensions = topology.getDimensions();
     return tensor -> {
-      if (!RefArrays.equals(dimensions, tensor.getDimensions()))
+      int[] tensorDimensions = tensor.getDimensions();
+      if (!RefArrays.equals(dimensions, tensorDimensions)) {
+        tensor.freeRef();
         throw new IllegalArgumentException(
-            RefArrays.toString(dimensions) + " != " + RefArrays.toString(tensor.getDimensions()));
+            RefArrays.toString(dimensions) + " != " + RefArrays.toString(tensorDimensions));
+      }
       final SimpleMatrix imageMatrix = new SimpleMatrix(dimensions[0] * dimensions[1], dimensions[2]);
       for (int x = 0; x < dimensions[0]; x++) {
         for (int y = 0; y < dimensions[1]; y++) {
@@ -72,15 +81,17 @@ public class SmoothSolver_EJML implements SmoothSolver {
         }
       }
       SimpleMatrix smoothed = solver.apply(imageMatrix);
-      return tensor.mapCoords(coordinate -> {
+      Tensor mapCoords = tensor.mapCoords(coordinate -> {
         final int[] c = coordinate.getCoords();
         return Math.min(Math.max(smoothed.get(topology.getIndexFromCoords(c[0], c[1]), c[2]), 0), 255);
       });
+      tensor.freeRef();
+      return mapCoords;
     };
   }
 
   public static @Nonnull
-  DMatrixSparseCSC laplacian(@Nonnull RefList<int[]> graphEdges, @Nonnull RefList<double[]> affinityList) {
+  DMatrixSparseCSC laplacian(@Nonnull List<int[]> graphEdges, @Nonnull List<double[]> affinityList) {
     final int pixels = graphEdges.size();
     final DMatrixSparseCSC adjacency = new DMatrixSparseCSC(pixels, pixels);
     for (int i = 0; i < pixels; i++) {
@@ -93,7 +104,7 @@ public class SmoothSolver_EJML implements SmoothSolver {
           adjacency.set(i, edges[j], affinity);
       }
     }
-    final double[] degree = affinityList.stream().mapToDouble(x -> RefArrays.stream(x).sum()).toArray();
+    final double[] degree = affinityList.stream().mapToDouble(x -> Arrays.stream(x).sum()).toArray();
     // Calclulate normalized laplacian
     final DMatrixSparseCSC rescaled = new DMatrixSparseCSC(pixels, pixels);
     for (int i = 0; i < pixels; i++) {
@@ -119,7 +130,7 @@ public class SmoothSolver_EJML implements SmoothSolver {
   }
 
   @Nonnull
-  public RefOperator<Tensor> solve(@Nonnull RasterTopology topology, @Nonnull RasterAffinity affinity, double lambda) {
+  public RefOperator<Tensor> solve(@Nonnull RasterTopology topology, @Nonnull @RefAware RasterAffinity affinity, double lambda) {
     return RefOperator.wrap(wrap(solve(laplacian(affinity, topology), lambda), topology));
   }
 

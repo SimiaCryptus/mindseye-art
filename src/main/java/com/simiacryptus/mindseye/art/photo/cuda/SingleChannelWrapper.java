@@ -34,21 +34,6 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
     this.unaryOperator = unaryOperator;
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  SingleChannelWrapper[] addRefs(@Nullable SingleChannelWrapper[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(singleChannelWrapper -> singleChannelWrapper.addRef())
-        .toArray(x -> new SingleChannelWrapper[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  SingleChannelWrapper[][] addRefs(@Nullable SingleChannelWrapper[][] array) {
-    return RefUtil.addRefs(array);
-  }
-
   @Nonnull
   @Override
   public double[][] apply(@Nonnull double[][] img) {
@@ -56,7 +41,7 @@ class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<
   }
 
   public void _free() {
-    this.unaryOperator.freeRef();
+    unaryOperator.freeRef();
     super._free();
   }
 

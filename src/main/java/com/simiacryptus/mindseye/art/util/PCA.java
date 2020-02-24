@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.util;
 
+import com.simiacryptus.mindseye.art.ops.ContentInceptionMatcher;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.BandReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.ImgBandBiasLayer;
@@ -104,6 +105,7 @@ public class PCA {
 
   public static int countPixels(@Nonnull final Tensor featureImage) {
     int[] dimensions = featureImage.getDimensions();
+    featureImage.freeRef();
     int width = dimensions[0];
     int height = dimensions[1];
     return width * height;
@@ -115,7 +117,7 @@ public class PCA {
       double[] data = decomposition.getEigenvector(vectorIndex).toArray();
       Tensor tensor = new Tensor(data, 1, 1, data.length).unit();
       tensor.scaleInPlace(Math.pow(decomposition.getRealEigenvalue(vectorIndex), eigenPower));
-      return tensor.addRef();
+      return tensor;
     }).collect(RefCollectors.toList());
   }
 
@@ -133,20 +135,24 @@ public class PCA {
   }
 
   public RefList<Tensor> channelPCA(@Nonnull Tensor image) {
-    Tensor meanTensor = getChannelMeans(image);
-    Tensor scaled = getChannelRms(image, image.getDimensions()[2], meanTensor);
+    Tensor meanTensor = getChannelMeans(image.addRef());
+    Tensor scaled = getChannelRms(image.addRef(), image.getDimensions()[2], meanTensor.addRef());
     assert scaled != null;
-    double[] bandCovariance = bandCovariance(image.getPixelStream(), countPixels(image), meanTensor.getData(),
+    double[] bandCovariance = bandCovariance(image.getPixelStream(), countPixels(image.addRef()), meanTensor.getData(),
         scaled.getData());
+    image.freeRef();
     meanTensor.freeRef();
     scaled.freeRef();
-    return pca(bandCovariance, getEigenvaluePower()).stream().collect(RefCollectors.toList());
+    return pca(bandCovariance, getEigenvaluePower());
   }
 
   @Nullable
   public Tensor getChannelRms(Tensor image, int bands, @Nonnull Tensor meanTensor) {
     if (!isRescale()) {
-      return meanTensor.map(x -> 1);
+      Tensor tensor = meanTensor.map(x -> 1);
+      meanTensor.freeRef();
+      image.freeRef();
+      return tensor;
     } else {
       NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
       nthPowerActivationLayer.setPower(0.5);
@@ -154,11 +160,18 @@ public class PCA {
       bandReducerLayer.setMode(PoolingLayer.PoolingMode.Avg);
       ImgBandBiasLayer imgBandBiasLayer = new ImgBandBiasLayer(bands);
       imgBandBiasLayer.set(meanTensor.scale(-1));
-      PipelineNetwork network = PipelineNetwork.build(1, imgBandBiasLayer.addRef(),
-          new SquareActivationLayer(), bandReducerLayer.addRef(),
-          nthPowerActivationLayer.addRef());
+      meanTensor.freeRef();
+      PipelineNetwork network = PipelineNetwork.build(1,
+          imgBandBiasLayer,
+          new SquareActivationLayer(),
+          bandReducerLayer,
+          nthPowerActivationLayer
+      );
       try {
-        return network.eval(image).getData().get(0).map(x -> x == 0.0 ? 1.0 : x);
+        Tensor data0 = ContentInceptionMatcher.getData0(network.eval(image));
+        Tensor map = data0.map(x -> x == 0.0 ? 1.0 : x);
+        data0.freeRef();
+        return map;
       } finally {
         network.freeRef();
       }
@@ -169,7 +182,7 @@ public class PCA {
   public Tensor getChannelMeans(Tensor image) {
     BandReducerLayer bandReducerLayer = new BandReducerLayer();
     bandReducerLayer.setMode(PoolingLayer.PoolingMode.Avg);
-    Tensor meanTensor = bandReducerLayer.addRef().eval(image).getData().get(0);
+    Tensor meanTensor = ContentInceptionMatcher.getData0(bandReducerLayer.eval(image));
     bandReducerLayer.freeRef();
     if (!isRecenter())
       RefArrays.fill(meanTensor.getData(), 0);

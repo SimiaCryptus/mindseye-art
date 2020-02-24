@@ -30,6 +30,7 @@ import java.util.UUID;
 
 public enum VGG16 implements VisionPipelineLayer {
   VGG16_0a(x -> {
+    x.freeRef();
   }), VGG16_0b(pipeline -> {
     getVgg16_hdf5().phase0b(pipeline);
   }), VGG16_1a(pipeline -> {
@@ -78,20 +79,25 @@ public enum VGG16 implements VisionPipelineLayer {
   @Override
   public PipelineNetwork getLayer() {
     PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
-    fn.accept(pipeline);
-    return pipeline.copyPipeline();
+    fn.accept(pipeline.addRef());
+    PipelineNetwork copyPipeline = pipeline.copyPipeline();
+    pipeline.freeRef();
+    return copyPipeline;
   }
 
   @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline().addRef();
+    return getVisionPipeline();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
-    return getVisionPipeline().name;
+    VisionPipeline<VisionPipelineLayer> visionPipeline = getVisionPipeline();
+    String name = visionPipeline.name;
+    visionPipeline.freeRef();
+    return name;
   }
 
   @Nonnull
@@ -111,7 +117,7 @@ public enum VGG16 implements VisionPipelineLayer {
         }
       }
     }
-    return visionPipeline;
+    return visionPipeline.addRef();
   }
 
 }

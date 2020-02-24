@@ -19,61 +19,68 @@
 
 package com.simiacryptus.mindseye.art.photo.affinity;
 
+import com.simiacryptus.mindseye.lang.CoreSettings;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public interface RasterAffinity {
-  static RefList<double[]> normalize(@Nonnull RefList<int[]> graphEdges, @Nonnull RefList<double[]> affinityList) {
+  static List<double[]> normalize(@Nonnull List<int[]> graphEdges, @Nonnull List<double[]> affinityList) {
     return adjust(graphEdges, affinityList, degree(affinityList), 0.5);
   }
 
-  static RefList<double[]> adjust(@Nonnull List<int[]> graphEdges, @Nonnull List<double[]> affinityList, double[] degree, double power) {
-    return RefIntStream.range(0, graphEdges.size()).mapToObj(i2 -> {
+  static List<double[]> adjust(@Nonnull List<int[]> graphEdges, @Nonnull List<double[]> affinityList, double[] degree, double power) {
+    return IntStream.range(0, graphEdges.size()).mapToObj(i2 -> {
       final double deg_i = degree[i2];
       final int[] edges = graphEdges.get(i2);
       final double[] affinities = affinityList.get(i2);
       if (deg_i == 0)
         return new double[edges.length];
-      return RefIntStream.range(0, edges.length).mapToDouble(j -> {
+      return IntStream.range(0, edges.length).mapToDouble(j -> {
         final double deg_j = degree[edges[j]];
         if (deg_j == 0)
           return 0;
         return affinities[j] / Math.pow(deg_j * deg_i, power);
       }).toArray();
-    }).collect(RefCollectors.toList());
+    }).collect(Collectors.toList());
   }
 
   static double[] degree(@Nonnull List<double[]> affinityList) {
-    return affinityList.stream().parallel().mapToDouble(x -> RefArrays.stream(x).sum()).toArray();
+    Stream<double[]> stream = affinityList.stream();
+    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    return stream.mapToDouble(x -> Arrays.stream(x).sum()).toArray();
   }
 
   @Nonnull
-  default AffinityWrapper wrap(@Nonnull BiFunction<RefList<int[]>, RefList<double[]>, RefList<double[]>> fn) {
+  default AffinityWrapper wrap(@Nonnull BiFunction<List<int[]>, List<double[]>, List<double[]>> fn) {
     return new AffinityWrapper(this) {
       @Override
-      public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
+      public List<double[]> affinityList(List<int[]> graphEdges) {
         return fn.apply(graphEdges, inner.affinityList(graphEdges));
       }
     };
   }
 
   @Nonnull
-  default AffinityWrapper wrap(@Nonnull Function<RefList<int[]>, RefList<double[]>> fn) {
+  default AffinityWrapper wrap(@Nonnull Function<List<int[]>, List<double[]>> fn) {
     return new AffinityWrapper(this) {
       @Override
-      public RefList<double[]> affinityList(RefList<int[]> graphEdges) {
+      public List<double[]> affinityList(List<int[]> graphEdges) {
         return fn.apply(graphEdges);
       }
     };
   }
 
-  RefList<double[]> affinityList(RefList<int[]> graphEdges);
+  List<double[]> affinityList(List<int[]> graphEdges);
 
 }

@@ -22,12 +22,14 @@ package com.simiacryptus.mindseye.art.util;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.FloatPointer;
 import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacpp.hdf5;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +39,9 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.Exception;
 import java.nio.ByteBuffer;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.bytedeco.javacpp.hdf5.*;
 
@@ -100,7 +104,7 @@ public class Hdf5Archive {
     hdf5.getAttributes(path).forEach((k, v) -> {
       log.info(RefString.format("%sAttribute: %s => %s", prefix, k, v));
     });
-    for (String t : hdf5.getGroups(path).stream().map(charSequence -> charSequence.toString()).sorted(new RefComparator<String>() {
+    for (String t : hdf5.getGroups(path).stream().map(charSequence -> charSequence.toString()).sorted(new Comparator<String>() {
       @Override
       public int compare(@Nonnull String o1, @Nonnull String o2) {
         @Nonnull
@@ -114,7 +118,7 @@ public class Hdf5Archive {
         else
           return o1.compareTo(o2);
       }
-    }).collect(RefCollectors.toList())) {
+    }).collect(Collectors.toList())) {
       log.info(prefix + t);
       printTree(hdf5, prefix + "\t", printData, log, concat(path, t));
     }
@@ -186,7 +190,7 @@ public class Hdf5Archive {
   }
 
   @Nonnull
-  public RefMap<CharSequence, Object> getAttributes(@Nonnull String... groups) {
+  public Map<CharSequence, Object> getAttributes(@Nonnull String... groups) {
     if (groups.length == 0) {
       return getAttributes(this.file);
     }
@@ -194,25 +198,25 @@ public class Hdf5Archive {
     Group[] groupArray = openGroups(groups);
     Group group = groupArray[groupArray.length - 1];
     @Nonnull
-    RefMap<CharSequence, Object> attributes = getAttributes(group);
+    Map<CharSequence, Object> attributes = getAttributes(group);
     closeGroups(groupArray);
     return attributes;
   }
 
   @Nonnull
-  public RefMap<CharSequence, Object> getAttributes(@Nonnull Group group) {
+  public Map<CharSequence, Object> getAttributes(@Nonnull Group group) {
     int numAttrs = group.getNumAttrs();
     @Nonnull
-    RefTreeMap<CharSequence, Object> attributes = new RefTreeMap<>();
+    TreeMap<CharSequence, Object> attributes = new TreeMap<>();
     for (int i = 0; i < numAttrs; i++) {
       Attribute attribute = group.openAttribute(i);
       CharSequence name = attribute.getName().getString();
       int typeId = attribute.getTypeClass();
       if (typeId == 0) {
-        attributes.put(name, getI64(attribute));
+        RefUtil.freeRef(attributes.put(name, getI64(attribute)));
       } else {
         RefSystem.out.println(name + " type = " + typeId);
-        attributes.put(name, getString(attribute));
+        RefUtil.freeRef(attributes.put(name, getString(attribute)));
       }
       attribute.deallocate();
     }
@@ -220,27 +224,27 @@ public class Hdf5Archive {
   }
 
   @Nonnull
-  public RefList<CharSequence> getDataSets(@Nonnull String... groups) {
+  public List<CharSequence> getDataSets(@Nonnull String... groups) {
     if (groups.length == 0) {
       return getObjects(this.file, H5O_TYPE_DATASET);
     }
     @Nonnull
     Group[] groupArray = openGroups(groups);
     @Nonnull
-    RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1], H5O_TYPE_DATASET);
+    List<CharSequence> ls = getObjects(groupArray[groupArray.length - 1], H5O_TYPE_DATASET);
     closeGroups(groupArray);
     return ls;
   }
 
   @Nonnull
-  public RefList<CharSequence> getGroups(@Nonnull String... groups) {
+  public List<CharSequence> getGroups(@Nonnull String... groups) {
     if (groups.length == 0) {
       return getObjects(this.file, H5O_TYPE_GROUP);
     }
     @Nonnull
     Group[] groupArray = openGroups(groups);
     @Nonnull
-    RefList<CharSequence> ls = getObjects(groupArray[groupArray.length - 1], H5O_TYPE_GROUP);
+    List<CharSequence> ls = getObjects(groupArray[groupArray.length - 1], H5O_TYPE_GROUP);
     closeGroups(groupArray);
     return ls;
   }
@@ -324,57 +328,7 @@ public class Hdf5Archive {
       int j = 0;
       @Nonnull
       DataType dataType = new DataType(PredType.NATIVE_FLOAT());
-      @Nullable
-      Tensor data = null;
-      switch (nbDims) {
-        case 4: /* 2D Convolution weights */
-          dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2] * dims[3])];
-          fp = new FloatPointer(dataBuffer);
-          dataset.read(fp, dataType);
-          fp.get(dataBuffer);
-          data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2], (int) dims[3]);
-          for (int i1 = 0; i1 < dims[0]; i1++)
-            for (int i2 = 0; i2 < dims[1]; i2++)
-              for (int i3 = 0; i3 < dims[2]; i3++)
-                for (int i4 = 0; i4 < dims[3]; i4++)
-                  data.set(i1, i2, i3, i4, dataBuffer[j++]);
-          break;
-        case 3:
-          dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2])];
-          fp = new FloatPointer(dataBuffer);
-          dataset.read(fp, dataType);
-          fp.get(dataBuffer);
-          data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2]);
-          for (int i1 = 0; i1 < dims[0]; i1++)
-            for (int i2 = 0; i2 < dims[1]; i2++)
-              for (int i3 = 0; i3 < dims[2]; i3++)
-                data.set(i1, i2, i3, dataBuffer[j++]);
-          break;
-        case 2: /* Dense and Recurrent weights */
-          dataBuffer = new float[(int) (dims[0] * dims[1])];
-          fp = new FloatPointer(dataBuffer);
-          dataset.read(fp, dataType);
-          fp.get(dataBuffer);
-          data = new Tensor((int) dims[0], (int) dims[1]);
-          for (int i1 = 0; i1 < dims[0]; i1++)
-            for (int i2 = 0; i2 < dims[1]; i2++)
-              data.set(i1, i2, dataBuffer[j++]);
-          break;
-        case 1: /* Bias */
-          dataBuffer = new float[(int) dims[0]];
-          fp = new FloatPointer(dataBuffer);
-          dataset.read(fp, dataType);
-          fp.get(dataBuffer);
-          data = new Tensor((int) dims[0]);
-          for (int i1 = 0; i1 < dims[0]; i1++) {
-            final double value = dataBuffer[j++];
-            data.set(i1, value);
-          }
-          break;
-        default:
-          throw new RuntimeException("Cannot import weights apply rank " + nbDims);
-      }
-      return data;
+      return getTensor(dataset, nbDims, dims, j, dataType);
     } finally {
       space.deallocate();
       dataset.deallocate();
@@ -382,10 +336,72 @@ public class Hdf5Archive {
     }
   }
 
+  @NotNull
+  private Tensor getTensor(DataSet dataset, int nbDims, long[] dims, int j, DataType dataType) {
+    float[] dataBuffer;
+    FloatPointer fp;
+    switch (nbDims) {
+      case 4: /* 2D Convolution weights */
+      {
+        dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2] * dims[3])];
+        fp = new FloatPointer(dataBuffer);
+        dataset.read(fp, dataType);
+        fp.get(dataBuffer);
+        Tensor data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2], (int) dims[3]);
+        for (int i1 = 0; i1 < dims[0]; i1++)
+          for (int i2 = 0; i2 < dims[1]; i2++)
+            for (int i3 = 0; i3 < dims[2]; i3++)
+              for (int i4 = 0; i4 < dims[3]; i4++)
+                data.set(i1, i2, i3, i4, dataBuffer[j++]);
+        return data;
+      }
+      case 3:
+      {
+        dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2])];
+        fp = new FloatPointer(dataBuffer);
+        dataset.read(fp, dataType);
+        fp.get(dataBuffer);
+        Tensor data = new Tensor((int) dims[0], (int) dims[1], (int) dims[2]);
+        for (int i1 = 0; i1 < dims[0]; i1++)
+          for (int i2 = 0; i2 < dims[1]; i2++)
+            for (int i3 = 0; i3 < dims[2]; i3++)
+              data.set(i1, i2, i3, dataBuffer[j++]);
+        return data;
+      }
+      case 2: /* Dense and Recurrent weights */
+      {
+        dataBuffer = new float[(int) (dims[0] * dims[1])];
+        fp = new FloatPointer(dataBuffer);
+        dataset.read(fp, dataType);
+        fp.get(dataBuffer);
+        Tensor data = new Tensor((int) dims[0], (int) dims[1]);
+        for (int i1 = 0; i1 < dims[0]; i1++)
+          for (int i2 = 0; i2 < dims[1]; i2++)
+            data.set(i1, i2, dataBuffer[j++]);
+        return data;
+      }
+      case 1: /* Bias */
+      {
+        dataBuffer = new float[(int) dims[0]];
+        fp = new FloatPointer(dataBuffer);
+        dataset.read(fp, dataType);
+        fp.get(dataBuffer);
+        Tensor data = new Tensor((int) dims[0]);
+        for (int i1 = 0; i1 < dims[0]; i1++) {
+          final double value = dataBuffer[j++];
+          data.set(i1, value);
+        }
+        return data;
+      }
+      default:
+        throw new RuntimeException("Cannot import weights apply rank " + nbDims);
+    }
+  }
+
   @Nonnull
-  private RefList<CharSequence> getObjects(@Nonnull Group fileGroup, int objType) {
+  private List<CharSequence> getObjects(@Nonnull Group fileGroup, int objType) {
     @Nonnull
-    RefList<CharSequence> groups = new RefArrayList<CharSequence>();
+    List<CharSequence> groups = new ArrayList<CharSequence>();
     for (int i = 0; i < fileGroup.getNumObjs(); i++) {
       BytePointer objPtr = fileGroup.getObjnameByIdx(i);
       if (fileGroup.childObjType(objPtr) == objType) {

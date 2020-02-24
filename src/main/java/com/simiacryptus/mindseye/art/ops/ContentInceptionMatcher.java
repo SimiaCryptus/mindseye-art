@@ -22,7 +22,9 @@ package com.simiacryptus.mindseye.art.ops;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.mindseye.lang.TensorList;
 import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
@@ -82,41 +84,52 @@ public class ContentInceptionMatcher implements VisualModifier {
   @Nonnull
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
-    PipelineNetwork network = visualModifierParameters.network;
-    assert network != null;
-    network = network.copyPipeline();
-    assert network != null;
-    Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
+    PipelineNetwork network = visualModifierParameters.copyNetwork();
+    Tensor baseContent = getData0(network.eval(visualModifierParameters.getStyle()));
     visualModifierParameters.freeRef();
     BandAvgReducerLayer bandAvgReducerLayer = new BandAvgReducerLayer();
-    Tensor bandAvg = bandAvgReducerLayer.eval(baseContent).getData().get(0);
+    Tensor bandAvg = getData0(bandAvgReducerLayer.eval(baseContent.addRef()));
     ImgBandBiasLayer offsetLayer = new ImgBandBiasLayer(bandAvg.scale(-1));
+    bandAvg.freeRef();
     NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
     nthPowerActivationLayer.setPower(0.5);
-    Tensor bandPowers = PipelineNetwork.build(1, offsetLayer, new SquareActivationLayer(), bandAvgReducerLayer,
-        nthPowerActivationLayer.addRef()).eval(baseContent).getData().get(0);
+    PipelineNetwork build = PipelineNetwork.build(1, offsetLayer, new SquareActivationLayer(), bandAvgReducerLayer,
+        nthPowerActivationLayer);
+    Tensor bandPowers = getData0(build.eval(baseContent.addRef()));
+    build.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
-    ConvolutionLayer convolutionLayer1 = new ConvolutionLayer(1, 1, contentDimensions[2], 1).setPaddingXY(0, 0);
-    convolutionLayer1.set(bandPowers.unit());
-    Layer colorProjection = convolutionLayer1.addRef().explode();
-    Tensor spacialPattern = colorProjection.eval(baseContent).getData().get(0);
+    ConvolutionLayer convolutionLayer2 = new ConvolutionLayer(1, 1, contentDimensions[2], 1);
+    convolutionLayer2.setPaddingXY(0, 0);
+    convolutionLayer2.set(bandPowers.unit());
+    bandPowers.freeRef();
+    Layer colorProjection = convolutionLayer2.explode();
+    convolutionLayer2.freeRef();
+    Tensor spacialPattern = getData0(colorProjection.eval(baseContent));
     double mag = balanced ? spacialPattern.rms() : 1;
-    network.add(colorProjection);
+    network.add(colorProjection).freeRef();
     spacialPattern.scaleInPlace(Math.pow(spacialPattern.rms(), -2));
     ConvolutionLayer convolutionLayer = new ConvolutionLayer(contentDimensions[0], contentDimensions[1], 1, 1);
-    convolutionLayer.set(spacialPattern.addRef());
-    network.add(convolutionLayer.addRef().explode()).freeRef();
+    convolutionLayer.set(spacialPattern);
+    network.add(convolutionLayer.explode()).freeRef();
+    convolutionLayer.freeRef();
     BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
     boundedActivationLayer1.setMinValue(getMinValue());
-    BoundedActivationLayer boundedActivationLayer = boundedActivationLayer1.addRef();
-    boundedActivationLayer.setMaxValue(getMaxValue());
+    boundedActivationLayer1.setMaxValue(getMaxValue());
     final Layer[] layers = new Layer[]{
-        boundedActivationLayer.addRef(), new SquareActivationLayer(),
+        boundedActivationLayer1, new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()};
     Layer layer = PipelineNetwork.build(1, layers);
     layer.setName(RefString.format("-RMS / %.0E", mag));
-    network.add(layer.addRef()).freeRef();
+    network.add(layer).freeRef();
     network.freeze();
-    return network.addRef();
+    return network;
+  }
+
+  public static Tensor getData0(Result eval) {
+    TensorList data = eval.getData();
+    Tensor tensor = data.get(0);
+    data.freeRef();
+    eval.freeRef();
+    return tensor;
   }
 }

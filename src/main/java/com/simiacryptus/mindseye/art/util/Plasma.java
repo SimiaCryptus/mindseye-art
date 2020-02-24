@@ -71,30 +71,24 @@ public class Plasma {
 
   @Nonnull
   private static Tensor initSquare(final int bands) {
-    Tensor tensor2 = new Tensor(1, 1, bands);
-    tensor2.setByCoord(c1 -> 100 + 200 * (Math.random() - 0.5));
-    Tensor baseColor = tensor2.addRef();
+    Tensor tensor = new Tensor(1, 1, bands);
+    tensor.setByCoord(c1 -> 100 + 200 * (Math.random() - 0.5));
     Tensor tensor1 = new Tensor(2, 2, bands);
-    tensor1.setByCoord(c -> baseColor.get(0, 0, c.getCoords()[2]));
-    Tensor tensor = tensor1.addRef();
-    baseColor.freeRef();
-    return tensor;
+    tensor1.setByCoord(c -> tensor.get(0, 0, c.getCoords()[2]));
+    tensor.freeRef();
+    return tensor1;
   }
 
   @Nonnull
   public Tensor paint(final int width, final int height) {
-    Tensor initSquare = initSquare(bands);
-    Tensor expandPlasma = expandPlasma(initSquare, width, height);
-    initSquare.freeRef();
-    return expandPlasma;
+    return expandPlasma(initSquare(bands), width, height);
   }
 
   @Nonnull
   private Tensor expandPlasma(@Nonnull Tensor image, final int width, final int height) {
-    image.addRef();
     while (image.getDimensions()[0] < Math.max(width, height)) {
       final double factor = Math.pow(image.getDimensions()[0], noisePower);
-      Tensor newImage = expandPlasma(image, RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
+      Tensor newImage = expandPlasma(image.addRef(), RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
       image.freeRef();
       image = newImage;
     }
@@ -167,6 +161,7 @@ public class Plasma {
         }
       }
     }
+    seed.freeRef();
     return returnValue;
   }
 }

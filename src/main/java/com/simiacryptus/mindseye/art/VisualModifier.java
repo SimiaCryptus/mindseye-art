@@ -25,6 +25,7 @@ import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefString;
 
 import javax.annotation.Nonnull;
@@ -42,9 +43,7 @@ public interface VisualModifier {
                                 Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
     network.assertAlive();
-    PipelineNetwork pipelineNetwork = build(new VisualModifierParameters(network, contentDims, viewLayer, null, image));
-    network.freeRef();
-    return pipelineNetwork;
+    return build(new VisualModifierParameters(network, contentDims, viewLayer, null, image));
   }
 
   @Nonnull
@@ -64,10 +63,11 @@ public interface VisualModifier {
       @Nonnull
       @Override
       public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
-        Layer layer = SumInputsLayer.combine(VisualModifier.this.build(visualModifierParameters.addRef()),
+        Layer layer = SumInputsLayer.combine(
+            VisualModifier.this.build(visualModifierParameters.addRef()),
             right.build(visualModifierParameters));
         layer.freeze();
-        return (PipelineNetwork) layer.addRef();
+        return (PipelineNetwork) layer;
       }
     };
   }
@@ -92,11 +92,10 @@ public interface VisualModifier {
         PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
         LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
         linearActivationLayer.setScale(scale);
-        Layer layer = linearActivationLayer.addRef();
-        layer.freeze();
-        build.add(layer.addRef()).freeRef();
+        linearActivationLayer.freeze();
+        build.add(linearActivationLayer).freeRef();
         build.freeze();
-        return build.addRef();
+        return build;
       }
     };
   }
@@ -121,11 +120,10 @@ public interface VisualModifier {
         PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
         NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
         nthPowerActivationLayer.setPower(power);
-        Layer layer = nthPowerActivationLayer.addRef();
-        layer.freeze();
-        build.add(layer.addRef()).freeRef();
+        nthPowerActivationLayer.freeze();
+        build.add(nthPowerActivationLayer).freeRef();
         build.freeze();
-        return build.addRef();
+        return build;
       }
     };
   }
@@ -133,16 +131,18 @@ public interface VisualModifier {
   @Nonnull
   default VisualModifier withMask(Tensor maskedInput) {
     final VisualModifier inner = this;
-    return new VisualModifier() {
+    return RefUtil.wrapInterface(new VisualModifier() {
       public boolean isLocalized() {
         return true;
       }
 
       @Override
       public PipelineNetwork build(@Nonnull VisualModifierParameters parameters) {
-        return inner.build(parameters.withMask(maskedInput));
+        PipelineNetwork build = inner.build(parameters.withMask(maskedInput.addRef()));
+        parameters.freeRef();
+        return build;
       }
-    };
+    }, maskedInput);
   }
 
 }

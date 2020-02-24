@@ -24,6 +24,9 @@ import com.simiacryptus.mindseye.lang.DeltaSet;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.PointSample;
 import com.simiacryptus.mindseye.lang.StateSet;
+import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
+import com.simiacryptus.mindseye.network.DAGNode;
+import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCounting;
@@ -36,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class SumTrainable extends ReferenceCountingBase implements Trainable {
@@ -49,57 +53,64 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
   }
 
   public Trainable[] getInner() {
-    return inner;
+    return RefUtil.addRef(inner);
   }
 
-  @Nonnull
   @Override
   public Layer getLayer() {
-    return null;
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  SumTrainable[] addRefs(@Nullable SumTrainable[] array) {
-    return RefUtil.addRefs(array);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  SumTrainable[][] addRefs(@Nullable SumTrainable[][] array) {
-    return RefUtil.addRefs(array);
+    PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
+    pipelineNetwork.add(new SumInputsLayer(), RefArrays.stream(getInner())
+        .map(trainable -> trainable.getLayer())
+        .map(node -> pipelineNetwork.add(node, pipelineNetwork.getInput(0)))
+        .toArray(i->new DAGNode[i])
+    ).freeRef();
+    return pipelineNetwork;
   }
 
   @Nonnull
   @Override
   public PointSample measure(final TrainingMonitor monitor) {
-    RefList<PointSample> results = RefArrays.stream(getInner()).map(x -> x.measure(monitor))
-        .collect(RefCollectors.toList());
-    DeltaSet<UUID> delta = RefUtil.get(results.stream().map(x -> x.delta.addRef()).reduce((a, b) -> {
+    RefList<PointSample> results = RefArrays.stream(getInner()).map(pointSample -> {
+      PointSample measure = pointSample.measure(monitor);
+      pointSample.freeRef();
+      return measure;
+    }).collect(RefCollectors.toList());
+    DeltaSet<UUID> delta = RefUtil.get(results.stream().map(x -> {
+      DeltaSet<UUID> uuidDeltaSet = x.delta.addRef();
+      x.freeRef();
+      return uuidDeltaSet;
+    }).reduce((a, b) -> {
       a.addInPlace(b);
-      DeltaSet<UUID> c = a.addRef();
-      b.freeRef();
-      return c;
+      return a;
     }));
-    StateSet<UUID> weights = RefUtil.get(results.stream().map(x -> x.weights.addRef()).reduce((a, b) -> {
-      StateSet<UUID> c = StateSet.union(a, b);
-      a.freeRef();
-      b.freeRef();
-      return c;
+    StateSet<UUID> weights = RefUtil.get(results.stream().map(x -> {
+      StateSet<UUID> uuidStateSet = x.weights.addRef();
+      x.freeRef();
+      return uuidStateSet;
+    }).reduce((a, b) -> {
+      return StateSet.union(a, b);
     }));
-    double mean = results.stream().mapToDouble(x -> x.getMean()).sum();
-    double rate = results.stream().mapToDouble(x -> x.getRate()).average().getAsDouble();
-    int sum = results.stream().mapToInt(x -> x.count).sum();
-    results.forEach(pointSample1 -> pointSample1.freeRef());
-    final PointSample pointSample = new PointSample(delta, weights, mean, rate, sum);
-    delta.freeRef();
-    weights.freeRef();
-    return pointSample;
+    double mean = results.stream().mapToDouble(x -> {
+      double xMean = x.getMean();
+      x.freeRef();
+      return xMean;
+    }).sum();
+    double rate = results.stream().mapToDouble(x -> {
+      double xRate = x.getRate();
+      x.freeRef();
+      return xRate;
+    }).average().getAsDouble();
+    int sum = results.stream().mapToInt(x -> {
+      int count = x.count;
+      x.freeRef();
+      return count;
+    }).sum();
+    results.freeRef();
+    return new PointSample(delta, weights, mean, rate, sum);
   }
 
   public void _free() {
-    if (null != getInner())
-      RefArrays.stream(getInner()).forEach(trainable -> trainable.freeRef());
+    RefUtil.freeRef(inner);
     super._free();
   }
 

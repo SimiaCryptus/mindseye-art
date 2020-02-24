@@ -29,8 +29,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
-public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
+public enum VGG19 implements VisionPipelineLayer {
   VGG19_0a(p -> {
+    p.freeRef();
   }), VGG19_0b(pipeline -> {
     getVGG19_hdf5().phase0(pipeline);
   }), VGG19_1a(pipeline -> {
@@ -83,20 +84,25 @@ public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
   @Override
   public PipelineNetwork getLayer() {
     PipelineNetwork pipeline = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
-    fn.accept(pipeline);
-    return pipeline.copyPipeline();
+    fn.accept(pipeline.addRef());
+    PipelineNetwork copyPipeline = pipeline.copyPipeline();
+    pipeline.freeRef();
+    return copyPipeline;
   }
 
   @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline().addRef();
+    return getVisionPipeline();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
-    return getVisionPipeline().name;
+    VisionPipeline<VisionPipelineLayer> visionPipeline = getVisionPipeline();
+    String name = visionPipeline.name;
+    visionPipeline.freeRef();
+    return name;
   }
 
   @Nonnull
@@ -116,7 +122,7 @@ public enum VGG19 implements VisionPipelineLayer, ReferenceCounting {
         }
       }
     }
-    return visionPipeline;
+    return visionPipeline.addRef();
   }
 
 }

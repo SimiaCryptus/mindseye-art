@@ -51,15 +51,6 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
       this.inner = inner;
     }
 
-    @Nullable
-    public static @SuppressWarnings("unused")
-    RefOperatorWrapper[] addRefs(@Nullable RefOperatorWrapper[] array) {
-      if (array == null)
-        return null;
-      return Arrays.stream(array).filter(x -> x != null).map((RefOperatorWrapper refOperatorWrapper) -> refOperatorWrapper.addRef())
-          .toArray(x -> new RefOperatorWrapper[x]);
-    }
-
     @Override
     public T apply(T t) {
       return inner.apply(t);
@@ -67,6 +58,7 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
 
     public @SuppressWarnings("unused")
     void _free() {
+      super._free();
     }
 
     @Nonnull

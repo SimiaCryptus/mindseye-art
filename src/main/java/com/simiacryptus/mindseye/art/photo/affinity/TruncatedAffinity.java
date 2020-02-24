@@ -24,6 +24,9 @@ import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefList;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class TruncatedAffinity extends AffinityWrapper {
   private double min = 1e-2;
@@ -54,13 +57,13 @@ public class TruncatedAffinity extends AffinityWrapper {
   }
 
   @Override
-  public RefList<double[]> affinityList(@Nonnull RefList<int[]> graphEdges) {
-    final RefList<double[]> innerResult = inner.affinityList(graphEdges);
+  public List<double[]> affinityList(@Nonnull List<int[]> graphEdges) {
+    final List<double[]> innerResult = inner.affinityList(graphEdges);
     final double[] degree = RasterAffinity.degree(innerResult);
-    final RefList<double[]> doubles = RasterAffinity.adjust(graphEdges, innerResult, degree, getPower());
-    final RefList<double[]> truncated = doubles.stream()
-        .map(list -> RefArrays.stream(list).map(x -> x >= getMin() ? x : 0.0).toArray())
-        .collect(RefCollectors.toList());
+    final List<double[]> doubles = RasterAffinity.adjust(graphEdges, innerResult, degree, getPower());
+    final List<double[]> truncated = doubles.stream()
+        .map(list -> Arrays.stream(list).map(x -> x >= getMin() ? x : 0.0).toArray())
+        .collect(Collectors.toList());
     return RasterAffinity.adjust(graphEdges, truncated, degree, -getPower());
   }
 }

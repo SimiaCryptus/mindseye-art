@@ -23,17 +23,27 @@ import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
+import com.simiacryptus.mindseye.lang.CoreSettings;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.util.ImageUtil;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.util.FastRandom;
 
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.adjust;
 import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.degree;
@@ -49,22 +59,30 @@ public class SegmentUtil {
   }
 
   public static int[] valueCountArray(@Nonnull int[] ints) {
-    final RefMap<Integer, Long> countMap = valueCountMap(ints);
+    final Map<Integer, Long> countMap = valueCountMap(ints);
     return range(0, RefArrays.stream(ints).max().getAsInt() + 1)
         .map((int i) -> (int) (long) countMap.getOrDefault(i, 0l)).toArray();
   }
 
-  public static RefMap<Integer, Long> valueCountMap(@Nonnull int[] ints) {
-    return RefArrays.stream(ints).mapToObj(x -> x)
-        .collect(RefCollectors.groupingBy((Integer x) -> x, RefCollectors.counting()));
+  public static Map<Integer, Long> valueCountMap(@Nonnull int[] ints) {
+    return Arrays.stream(ints).mapToObj(x -> x)
+        .collect(Collectors.groupingBy((Integer x) -> x, Collectors.counting()));
   }
 
   public static void printHistogram(@Nonnull int[] islands) {
-    RefArrays.stream(islands).mapToObj(x -> x).collect(RefCollectors.groupingBy(x -> x, RefCollectors.counting()))
-        .values().stream().collect(RefCollectors.groupingBy(x -> x, RefCollectors.counting())).entrySet().stream()
-        .sorted(RefComparator.comparingDouble(x -> -x.getValue() * x.getKey()))
-        .map(x -> RefString.format("%d regions of size %s", x.getValue(), x.getKey()))
-        .forEach(x1 -> RefSystem.out.println(x1));
+    RefArrays.stream(islands).mapToObj(x -> x).collect(Collectors.groupingBy(x -> x, Collectors.counting()))
+        .values().stream().collect(Collectors.groupingBy(x -> x, Collectors.counting())).entrySet().stream()
+        .sorted(Comparator.comparingDouble(entry -> {
+          long v = -entry.getValue() * entry.getKey();
+          RefUtil.freeRef(entry);
+          return v;
+        }))
+        .map(entry -> {
+          String msg = String.format("%d regions of size %s", entry.getValue(), entry.getKey());
+          RefUtil.freeRef(entry);
+          return msg;
+        })
+        .forEach(x1 -> System.out.println(x1));
   }
 
   @Nonnull
@@ -73,9 +91,11 @@ public class SegmentUtil {
     int[] marks = new int[rows];
     AtomicInteger islandNumber = new AtomicInteger(0);
     int[] dimensions = topology.getDimensions();
-    range(0, dimensions[0]).parallel().mapToObj(x -> x).sorted(RefComparator.comparingInt(x -> x.hashCode()))
+    IntStream stream = range(0, dimensions[0]);
+    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    stream.mapToObj(x -> x).sorted(Comparator.comparingInt(x -> x.hashCode()))
         .mapToInt(x -> x).forEach(x -> range(0, dimensions[1]).mapToObj(y -> y)
-        .sorted(RefComparator.comparing(y -> y.hashCode())).mapToInt(y -> y).forEach(y -> {
+        .sorted(Comparator.comparing(y -> y.hashCode())).mapToInt(y -> y).forEach(y -> {
           int row = topology.getIndexFromCoords(x, y);
           if (marks[row] == 0) {
             final int thisIsland = islandNumber.incrementAndGet();
@@ -94,17 +114,17 @@ public class SegmentUtil {
     return removeTinyInclusions(valueCountMap(pixelMap), graph, smallSize, largeSize);
   }
 
-  public static int[] removeTinyInclusions(@Nonnull RefMap<Integer, Long> islandSizes, @Nonnull SparseMatrixFloat graph,
+  public static int[] removeTinyInclusions(@Nonnull Map<Integer, Long> islandSizes, @Nonnull SparseMatrixFloat graph,
                                            int sizeThreshold) {
     return removeTinyInclusions(islandSizes, graph, sizeThreshold, sizeThreshold);
   }
 
-  public static int[] removeTinyInclusions(@Nonnull RefMap<Integer, Long> islandSizes, @Nonnull SparseMatrixFloat graph, int smallSize,
+  public static int[] removeTinyInclusions(@Nonnull Map<Integer, Long> islandSizes, @Nonnull SparseMatrixFloat graph, int smallSize,
                                            int largeSize) {
     return range(0, graph.rows).map(row -> {
       final int[] cols = graph.getCols(row);
       if (islandSizes.getOrDefault(row, 0l) < smallSize) {
-        final int[] largeNeighbors = RefArrays.stream(cols).filter(j -> {
+        final int[] largeNeighbors = Arrays.stream(cols).filter(j -> {
           return islandSizes.getOrDefault(j, 0l) >= largeSize;
         }).toArray();
         if (largeNeighbors.length == 1) {
@@ -116,11 +136,12 @@ public class SegmentUtil {
   }
 
   @Nonnull
-  public static BufferedImage flattenColors(@Nonnull Tensor content, RasterTopology topology, @Nonnull RasterAffinity affinity, int n,
+  public static BufferedImage flattenColors(@Nonnull Tensor content, RasterTopology topology, @RefAware @Nonnull RasterAffinity affinity, int n,
                                             @Nonnull SmoothSolver solver) {
     final RefOperator<Tensor> refOperator = solver.solve(topology,
         affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5)), 1e-4);
-    final Tensor tensor = refOperator.iterate(n, content.addRef());
+    RefUtil.freeRef(affinity);
+    final Tensor tensor = refOperator.iterate(n, content);
     refOperator.freeRef();
     final BufferedImage image = tensor.toRgbImage();
     tensor.freeRef();
@@ -150,9 +171,9 @@ public class SegmentUtil {
     final int row = topology.getIndexFromCoords(coords[0], coords[1]);
     assert 0 < indexNumber;
     final T rowColor = extract.apply(coords);
-    final RefList<int[]> connectivity = topology.connectivity();
+    final List<int[]> connectivity = topology.connectivity();
     if (maxRecursion > 0) {
-      RefArrays.stream(connectivity.get(row)).forEach(col -> {
+      Arrays.stream(connectivity.get(row)).forEach(col -> {
         if (0 == marks[col]) {
           final int[] toCoords = topology.getCoordsFromIndex(col);
           if (test.test(rowColor, extract.apply(toCoords))) {
@@ -166,17 +187,17 @@ public class SegmentUtil {
     }
   }
 
-  private static RefMap<Integer, double[]> randomColors(@Nonnull SparseMatrixFloat graph, int iterations) {
+  private static Map<Integer, double[]> randomColors(@Nonnull SparseMatrixFloat graph, int iterations) {
     return randomColors(graph,
-        x -> RefDoubleStream.generate(() -> FastRandom.INSTANCE.random() * 255).limit(3).toArray(),
-        new RefConcurrentHashMap<>(), iterations);
+        x -> DoubleStream.generate(() -> FastRandom.INSTANCE.random() * 255).limit(3).toArray(),
+        new ConcurrentHashMap<>(), iterations);
   }
 
-  private static RefMap<Integer, double[]> randomColors(@Nonnull SparseMatrixFloat graph, @Nonnull Function<Integer, double[]> seedColor,
-                                                        @Nonnull RefMap<Integer, double[]> colors, int n) {
+  private static Map<Integer, double[]> randomColors(@Nonnull SparseMatrixFloat graph, @Nonnull Function<Integer, double[]> seedColor,
+                                                        @Nonnull Map<Integer, double[]> colors, int n) {
     if (n <= 0) {
       if (colors.isEmpty()) {
-        return RefArrays.stream(graph.activeRows()).mapToObj(x -> x).collect(RefCollectors.toMap(x -> x, seedColor));
+        return Arrays.stream(graph.activeRows()).mapToObj(x -> x).collect(Collectors.toMap(x -> x, seedColor));
       } else {
         return colors;
       }
@@ -184,22 +205,24 @@ public class SegmentUtil {
     return randomColors(graph, seedColor, iterateColors(graph, seedColor, colors), n - 1);
   }
 
-  private static RefMap<Integer, double[]> iterateColors(@Nonnull SparseMatrixFloat graph, @Nonnull Function<Integer, double[]> seedColor,
-                                                         @Nonnull RefMap<Integer, double[]> colors) {
-    return RefArrays.stream(graph.activeRows()).parallel().mapToObj(x -> x)
-        .collect(RefCollectors.toMap(key -> key, key -> {
+  private static Map<Integer, double[]> iterateColors(@Nonnull SparseMatrixFloat graph, @Nonnull Function<Integer, double[]> seedColor,
+                                                         @Nonnull Map<Integer, double[]> colors) {
+    IntStream stream = Arrays.stream(graph.activeRows());
+    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    return stream.mapToObj(x -> x)
+        .collect(Collectors.toMap(key -> key, key -> {
           final int[] cols = graph.getCols(key);
           final float[] vals = graph.getVals(key);
-          final RefList<double[]> neighborColors = range(0, cols.length)
+          final List<double[]> neighborColors = range(0, cols.length)
               .mapToObj(
-                  ni -> RefArrays.stream(colors.computeIfAbsent(cols[ni], seedColor)).map(x -> x / vals[ni]).toArray())
-              .collect(RefCollectors.toList());
+                  ni -> Arrays.stream(colors.computeIfAbsent(cols[ni], seedColor)).map(x -> x / vals[ni]).toArray())
+              .collect(Collectors.toList());
           if (neighborColors.isEmpty())
             return colors.computeIfAbsent(key, seedColor);
           final double[] average = range(0, 3)
               .mapToDouble(i -> -neighborColors.stream().mapToDouble(j -> j[i] - 127).average().orElse(0.0)).toArray();
-          final double rms = Math.sqrt(RefArrays.stream(average).map(x -> x * x).average().getAsDouble());
-          return RefArrays.stream(average).map(x -> Math.min(Math.max(x / rms * 64 + 127, 0), 255)).toArray();
+          final double rms = Math.sqrt(Arrays.stream(average).map(x -> x * x).average().getAsDouble());
+          return Arrays.stream(average).map(x -> Math.min(Math.max(x / rms * 64 + 127, 0), 255)).toArray();
         }));
   }
 

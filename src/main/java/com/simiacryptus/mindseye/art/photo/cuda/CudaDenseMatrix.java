@@ -19,7 +19,7 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
-import com.simiacryptus.ref.lang.LazyVal;
+import com.simiacryptus.ref.lang.RefLazyVal;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import jcuda.Pointer;
@@ -38,7 +38,7 @@ import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
-public class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
+public class CudaDenseMatrix extends RefLazyVal<CudaDenseMatrix.GpuCopy> {
 
   public final SparseMatrixFloat matrix;
 
@@ -85,21 +85,6 @@ public class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
     return cooRowIndex;
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  CudaDenseMatrix[] addRefs(@Nullable CudaDenseMatrix[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(cudaDenseMatrix -> cudaDenseMatrix.addRef())
-        .toArray(x -> new CudaDenseMatrix[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  CudaDenseMatrix[][] addRefs(@Nullable CudaDenseMatrix[][] array) {
-    return RefUtil.addRefs(array);
-  }
-
   @Override
   @Nonnull
   public CudaDenseMatrix.GpuCopy build() {
@@ -108,6 +93,7 @@ public class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
 
   public @SuppressWarnings("unused")
   void _free() {
+    super._free();
   }
 
   @Nonnull
@@ -133,12 +119,7 @@ public class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
       rowIndices = toDevice(matrix.rowIndices);
       columnIndices = toDevice(matrix.colIndices);
       values = toDevice(matrix.values);
-    }
-
-    @Nullable
-    public static @SuppressWarnings("unused")
-    GpuCopy[] addRefs(@Nullable GpuCopy[] array) {
-      return RefUtil.addRefs(array);
+      cudaCoo.freeRef();
     }
 
     @Nonnull
@@ -150,10 +131,10 @@ public class CudaDenseMatrix extends LazyVal<CudaDenseMatrix.GpuCopy> {
     }
 
     public void _free() {
-      final GpuCopy gpuCopy = this;
-      cudaFree(gpuCopy.rowIndices);
-      cudaFree(gpuCopy.columnIndices);
-      cudaFree(gpuCopy.values);
+      super._free();
+      cudaFree(this.rowIndices);
+      cudaFree(this.columnIndices);
+      cudaFree(this.values);
     }
 
     @Nonnull

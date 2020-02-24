@@ -25,6 +25,10 @@ import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefList;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class IteratedRasterTopology implements RasterTopology {
   private final RasterTopology inner;
@@ -50,21 +54,21 @@ public class IteratedRasterTopology implements RasterTopology {
     return this;
   }
 
-  public static RefList<int[]> iterate(RefList<int[]> edges, int pow) {
+  public static List<int[]> iterate(List<int[]> edges, int pow) {
     assert pow > 0;
     if (1 == pow) {
       return edges;
     } else {
-      final RefList<int[]> prev = iterate(edges, pow - 1);
-      return RefIntStream
-          .range(0, prev.size()).parallel().mapToObj(j -> RefArrays.stream(prev.get(j))
-              .flatMap(i -> RefArrays.stream(prev.get(i))).filter(i -> i != j).distinct().toArray())
-          .collect(RefCollectors.toList());
+      final List<int[]> prev = iterate(edges, pow - 1);
+      return IntStream
+          .range(0, prev.size()).parallel().mapToObj(j -> Arrays.stream(prev.get(j))
+              .flatMap(i -> Arrays.stream(prev.get(i))).filter(i -> i != j).distinct().toArray())
+          .collect(Collectors.toList());
     }
   }
 
   @Override
-  public RefList<int[]> connectivity() {
+  public List<int[]> connectivity() {
     return iterate(inner.connectivity(), getIterations());
   }
 

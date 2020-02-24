@@ -52,8 +52,12 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 
 public class ImageArtUtil {
 
@@ -151,30 +155,34 @@ public class ImageArtUtil {
     RefMap<String, PipelineNetwork> graphs = new RefHashMap<>();
     TFConverter tfConverter = new TFConverter();
     TFLayer tfLayer0 = new TFLayer(
-        graphModel.getChild(nodes[0]).subgraph(new RefHashSet<>(RefArrays.asList())).toByteArray(), new RefHashMap<>(),
+        graphModel.getChild(nodes[0]).subgraph(new HashSet<>(Arrays.asList())).toByteArray(), new RefHashMap<>(),
         nodes[0], "input");
-    graphs.put(nodes[0], tfConverter.convert(tfLayer0));
-    tfLayer0.freeRef();
+    RefUtil.freeRef(graphs.put(nodes[0], tfConverter.convert(tfLayer0)));
     for (int i = 1; i < nodes.length; i++) {
       String currentNode = nodes[i];
       String priorNode = nodes[i - 1];
       TFLayer tfLayer1 = new TFLayer(
-          graphModel.getChild(currentNode).subgraph(new RefHashSet<>(RefArrays.asList(priorNode))).toByteArray(),
+          graphModel.getChild(currentNode).subgraph(new HashSet<>(Arrays.asList(priorNode))).toByteArray(),
           new RefHashMap<>(), currentNode, priorNode);
-      graphs.put(currentNode, tfConverter.convert(tfLayer1));
-      tfLayer1.freeRef();
+      RefUtil.freeRef(graphs.put(currentNode, tfConverter.convert(tfLayer1)));
     }
     return graphs;
   }
 
   @Nonnull
   public static BufferedImage load(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int imageSize) {
-    return getImageTensor(image, log, imageSize).toImage();
+    Tensor imageTensor = getImageTensor(image, log, imageSize);
+    BufferedImage bufferedImage = imageTensor.toImage();
+    imageTensor.freeRef();
+    return bufferedImage;
   }
 
   @Nonnull
   public static BufferedImage load(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int width, final int height) {
-    return getImageTensor(image, log, width, height).toImage();
+    Tensor imageTensor = getImageTensor(image, log, width, height);
+    BufferedImage bufferedImage = imageTensor.toImage();
+    imageTensor.freeRef();
+    return bufferedImage;
   }
 
   @Nonnull
@@ -183,23 +191,27 @@ public class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width))
-            .filter(x -> true).findFirst());
+        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width)).findFirst());
+        int[] sampleImageDimensions = sampleImage.getDimensions();
+        sampleImage.freeRef();
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
-            .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
+            .map(x -> getImageTensor(x, log, sampleImageDimensions[0], sampleImageDimensions[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
               b.freeRef();
+              a.freeRef();
               return r;
             }));
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width))
-            .filter(x -> true).findFirst());
+        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width)).findFirst());
+        int[] sampleImageDimensions = sampleImage.getDimensions();
+        sampleImage.freeRef();
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +"))
-            .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
+            .map(x -> getImageTensor(x, log, sampleImageDimensions[0], sampleImageDimensions[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
               b.freeRef();
+              a.freeRef();
               return r;
             }));
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
@@ -211,7 +223,10 @@ public class ImageArtUtil {
         return new Tensor(width, width, 3).map(x -> v);
       }
     }
-    return Tensor.fromRGB(ImageUtil.resize(getTensor(log, file).toImage(), width, true));
+    Tensor tensor = getTensor(log, file);
+    Tensor resized = Tensor.fromRGB(ImageUtil.resize(tensor.toImage(), width, true));
+    tensor.freeRef();
+    return resized;
   }
 
   @Nonnull
@@ -220,23 +235,28 @@ public class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width, height))
-            .filter(x -> true).findFirst());
+        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
+            .map(x -> getImageTensor(x, log, width, height)).findFirst());
+        int[] sampleImageDimensions = sampleImage.getDimensions();
+        sampleImage.freeRef();
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
-            .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
+            .map(x -> getImageTensor(x, log, sampleImageDimensions[0], sampleImageDimensions[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
+              a.freeRef();
               b.freeRef();
               return r;
             }));
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width, height))
-            .filter(x -> true).findFirst());
+        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width, height)).findFirst());
+        int[] sampleImageDimensions = sampleImage.getDimensions();
+        sampleImage.freeRef();
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +"))
-            .map(x -> getImageTensor(x, log, sampleImage.getDimensions()[0], sampleImage.getDimensions()[1]))
+            .map(x -> getImageTensor(x, log, sampleImageDimensions[0], sampleImageDimensions[1]))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
               b.freeRef();
+              a.freeRef();
               return r;
             }));
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
@@ -248,7 +268,10 @@ public class ImageArtUtil {
         return new Tensor(width, height, 3).map(x -> v);
       }
     }
-    return Tensor.fromRGB(ImageUtil.resize(getTensor(log, file).toImage(), width, height));
+    Tensor tensor = getTensor(log, file);
+    Tensor resized = Tensor.fromRGB(ImageUtil.resize(tensor.toImage(), width, height));
+    tensor.freeRef();
+    return resized;
   }
 
   @Nonnull
@@ -256,8 +279,7 @@ public class ImageArtUtil {
     String fileStr = file.toString();
     if (fileStr.trim().toLowerCase().startsWith("upload:")) {
       String key = fileStr.substring("upload:".length());
-      MarkdownNotebookOutput markdownLog = (MarkdownNotebookOutput) log;
-      return (Tensor) MarkdownNotebookOutput.uploadCache.computeIfAbsent(key, k -> {
+      return (Tensor) MarkdownNotebookOutput.uploadCache.computeIfAbsent(key, (RefFunction<String, Tensor>) k -> {
         try {
           UploadImageQuery uploadImageQuery = new UploadImageQuery(k, log);
           return Tensor.fromRGB(ImageIO.read(uploadImageQuery.print().get()));
@@ -305,12 +327,13 @@ public class ImageArtUtil {
   @Nonnull
   public static int[][] getIndexMap(@Nonnull final SimpleConvolutionLayer layer) {
     int[] kernelDimensions = layer.getKernelDimensions();
+    layer.freeRef();
     double b = Math.sqrt(kernelDimensions[2]);
     int h = kernelDimensions[1];
     int w = kernelDimensions[0];
     int l = (int) (w * h * b);
-    return RefIntStream.range(0, (int) b).mapToObj(i -> {
-      return RefIntStream.range(0, l).map(j -> j + l * i).toArray();
+    return IntStream.range(0, (int) b).mapToObj(i -> {
+      return IntStream.range(0, l).map(j -> j + l * i).toArray();
     }).toArray(i -> new int[i][]);
   }
 }

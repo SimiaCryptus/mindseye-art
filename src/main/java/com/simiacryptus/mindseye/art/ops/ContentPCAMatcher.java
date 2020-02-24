@@ -49,9 +49,8 @@ public class ContentPCAMatcher implements VisualModifier {
   }
 
   @Nonnull
-  public ContentPCAMatcher setBands(int bands) {
+  public void setBands(int bands) {
     this.bands = bands;
-    return this;
   }
 
   public int getMaxValue() {
@@ -59,9 +58,8 @@ public class ContentPCAMatcher implements VisualModifier {
   }
 
   @Nonnull
-  public ContentPCAMatcher setMaxValue(int maxValue) {
+  public void setMaxValue(int maxValue) {
     this.maxValue = maxValue;
-    return this;
   }
 
   public int getMinValue() {
@@ -69,9 +67,8 @@ public class ContentPCAMatcher implements VisualModifier {
   }
 
   @Nonnull
-  public ContentPCAMatcher setMinValue(int minValue) {
+  public void setMinValue(int minValue) {
     this.minValue = minValue;
-    return this;
   }
 
   public boolean isAveraging() {
@@ -79,105 +76,137 @@ public class ContentPCAMatcher implements VisualModifier {
   }
 
   @Nonnull
-  public ContentPCAMatcher setAveraging(boolean averaging) {
+  public void setAveraging(boolean averaging) {
     this.averaging = averaging;
-    return this;
   }
 
   @Nonnull
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
-    PipelineNetwork network = visualModifierParameters.network;
-    assert network != null;
-    network = network.copyPipeline();
-    assert network != null;
-    Tensor baseContent = network.eval(visualModifierParameters.style).getData().get(0);
+    PipelineNetwork network = visualModifierParameters.copyNetwork();
+    Tensor baseContent = ContentInceptionMatcher.getData0(network.eval(visualModifierParameters.getStyle()));
     visualModifierParameters.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
     RefList<Tensor> components;
     PipelineNetwork signalProjection;
     try {
       PCA pca = new PCA().setRecenter(true).setRescale(false).setEigenvaluePower(0.0);
-      Tensor channelMeans = pca.getChannelMeans(baseContent);
-      Tensor channelRms = pca.getChannelRms(baseContent, contentDimensions[2], channelMeans);
+      Tensor channelMeans = pca.getChannelMeans(baseContent.addRef());
+      Tensor channelRms = pca.getChannelRms(baseContent.addRef(), contentDimensions[2], channelMeans.addRef());
       assert channelRms != null;
-      double[] covariance = PCA.bandCovariance(baseContent.getPixelStream(), PCA.countPixels(baseContent),
+      double[] covariance = PCA.bandCovariance(baseContent.getPixelStream(), PCA.countPixels(baseContent.addRef()),
           channelMeans.getData(), channelRms.getData());
       channelMeans.scaleInPlace(-1);
-      signalProjection = PipelineNetwork.build(1, new ImgBandBiasLayer(channelMeans.addRef()),
-          new ImgBandScaleLayer(channelRms.map(x -> 1 / x).getData()));
-      channelMeans.freeRef();
-      components = PCA.pca(covariance, pca.getEigenvaluePower()).stream().collect(RefCollectors.toList());
+      Tensor map = channelRms.map(x -> 1 / x);
+      channelRms.freeRef();
+      signalProjection = PipelineNetwork.build(1, new ImgBandBiasLayer(channelMeans),
+          new ImgBandScaleLayer(map.getData()));
+      map.freeRef();
+      RefList<Tensor> pca1 = PCA.pca(covariance, pca.getEigenvaluePower());
+      components = pca1.stream().collect(RefCollectors.toList());
+      pca1.freeRef();
     } catch (Throwable e) {
       log.info("Error processing PCA for dimensions " + RefArrays.toString(contentDimensions), e);
       PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
-      pipelineNetwork.add(new ValueLayer(new Tensor(0.0)), new DAGNode[]{});
+      pipelineNetwork.add(new ValueLayer(new Tensor(0.0)), new DAGNode[]{}).freeRef();
       return pipelineNetwork;
     }
     int bands = Math.min(getBands(), contentDimensions[2]);
 
-    Tensor prefixPattern = signalProjection.eval(baseContent).getData().get(0);
-    channelStats(getConvolutionLayer1(new ConvolutionLayer(1, 1, contentDimensions[2], bands).setPaddingXY(0, 0),
-        components, bands).explode().eval(prefixPattern).getData().get(0), bands);
-    channelStats(getConvolutionLayer2(new ConvolutionLayer(1, 1, contentDimensions[2], bands).setPaddingXY(0, 0),
-        components, bands).explode().eval(prefixPattern).getData().get(0), bands);
+    Tensor prefixPattern = ContentInceptionMatcher.getData0(signalProjection.eval(baseContent.addRef()));
+    ConvolutionLayer convolutionLayer2 = new ConvolutionLayer(1, 1, contentDimensions[2], bands);
+    convolutionLayer2.setPaddingXY(0, 0);
+    ConvolutionLayer convolutionLayer12 = getConvolutionLayer1(convolutionLayer2, components.addRef(), bands);
+    Layer explode1 = convolutionLayer12.explode();
+    convolutionLayer12.freeRef();
+    channelStats(ContentInceptionMatcher.getData0(explode1.eval(prefixPattern.addRef())), bands);
+    explode1.freeRef();
+    ConvolutionLayer convolutionLayer1 = new ConvolutionLayer(1, 1, contentDimensions[2], bands);
+    convolutionLayer1.setPaddingXY(0, 0);
+    ConvolutionLayer convolutionLayer21 = getConvolutionLayer2(convolutionLayer1,
+        components.addRef(), bands);
+    Layer explode = convolutionLayer21.explode();
+    convolutionLayer21.freeRef();
+    channelStats(ContentInceptionMatcher.getData0(explode.eval(prefixPattern)), bands);
+    explode.freeRef();
 
-    signalProjection
-        .add(getConvolutionLayer1(new ConvolutionLayer(1, 1, contentDimensions[2], bands).setPaddingXY(0, 0),
-            components, bands).explode());
-    Tensor spacialPattern = signalProjection.eval(baseContent).getData().get(0);
-    channelStats(spacialPattern, bands);
+
+    ConvolutionLayer convolutionLayer = new ConvolutionLayer(1, 1, contentDimensions[2], bands);
+    convolutionLayer.setPaddingXY(0, 0);
+    ConvolutionLayer convolutionLayer11 = getConvolutionLayer1(convolutionLayer, components, bands);
+    signalProjection.add(convolutionLayer11.explode()).freeRef();
+    convolutionLayer11.freeRef();
+    Tensor spacialPattern = ContentInceptionMatcher.getData0(signalProjection.eval(baseContent));
+    channelStats(spacialPattern.addRef(), bands);
 
     double mag = spacialPattern.rms();
     DAGNode head = signalProjection.getHead();
     spacialPattern.scaleInPlace(-1);
-    DAGNode constNode = signalProjection.constValueWrap(spacialPattern.addRef());
+    DAGNode constNode = signalProjection.constValueWrap(spacialPattern);
     Layer layer1 = new SumInputsLayer();
     layer1.setName("Difference");
-    signalProjection.add(layer1.addRef(), head, constNode).freeRef();
+    signalProjection.add(layer1, head, constNode).freeRef();
     LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
     linearActivationLayer.setScale(Math.pow(mag, -2));
-    final Layer[] layers = new Layer[]{new SquareActivationLayer(),
+    Layer layer = PipelineNetwork.build(1,
+        new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        linearActivationLayer.addRef()};
-    Layer layer = PipelineNetwork.build(1, layers);
+        linearActivationLayer
+    );
     layer.setName(RefString.format("RMS / %.0E", mag));
-    signalProjection.add(layer.addRef());
-
+    signalProjection.add(layer).freeRef();
     signalProjection.setName(RefString.format("PCA Content Match"));
-    network.add(signalProjection.addRef()).freeRef();
+    network.add(signalProjection).freeRef();
     network.freeze();
-    return network.addRef();
+    return network;
   }
 
   public void channelStats(@Nonnull Tensor spacialPattern, int bands) {
     double[] means = RefIntStream.range(0, bands).mapToDouble(band -> {
-      return spacialPattern.selectBand(band).mean();
+      Tensor selectBand = spacialPattern.selectBand(band);
+      double mean = selectBand.mean();
+      selectBand.freeRef();
+      return mean;
     }).toArray();
     double[] stdDevs = RefIntStream.range(0, bands).mapToDouble(band -> {
       Tensor bandPattern = spacialPattern.selectBand(band);
-      return Math.sqrt(Math.pow(bandPattern.rms(), 2) - Math.pow(bandPattern.mean(), 2));
+      double sqrt = Math.sqrt(Math.pow(bandPattern.rms(), 2) - Math.pow(bandPattern.mean(), 2));
+      bandPattern.freeRef();
+      return sqrt;
     }).toArray();
+    spacialPattern.freeRef();
     log.info("Means: " + RefArrays.toString(means) + "; StdDev: " + RefArrays.toString(stdDevs));
   }
 
   @Nonnull
   public ConvolutionLayer getConvolutionLayer1(@Nonnull ConvolutionLayer convolutionLayer, @Nonnull RefList<Tensor> components,
                                                int stride) {
-    convolutionLayer.getKernel().setByCoord(c -> {
+    Tensor kernel = convolutionLayer.getKernel();
+    kernel.setByCoord(c -> {
       int[] coords = c.getCoords();
-      return components.get(coords[2] % stride).get(coords[2] / stride);
+      Tensor tensor = components.get(coords[2] % stride);
+      double v = tensor.get(coords[2] / stride);
+      tensor.freeRef();
+      return v;
     });
+    components.freeRef();
+    kernel.freeRef();
     return convolutionLayer;
   }
 
   @Nonnull
   public ConvolutionLayer getConvolutionLayer2(@Nonnull ConvolutionLayer convolutionLayer, @Nonnull RefList<Tensor> components,
                                                int stride) {
-    convolutionLayer.getKernel().setByCoord(c -> {
+    Tensor kernel = convolutionLayer.getKernel();
+    kernel.setByCoord(c -> {
       int[] coords = c.getCoords();
-      return components.get(coords[2] / stride).get(coords[2] % stride);
+      Tensor tensor = components.get(coords[2] / stride);
+      double v = tensor.get(coords[2] % stride);
+      tensor.freeRef();
+      return v;
     });
+    components.freeRef();
+    kernel.freeRef();
     return convolutionLayer;
   }
 }

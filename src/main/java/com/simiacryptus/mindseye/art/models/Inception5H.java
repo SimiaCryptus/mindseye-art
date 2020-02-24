@@ -48,21 +48,28 @@ public enum Inception5H implements VisionPipelineLayer {
   @Nonnull
   @Override
   public PipelineNetwork getLayer() {
-    Layer layer = layerMap().get(this.layerId).copyPipeline();
+    RefMap<String, PipelineNetwork> layerMap = layerMap();
+    PipelineNetwork network = layerMap.get(this.layerId);
+    layerMap.freeRef();
+    Layer layer = network.copyPipeline();
+    network.freeRef();
     layer.setName(name());
-    return (PipelineNetwork) layer.addRef();
+    return (PipelineNetwork) layer;
   }
 
   @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline().addRef();
+    return getVisionPipeline();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
-    return getVisionPipeline().name;
+    VisionPipeline<Inception5H> visionPipeline = getVisionPipeline();
+    String name = visionPipeline.name;
+    visionPipeline.freeRef();
+    return name;
   }
 
   @Nullable
@@ -74,7 +81,7 @@ public enum Inception5H implements VisionPipelineLayer {
         }
       }
     }
-    return visionPipeline;
+    return visionPipeline.addRef();
   }
 
   @Nonnull

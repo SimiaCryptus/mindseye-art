@@ -27,11 +27,11 @@ import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
-import com.simiacryptus.mindseye.layers.java.LayerTestBase;
+import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.mindseye.test.LayerTestBase;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
-import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.notebook.NullNotebookOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,14 +62,15 @@ public class NetworkTest extends LayerTestBase {
     Tensor styleTensor = Tensor.fromRGB(styleImage);
     LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
     linearActivationLayer.setScale(1e-1);
-    Layer layer1 = linearActivationLayer.addRef();
-    layer1.freeze();
-    DAGNetwork dagNetwork = SumInputsLayer.combine(new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleTensor),
-        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleTensor),
-        new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, Tensor.fromRGB(contentImage))
-            .andThen(layer1.addRef()));
-    MultiPrecision.setPrecision(dagNetwork, Precision.Float);
+    linearActivationLayer.freeze();
+    PipelineNetwork build = new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, Tensor.fromRGB(contentImage));
+    DAGNetwork dagNetwork = SumInputsLayer.combine(
+        new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleTensor.addRef()),
+        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleTensor.addRef()),
+        build.andThen(linearActivationLayer));
     styleTensor.freeRef();
+    build.freeRef();
+    MultiPrecision.setPrecision(dagNetwork.addRef(), Precision.Float);
     return dagNetwork;
   }
 

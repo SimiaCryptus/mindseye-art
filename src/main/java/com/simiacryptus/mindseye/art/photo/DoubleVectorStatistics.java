@@ -23,13 +23,10 @@ import com.simiacryptus.ref.wrappers.*;
 
 import javax.annotation.Nonnull;
 import java.util.DoubleSummaryStatistics;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Collector;
 
-public class DoubleVectorStatistics implements RefConsumer<double[]> {
+public class DoubleVectorStatistics implements Consumer<double[]> {
 
   @Nonnull
   final DoubleSummaryStatistics[] firstOrder;

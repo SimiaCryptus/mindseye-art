@@ -32,6 +32,7 @@ import java.util.UUID;
 public enum PoolingPipeline implements VisionPipelineLayer {
   Pooling0(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3,
       (PipelineNetwork pipeline) -> {
+        pipeline.freeRef();
       }),
   Pooling2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
   Pooling4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
@@ -55,14 +56,12 @@ public enum PoolingPipeline implements VisionPipelineLayer {
                   int outputChannels) {
     this(inputBorders, outputBorders, kenelSize, strides, inputChannels, outputChannels,
         (PipelineNetwork pipeline) -> {
-          PoolingLayer poolingLayer1 = new PoolingLayer();
-          poolingLayer1.setStrideXY(2, 2);
-          PoolingLayer poolingLayer2 = poolingLayer1.addRef();
-          poolingLayer2.setWindowXY(2, 2);
-          PoolingLayer poolingLayer = poolingLayer2.addRef();
+          PoolingLayer poolingLayer = new PoolingLayer();
+          poolingLayer.setStrideXY(2, 2);
+          poolingLayer.setWindowXY(2, 2);
           poolingLayer.setMode(PoolingLayer.PoolingMode.Avg);
-          pipeline
-              .add(poolingLayer.addRef());
+          pipeline.add(poolingLayer).freeRef();
+          pipeline.freeRef();
         });
   }
 
@@ -81,20 +80,23 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   @Override
   public PipelineNetwork getLayer() {
     PipelineNetwork layer = new PipelineNetwork(1, UUID.nameUUIDFromBytes(name().getBytes()), name());
-    fn.accept(layer);
+    fn.accept(layer.addRef());
     return layer;
   }
 
   @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
-    return getVisionPipeline().addRef();
+    return getVisionPipeline();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
-    return getVisionPipeline().name;
+    VisionPipeline<VisionPipelineLayer> visionPipeline = getVisionPipeline();
+    String name = visionPipeline.name;
+    visionPipeline.freeRef();
+    return name;
   }
 
   @Nullable
@@ -106,7 +108,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
         }
       }
     }
-    return visionPipeline;
+    return visionPipeline.addRef();
   }
 
 }

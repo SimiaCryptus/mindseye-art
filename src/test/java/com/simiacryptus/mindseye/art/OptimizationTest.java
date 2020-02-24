@@ -75,8 +75,8 @@ public class OptimizationTest {
   }
 
   public static void train(Tensor image, PipelineNetwork network, int maxIterations, LineSearchStrategy lineSearch) {
-    ImageUtil.monitorImage(image, false, 5, false);
-    MultiPrecision.setPrecision(network, Precision.Float);
+    ImageUtil.monitorImage(image.addRef(), false, 5, false);
+    MultiPrecision.setPrecision(network.addRef(), Precision.Float);
     ArrayTrainable arrayTrainable = new ArrayTrainable(new Tensor[][]{{image}}, network);
     arrayTrainable.setMask(true);
     IterativeTrainer iterativeTrainer = new IterativeTrainer(arrayTrainable);
@@ -84,11 +84,13 @@ public class OptimizationTest {
       @Nonnull
       @Override
       public TrustRegion getRegionPolicy(final Layer layer1) {
+        layer1.freeRef();
         return new RangeConstraint().setMin(0e-2).setMax(256);
       }
 
       public @SuppressWarnings("unused")
       void _free() {
+        super._free();
       }
     });
     iterativeTrainer.setMonitor(getTrainingMonitor());
@@ -96,6 +98,7 @@ public class OptimizationTest {
     iterativeTrainer.setLineSearchFactory(name -> lineSearch);
     iterativeTrainer.setTerminateThreshold(Double.NEGATIVE_INFINITY);
     iterativeTrainer.run();
+    iterativeTrainer.freeRef();
   }
 
   @Test
@@ -103,7 +106,7 @@ public class OptimizationTest {
     Tensor image = Tensor.fromRGB(ImageArtUtil.load(new NullNotebookOutput(),
         "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mandrill_at_SF_Zoo.jpg/1280px-Mandrill_at_SF_Zoo.jpg",
         500));
-    train(image, new ChannelPowerEnhancer().build(Inception5H.Inc5H_3b, null, null, image), 100,
+    train(image, new ChannelPowerEnhancer().build(Inception5H.Inc5H_3b, null, null, image.addRef()), 100,
         new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-1));
     Thread.sleep(100000);
   }
@@ -116,13 +119,14 @@ public class OptimizationTest {
         500));
     Tensor styleImage = Tensor.fromRGB(ImageArtUtil.load(log,
         "https://uploads1.wikiart.org/00142/images/vincent-van-gogh/the-starry-night.jpg!HD.jpg", 1200));
-    PipelineNetwork pipelineNetwork = SumInputsLayer.combine(new GramMatrixMatcher().build(Inception5H.Inc5H_1a, null, null, styleImage),
-        new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleImage),
-        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleImage),
-        new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, contentImage)
+    PipelineNetwork pipelineNetwork = SumInputsLayer.combine(new GramMatrixMatcher().build(Inception5H.Inc5H_1a, null, null, styleImage.addRef()),
+        new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleImage.addRef()),
+        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleImage.addRef()),
+        new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, contentImage.addRef())
         //.andThenWrap(new LinearActivationLayer().setScale(1e0).freeze())
     );
-    MultiPrecision.setPrecision(pipelineNetwork, Precision.Float);
+    styleImage.freeRef();
+    MultiPrecision.setPrecision(pipelineNetwork.addRef(), Precision.Float);
     train(contentImage, pipelineNetwork, 100, new BisectionSearch().setCurrentRate(1e4).setSpanTol(1e-4));
     Thread.sleep(100000);
   }

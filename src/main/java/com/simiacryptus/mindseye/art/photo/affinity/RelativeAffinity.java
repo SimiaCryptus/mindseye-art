@@ -45,17 +45,15 @@ public class RelativeAffinity extends ContextAffinity {
 
   public RelativeAffinity(@Nonnull Tensor content, RasterTopology topology) {
     super(content);
-    this.setTopology(topology);
+    setTopology(topology);
   }
 
   public double getContrast() {
     return contrast;
   }
 
-  @Nonnull
-  public RelativeAffinity setContrast(double contrast) {
+  public void setContrast(double contrast) {
     this.contrast = contrast;
-    return this;
   }
 
   public double getEpsilon() {
@@ -72,23 +70,9 @@ public class RelativeAffinity extends ContextAffinity {
     return introversion;
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  RelativeAffinity[] addRefs(@Nullable RelativeAffinity[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(relativeAffinity -> relativeAffinity.addRef())
-        .toArray(x -> new RelativeAffinity[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  RelativeAffinity[][] addRefs(@Nullable RelativeAffinity[][] array) {
-    return RefUtil.addRefs(array);
-  }
-
   public @SuppressWarnings("unused")
   void _free() {
+    super._free();
   }
 
   @Nonnull

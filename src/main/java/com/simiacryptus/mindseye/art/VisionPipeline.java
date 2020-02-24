@@ -43,35 +43,21 @@ public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCoun
     PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
     for (T value : values) {
       pipelineNetwork.add(value.getLayer()).freeRef();
-      Layer layer = pipelineNetwork.copyPipeline();
+      PipelineNetwork layer = pipelineNetwork.copyPipeline();
       layer.freeze();
-      layers.put(value, (PipelineNetwork) layer.addRef());
+      RefUtil.freeRef(layers.put(value, layer));
     }
     pipelineNetwork.freeRef();
   }
 
   @Nonnull
   public RefLinkedHashMap<T, PipelineNetwork> getLayers() {
-    return new RefLinkedHashMap<>(layers);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  VisionPipeline[] addRefs(@Nullable VisionPipeline[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map((VisionPipeline visionPipeline) -> visionPipeline.addRef())
-        .toArray(x -> new VisionPipeline[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  VisionPipeline[][] addRefs(@Nullable VisionPipeline[][] array) {
-    return RefUtil.addRefs(array);
+    assertAlive();
+    return new RefLinkedHashMap<>(layers.addRef());
   }
 
   public void _free() {
-    layers.values().stream().forEach(pipelineNetwork -> pipelineNetwork.freeRef());
+    layers.freeRef();
     super._free();
   }
 

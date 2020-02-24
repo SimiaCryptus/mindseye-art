@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
+import com.simiacryptus.mindseye.art.ops.ContentInceptionMatcher;
 import com.simiacryptus.mindseye.art.photo.affinity.ContextAffinity;
 import com.simiacryptus.mindseye.art.photo.affinity.RelativeAffinity;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
@@ -87,30 +88,24 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     return epsilon;
   }
 
-  @Nonnull
-  public FastPhotoStyleTransfer setEpsilon(double epsilon) {
+  public void setEpsilon(double epsilon) {
     this.epsilon = epsilon;
-    return this;
   }
 
   public double getLambda() {
     return lambda;
   }
 
-  @Nonnull
-  public FastPhotoStyleTransfer setLambda(double lambda) {
+  public void setLambda(double lambda) {
     this.lambda = lambda;
-    return this;
   }
 
   public boolean isSmooth() {
     return smooth;
   }
 
-  @Nonnull
-  public FastPhotoStyleTransfer setSmooth(boolean smooth) {
+  public void setSmooth(boolean smooth) {
     this.smooth = smooth;
-    return this;
   }
 
   public boolean isUseCuda() {
@@ -140,31 +135,15 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   @Nonnull
   public static Tensor transfer(Tensor contentImage, Tensor styleImage, @Nonnull Layer encode, @Nonnull Layer decode,
                                 double contentDensity, double styleDensity) {
-    final Tensor encodedContent = encode.eval(contentImage).getData().get(0);
-    final Tensor encodedStyle = encode.eval(styleImage).getData().get(0);
+    final Tensor encodedContent = ContentInceptionMatcher.getData0(encode.eval(contentImage.addRef()));
+    final Tensor encodedStyle = ContentInceptionMatcher.getData0(encode.eval(styleImage));
+    encode.freeRef();
     final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, contentDensity, styleDensity);
-    encodedStyle.freeRef();
-    final Tensor encodedTransformed = applicator.eval(encodedContent).getData().get(0);
-    encodedContent.freeRef();
+    final Tensor encodedTransformed = ContentInceptionMatcher.getData0(applicator.eval(encodedContent));
     applicator.freeRef();
-    final Tensor tensor = decode.eval(encodedTransformed, contentImage).getData().get(0);
-    encodedTransformed.freeRef();
+    final Tensor tensor = ContentInceptionMatcher.getData0(decode.eval(encodedTransformed, contentImage));
+    decode.freeRef();
     return tensor;
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  FastPhotoStyleTransfer[] addRefs(@Nullable FastPhotoStyleTransfer[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(fastPhotoStyleTransfer -> fastPhotoStyleTransfer.addRef())
-        .toArray(x -> new FastPhotoStyleTransfer[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  FastPhotoStyleTransfer[][] addRefs(@Nullable FastPhotoStyleTransfer[][] array) {
-    return RefUtil.addRefs(array);
   }
 
   public void _free() {
@@ -208,11 +187,13 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
 
   @Nonnull
   public Tensor photoWCT(Tensor style, Tensor content, double contentDensity, double styleDensity) {
-    return photoWCT_1(style,
-        photoWCT_2(style,
-            photoWCT_3(style, photoWCT_4(style, content, contentDensity, styleDensity), contentDensity, styleDensity),
+    Tensor wct1 = photoWCT_1(style.addRef(),
+        photoWCT_2(style.addRef(),
+            photoWCT_3(style.addRef(), photoWCT_4(style.addRef(), content, contentDensity, styleDensity), contentDensity, styleDensity),
             contentDensity, styleDensity),
         contentDensity, styleDensity);
+    style.freeRef();
+    return wct1;
   }
 
   public @Nonnull
@@ -222,16 +203,12 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
 
   public @Nonnull
   Tensor photoWCT_1(Tensor style, Tensor content, double contentDensity, double styleDensity) {
-    final Tensor encodedContent = encode_1.eval(content).getData().get(0);
-    final Tensor encodedStyle = encode_1.eval(style).getData().get(0);
+    final Tensor encodedContent = ContentInceptionMatcher.getData0(encode_1.eval(content));
+    final Tensor encodedStyle = ContentInceptionMatcher.getData0(encode_1.eval(style));
     final PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, contentDensity, styleDensity);
-    final Tensor encodedTransformed = applicator.eval(encodedContent).getData().get(0);
-    encodedContent.freeRef();
+    final Tensor encodedTransformed = ContentInceptionMatcher.getData0(applicator.eval(encodedContent));
     applicator.freeRef();
-    encodedStyle.freeRef();
-    final Tensor tensor = decode_1.eval(encodedTransformed).getData().get(0);
-    encodedTransformed.freeRef();
-    return tensor;
+    return ContentInceptionMatcher.getData0(decode_1.eval(encodedTransformed));
   }
 
   @Nonnull
@@ -241,7 +218,7 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
 
   @Nonnull
   public Tensor photoWCT_2(Tensor style, Tensor content, double contentDensity, double styleDensity) {
-    return transfer(content, style, encode_2, decode_2, contentDensity, styleDensity);
+    return transfer(content, style, encode_2.addRef(), decode_2.addRef(), contentDensity, styleDensity);
   }
 
   @Nonnull
@@ -251,7 +228,7 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
 
   @Nonnull
   public Tensor photoWCT_3(Tensor style, Tensor content, double contentDensity, double styleDensity) {
-    return transfer(content, style, encode_3, decode_3, contentDensity, styleDensity);
+    return transfer(content, style, encode_3.addRef(), decode_3.addRef(), contentDensity, styleDensity);
   }
 
   @Nonnull
@@ -261,7 +238,7 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
 
   @Nonnull
   public Tensor photoWCT_4(Tensor style, Tensor content, double contentDensity, double styleDensity) {
-    return transfer(content, style, encode_4, decode_4, contentDensity, styleDensity);
+    return transfer(content, style, encode_4.addRef(), decode_4.addRef(), contentDensity, styleDensity);
   }
 
   @Nonnull
@@ -275,6 +252,7 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
       //affinity = new TruncatedAffinity(affinity).setMin(1e-2);
       return (isUseCuda() ? new SmoothSolver_Cuda() : new SmoothSolver_EJML()).solve(topology, affinity, getLambda());
     } else
+      content.freeRef();
       return new NullOperator();
   }
 
@@ -286,14 +264,6 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   }
 
   private static class NullOperator<T> extends ReferenceCountingBase implements RefOperator<T> {
-    @Nullable
-    public static @SuppressWarnings("unused")
-    NullOperator[] addRefs(@Nullable NullOperator[] array) {
-      if (array == null)
-        return null;
-      return Arrays.stream(array).filter(x -> x != null).map((NullOperator nullOperator) -> nullOperator.addRef())
-          .toArray(x -> new NullOperator[x]);
-    }
 
     @Override
     public T apply(T tensor) {
@@ -302,6 +272,7 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
 
     public @SuppressWarnings("unused")
     void _free() {
+      super._free();
     }
 
     @Nonnull
@@ -323,30 +294,19 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     public StyleOperator(@Nonnull Tensor contentImage, @Nonnull FastPhotoStyleTransfer parent) {
       this.parent = parent;
       this.contentImage = contentImage;
-      photoSmooth = parent.photoSmooth(contentImage);
-    }
-
-    @Nullable
-    public static @SuppressWarnings("unused")
-    StyleOperator[] addRefs(@Nullable StyleOperator[] array) {
-      if (array == null)
-        return null;
-      return Arrays.stream(array).filter(x -> x != null).map(styleOperator -> styleOperator.addRef())
-          .toArray(x -> new StyleOperator[x]);
+      photoSmooth = this.parent.photoSmooth(this.contentImage);
     }
 
     public void _free() {
       contentImage.freeRef();
       photoSmooth.freeRef();
+      parent.freeRef();
       super._free();
     }
 
     @Override
     public Tensor apply(Tensor styleImage) {
-      final Tensor tensor = parent.photoWCT(styleImage, contentImage);
-      final Tensor tensor1 = photoSmooth.apply(tensor);
-      tensor.freeRef();
-      return tensor1;
+      return photoSmooth.apply(parent.photoWCT(styleImage, contentImage.addRef()));
     }
 
     @Nonnull

@@ -52,7 +52,7 @@ public class RadiusRasterTopology implements RasterTopology {
     final double minSq = Math.signum(this.minRadius) * (this.minRadius * this.minRadius);
     return RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
       final int[] coordsFromIndex = getCoordsFromIndex(i);
-      final int[] ints = RefIntStream.range(-maxRadius, maxRadius).flatMap(x -> {
+      return RefIntStream.range(-maxRadius, maxRadius).flatMap(x -> {
         final int xx = x + coordsFromIndex[0];
         return RefIntStream.range(-maxRadius, maxRadius).filter(y -> {
           final int radiusSq = x * x + y * y;
@@ -60,7 +60,6 @@ public class RadiusRasterTopology implements RasterTopology {
         }).map(y -> y + coordsFromIndex[1]).filter(yy -> yy >= 0 && xx >= 0)
             .filter(yy -> yy < dimensions[1] && xx < dimensions[0]).map(yy -> getIndexFromCoords(xx, yy));
       }).toArray();
-      return ints;
     }).collect(RefCollectors.toList());
   }
 

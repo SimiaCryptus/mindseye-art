@@ -21,7 +21,6 @@ package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.util.FastRandom;
@@ -34,8 +33,7 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.runtime.JCuda;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static jcuda.jcusolver.JCusolverSp.cusolverSpScsreigvsi;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
@@ -60,7 +58,7 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
     this.laplacian = laplacian;
     solverHandle = CudaSparseMatrix.newSolverHandle();
     spHandle = CudaSparseMatrix.newSparseHandle();
-    pixels = laplacian.matrix.cols;
+    pixels = this.laplacian.matrix.cols;
     this.mu0 = mu0;
   }
 
@@ -78,28 +76,22 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
   public static Tensor remaining(@Nonnull RefCollection<Tensor> eigenVectors, int... dimensions) {
     Tensor tensor = new Tensor(dimensions);
     tensor.set(() -> FastRandom.INSTANCE.random());
-    Tensor seed = tensor.addRef().unit();
-    for (Tensor eigenVector : eigenVectors) {
-      final double dot = eigenVector.dot(seed);
-      if (Double.isFinite(dot))
-        seed = seed.minus(eigenVector.scale(dot));
-    }
-    return seed.unit();
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  EigenvectorSolver_Cuda[] addRefs(@Nullable EigenvectorSolver_Cuda[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(eigenvectorSolver_cuda -> eigenvectorSolver_cuda.addRef())
-        .toArray(x -> new EigenvectorSolver_Cuda[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  EigenvectorSolver_Cuda[][] addRefs(@Nullable EigenvectorSolver_Cuda[][] array) {
-    return RefUtil.addRefs(array);
+    AtomicReference<Tensor> seed = new AtomicReference<>(tensor.unit());
+    tensor.freeRef();
+    eigenVectors.forEach(eigenVector -> {
+      Tensor prev = seed.get();
+      final double dot = eigenVector.dot(prev.addRef());
+      if (Double.isFinite(dot)) {
+        seed.set(prev.minus(eigenVector.scale(dot)));
+      }
+      eigenVector.freeRef();
+      prev.freeRef();
+    });
+    eigenVectors.freeRef();
+    Tensor tensor1 = seed.get();
+    Tensor unit = tensor1.unit();
+    tensor1.freeRef();
+    return unit;
   }
 
   @Nonnull
@@ -108,9 +100,10 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
     final int[] dimensions = topology.getDimensions();
     final TensorOperator eigenSolver = eigenRefiner(topology);
     for (int i = 0; i < n; i++) {
-      final Tensor remaining = remaining(eigenVectors, dimensions[0], dimensions[1]);
+      final Tensor remaining = remaining(eigenVectors.addRef(), dimensions[0], dimensions[1]);
       eigenVectors.add(eigenSolver.apply(remaining));
     }
+    eigenSolver.freeRef();
     //eigenVectors.add(remaining(eigenVectors, dimensions[0], dimensions[1]));
     return eigenVectors;
   }

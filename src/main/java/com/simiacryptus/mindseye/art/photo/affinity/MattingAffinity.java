@@ -45,36 +45,20 @@ public class MattingAffinity extends ContextAffinity {
 
   public MattingAffinity(@Nonnull Tensor content, RasterTopology topology) {
     super(content);
-    this.setTopology(topology);
+    setTopology(topology);
   }
 
   public double getEpsilon() {
     return epsilon;
   }
 
-  @Nonnull
-  public MattingAffinity setEpsilon(double epsilon) {
+  public void setEpsilon(double epsilon) {
     this.epsilon = epsilon;
-    return this;
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  MattingAffinity[] addRefs(@Nullable MattingAffinity[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(mattingAffinity -> mattingAffinity.addRef())
-        .toArray(x -> new MattingAffinity[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  MattingAffinity[][] addRefs(@Nullable MattingAffinity[][] array) {
-    return RefUtil.addRefs(array);
   }
 
   public @SuppressWarnings("unused")
   void _free() {
+    super._free();
   }
 
   @Nonnull

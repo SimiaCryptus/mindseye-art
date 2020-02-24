@@ -19,8 +19,11 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
+import com.simiacryptus.mindseye.art.ops.ContentInceptionMatcher;
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.mindseye.lang.TensorList;
 import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.InnerNode;
@@ -37,19 +40,15 @@ public class WCTUtil {
 
   @Nonnull
   public static PipelineNetwork renormalizer(Tensor encodedStyle, double styleDensity) {
-    Tensor tensor1 = means(encodedStyle);
+    Tensor tensor1 = means(encodedStyle.addRef());
     tensor1.scaleInPlace(1.0 / styleDensity);
-    final Tensor meanSignal = tensor1.addRef();
-    Tensor tensor = rms(encodedStyle, meanSignal);
+    Tensor tensor = rms(encodedStyle, tensor1.addRef());
     tensor.scaleInPlace(Math.sqrt(1.0 / styleDensity));
-    final Tensor signalPower = tensor.addRef();
     final PipelineNetwork renormalizer = new PipelineNetwork(1);
     renormalizer
-        .add(new ImgBandBiasLayer(meanSignal),
-            renormalizer.add(new ProductLayer(), renormalizer.getInput(0), renormalizer.constValue(signalPower)))
+        .add(new ImgBandBiasLayer(tensor1),
+            renormalizer.add(new ProductLayer(), renormalizer.getInput(0), renormalizer.constValue(tensor)))
         .freeRef();
-    meanSignal.freeRef();
-    signalPower.freeRef();
     return renormalizer;
   }
 
@@ -62,18 +61,19 @@ public class WCTUtil {
     NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
     nthPowerActivationLayer.setPower(-0.5);
     final InnerNode scales = normalizer.add(PipelineNetwork.build(1, new SquareActivationLayer(),
-        new BandAvgReducerLayer(), new ScaleLayer(1 / maskFactor), nthPowerActivationLayer.addRef()),
+        new BandAvgReducerLayer(), new ScaleLayer(1 / maskFactor), nthPowerActivationLayer),
         centered.addRef());
     final InnerNode rescaled = normalizer.add(new ProductLayer(), centered, scales);
     rescaled.freeRef();
     normalizer.freeze();
-    return normalizer.addRef();
+    return normalizer;
   }
 
   @Nonnull
   public static Tensor means(Tensor encodedStyle) {
     final BandAvgReducerLayer avgReducerLayer = new BandAvgReducerLayer();
-    final Tensor tensor = avgReducerLayer.eval(encodedStyle).getData().get(0);
+    Result eval = avgReducerLayer.eval(encodedStyle);
+    final Tensor tensor = ContentInceptionMatcher.getData0(eval);
     avgReducerLayer.freeRef();
     return tensor;
   }
@@ -81,12 +81,16 @@ public class WCTUtil {
   @Nonnull
   public static Tensor rms(Tensor normalFeatures, @Nonnull Tensor normalMeanSignal) {
     final Tensor scale = normalMeanSignal.scale(-1);
+    normalMeanSignal.freeRef();
     NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
     nthPowerActivationLayer.setPower(0.5);
     final PipelineNetwork wrap = PipelineNetwork.build(1, new ImgBandBiasLayer(scale), new SquareActivationLayer(),
-        new BandAvgReducerLayer(), nthPowerActivationLayer.addRef());
-    scale.freeRef();
-    final Tensor tensor = wrap.eval(normalFeatures).getData().get(0);
+        new BandAvgReducerLayer(), nthPowerActivationLayer);
+    Result result = wrap.eval(normalFeatures);
+    TensorList data = result.getData();
+    final Tensor tensor = data.get(0);
+    result.freeRef();
+    data.freeRef();
     wrap.freeRef();
     return tensor;
   }

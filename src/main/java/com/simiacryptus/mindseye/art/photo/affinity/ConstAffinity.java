@@ -24,11 +24,14 @@ import com.simiacryptus.ref.wrappers.RefCollectors;
 import com.simiacryptus.ref.wrappers.RefList;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ConstAffinity implements RasterAffinity {
   @Override
-  public RefList<double[]> affinityList(@Nonnull RefList<int[]> graphEdges) {
-    return graphEdges.stream().map(x -> RefArrays.stream(x).mapToDouble(i -> 1.0).toArray())
-        .collect(RefCollectors.toList());
+  public List<double[]> affinityList(@Nonnull List<int[]> graphEdges) {
+    return graphEdges.stream().map(x -> Arrays.stream(x).mapToDouble(i -> 1.0).toArray())
+        .collect(Collectors.toList());
   }
 }

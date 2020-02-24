@@ -62,39 +62,44 @@ public class ChannelMeanMatcher implements VisualModifier {
   @Nonnull
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
-    Tensor meanSignal = null;
-    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.network, null,
-        visualModifierParameters.style);
+    final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.getNetwork(), null,
+        visualModifierParameters.getStyle());
     visualModifierParameters.freeRef();
     return pipelineNetwork;
   }
 
   @Nonnull
   public PipelineNetwork buildWithModel(PipelineNetwork network, @Nullable Tensor meanSignal, @Nonnull Tensor... image) {
-    network = network.copyPipeline();
-    assert network != null;
-    network.add(new BandAvgReducerLayer());
+    PipelineNetwork copyPipeline = network.copyPipeline();
+    network.freeRef();
+    assert copyPipeline != null;
+    RefUtil.freeRef(copyPipeline.add(new BandAvgReducerLayer()));
     if (meanSignal == null) {
       final PipelineNetwork meanNetwork = PipelineNetwork.build(1,
-          new ImgTileSubnetLayer(network.addRef(), tileSize, tileSize), new BandAvgReducerLayer());
-      Tensor tensor1 = RefUtil.get(RefArrays.stream(image).map(tensor -> meanNetwork.eval(tensor).getData().get(0)).reduce((a, b) -> {
+          new ImgTileSubnetLayer(copyPipeline.addRef(), tileSize, tileSize), new BandAvgReducerLayer());
+      Tensor tensor1 = RefUtil.get(RefArrays.stream(RefUtil.addRefs(image)).map(tensor -> ContentInceptionMatcher.getData0(meanNetwork.eval(tensor))).reduce((a, b) -> {
         return Tensor.add(a,b);
       }));
       tensor1.scaleInPlace(1.0 / image.length);
-      meanSignal = tensor1.addRef();
+      RefUtil.freeRef(meanSignal);
+      meanSignal = tensor1;
       meanNetwork.freeRef();
     }
+    RefUtil.freeRef(image);
     double mag = isBalanced() ? meanSignal.rms() : 1;
     meanSignal.scaleInPlace(-1);
     LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
     linearActivationLayer.setScale(Math.pow(mag, -2));
-    final Layer[] layers = new Layer[]{new ImgBandBiasLayer(meanSignal.addRef()), new SquareActivationLayer(),
+    final Layer[] layers = new Layer[]{
+        new ImgBandBiasLayer(meanSignal),
+        new SquareActivationLayer(),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        linearActivationLayer.addRef()};
+        linearActivationLayer
+    };
     Layer layer = PipelineNetwork.build(1, layers);
     layer.setName(RefString.format("RMS[x-C] / %.0E", mag));
-    network.add(layer.addRef()).freeRef();
-    network.freeze();
-    return network.addRef();
+    copyPipeline.add(layer).freeRef();
+    copyPipeline.freeze();
+    return copyPipeline;
   }
 }

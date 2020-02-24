@@ -24,6 +24,7 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefList;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 public class RasterTopologyWrapper extends ReferenceCountingBase implements RasterTopology {
 
@@ -39,7 +40,7 @@ public class RasterTopologyWrapper extends ReferenceCountingBase implements Rast
   }
 
   @Override
-  public RefList<int[]> connectivity() {
+  public List<int[]> connectivity() {
     return inner.connectivity();
   }
 
@@ -59,9 +60,14 @@ public class RasterTopologyWrapper extends ReferenceCountingBase implements Rast
     return (RasterTopologyWrapper) super.addRef();
   }
 
+  @Override
+  protected void _free() {
+    super._free();
+  }
+
   public static class CachedRasterTopology extends RasterTopologyWrapper {
 
-    private final Singleton<RefList<int[]>> cache = new Singleton<>();
+    private final Singleton<List<int[]>> cache = new Singleton<>();
 
     public CachedRasterTopology(RasterTopology inner) {
       super(inner);
@@ -69,7 +75,7 @@ public class RasterTopologyWrapper extends ReferenceCountingBase implements Rast
 
     @Nonnull
     @Override
-    public RefList<int[]> connectivity() {
+    public List<int[]> connectivity() {
       return cache.getOrInit(() -> super.connectivity());
     }
 

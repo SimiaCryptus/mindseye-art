@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
@@ -33,56 +34,47 @@ import java.util.Arrays;
 public class TensorOperator extends ReferenceCountingBase implements RefOperator<Tensor> {
   private final RefOperator<double[][]> inner;
   private final int[] dimensions;
-  private final RasterTopology topology;
+  private final @RefAware RasterTopology topology;
 
-  public TensorOperator(RefOperator<double[][]> inner, int[] dimensions, RasterTopology topology) {
+  public TensorOperator(RefOperator<double[][]> inner, int[] dimensions, @RefAware RasterTopology topology) {
     this.inner = inner;
     this.dimensions = dimensions;
     this.topology = topology;
   }
 
   @Nullable
-  public static @SuppressWarnings("unused")
-  TensorOperator[] addRefs(@Nullable TensorOperator[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(tensorOperator -> tensorOperator.addRef())
-        .toArray(x -> new TensorOperator[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  TensorOperator[][] addRefs(@Nullable TensorOperator[][] array) {
-    return RefUtil.addRefs(array);
-  }
-
-  @Nullable
   @Override
   public Tensor apply(@Nonnull Tensor tensor) {
-    if (!RefArrays.equals(dimensions, tensor.getDimensions()))
+    int[] tensorDimensions = tensor.getDimensions();
+    if (!RefArrays.equals(this.dimensions, tensorDimensions)) {
+      tensor.freeRef();
       throw new IllegalArgumentException(
-          RefArrays.toString(dimensions) + " != " + RefArrays.toString(tensor.getDimensions()));
-    final int channels = 3 <= dimensions.length ? dimensions[2] : 1;
+          RefArrays.toString(this.dimensions) + " != " + RefArrays.toString(tensorDimensions));
+    }
+    final int channels = 3 <= this.dimensions.length ? this.dimensions[2] : 1;
     final double[][] imageMatrix = RefIntStream.range(0, channels).mapToObj(c -> {
-      final double[] doubles = new double[dimensions[0] * dimensions[1]];
-      for (int y = 0; y < dimensions[1]; y++) {
-        for (int x = 0; x < dimensions[0]; x++) {
-          doubles[topology.getIndexFromCoords(x, y)] = 3 <= dimensions.length ? tensor.get(x, y, c) : tensor.get(x, y);
+      final double[] doubles = new double[this.dimensions[0] * this.dimensions[1]];
+      for (int y = 0; y < this.dimensions[1]; y++) {
+        for (int x = 0; x < this.dimensions[0]; x++) {
+          doubles[topology.getIndexFromCoords(x, y)] = 3 <= this.dimensions.length ? tensor.get(x, y, c) : tensor.get(x, y);
         }
       }
       return doubles;
     }).toArray(i -> new double[i][]);
     double[][] smoothed = inner.apply(imageMatrix);
-    return tensor.mapCoords(coordinate -> {
+    Tensor mapCoords = tensor.mapCoords(coordinate -> {
       final int[] c = coordinate.getCoords();
-      final int channel = 3 <= dimensions.length ? c[2] : 0;
+      final int channel = 3 <= this.dimensions.length ? c[2] : 0;
       return Math.min(Math.max(smoothed[channel][topology.getIndexFromCoords(c[0], c[1])], 0), 255);
     });
+    tensor.freeRef();
+    return mapCoords;
   }
 
   public void _free() {
-    inner.freeRef();
     super._free();
+    inner.freeRef();
+    RefUtil.freeRef(topology);
   }
 
   @Nonnull

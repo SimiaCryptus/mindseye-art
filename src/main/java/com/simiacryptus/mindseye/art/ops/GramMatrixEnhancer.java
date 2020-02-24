@@ -33,7 +33,6 @@ import com.simiacryptus.mindseye.layers.java.AbsActivationLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefString;
 import org.slf4j.Logger;
@@ -107,18 +106,16 @@ public class GramMatrixEnhancer implements VisualModifier {
     PipelineNetwork rmsNetwork = new PipelineNetwork(1);
     rmsNetwork.setName(RefString.format("-RMS[x*C] / %.0E", mag));
     LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
-    final double scale = -Math.pow(mag, -2);
+    final double scale = mag==0?1:-Math.pow(mag, -2);
     linearActivationLayer.setScale(scale);
-    final Layer nextHead = linearActivationLayer.addRef();
     final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
     BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
     boundedActivationLayer1.setMinValue(getMin());
-    BoundedActivationLayer boundedActivationLayer = boundedActivationLayer1.addRef();
-    boundedActivationLayer.setMaxValue(getMax());
+    boundedActivationLayer1.setMaxValue(getMax());
     rmsNetwork
         .add(nextHead1,
-            rmsNetwork.add(boundedActivationLayer.addRef(),
-                rmsNetwork.add(nextHead,
+            rmsNetwork.add(boundedActivationLayer1,
+                rmsNetwork.add(linearActivationLayer,
                     rmsNetwork.add(new ProductLayer(), rmsNetwork.getInput(0), rmsNetwork.constValueWrap(result)))))
         .freeRef();
     return rmsNetwork;
@@ -127,38 +124,42 @@ public class GramMatrixEnhancer implements VisualModifier {
   @Nonnull
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
-    PipelineNetwork network = visualModifierParameters.network;
-    assert network != null;
-    network = network.copyPipeline();
-    MultiPrecision.setPrecision(network, precision);
-    assert network != null;
-    final UUID uuid = GramMatrixMatcher.getAppendUUID(network, GramianLayer.class);
-    int pixels = RefArrays.stream(visualModifierParameters.style).mapToInt(x -> {
+    PipelineNetwork network = visualModifierParameters.copyNetwork();
+    MultiPrecision.setPrecision(network.addRef(), precision);
+    final UUID uuid = GramMatrixMatcher.getAppendUUID(network.addRef(), GramianLayer.class);
+    int pixels = RefArrays.stream(visualModifierParameters.getStyle()).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
+      x.freeRef();
       return dimensions[0] * dimensions[1];
     }).sum();
 
     final PipelineNetwork copy = network.copyPipeline();
     assert copy != null;
-    MultiPrecision gramianLayerMultiPrecision1 = new GramianLayer(uuid);
+    GramianLayer gramianLayerMultiPrecision1 = new GramianLayer(uuid);
     gramianLayerMultiPrecision1.setPrecision(precision);
-    copy.add((GramianLayer) RefUtil.addRef(gramianLayerMultiPrecision1)).freeRef();
-    Tensor result = GramMatrixMatcher.eval(pixels, copy, getTileSize(), padding, visualModifierParameters.style);
-    copy.freeRef();
+    copy.add(gramianLayerMultiPrecision1).freeRef();
+    Tensor result = GramMatrixMatcher.eval(pixels, copy, getTileSize(), padding, visualModifierParameters.getStyle());
 
-    final Tensor boolMask = MomentMatcher
-        .toMask(MomentMatcher.transform(network, visualModifierParameters.mask, Precision.Float));
-    network.add(new ProductLayer(), network.getHead(), network.constValue(boolMask)).freeRef();
+    Tensor mask = visualModifierParameters.getMask();
+    if(mask != null) {
+      network.add(new ProductLayer(),
+          network.getHead(),
+          network.constValue(
+              MomentMatcher.toMask(MomentMatcher.transform(network.addRef(), mask, Precision.Float))
+          )
+      ).freeRef();
+    }
+
     visualModifierParameters.freeRef();
-    MultiPrecision gramianLayerMultiPrecision = new GramianLayer(uuid);
+    GramianLayer gramianLayerMultiPrecision = new GramianLayer(uuid);
     gramianLayerMultiPrecision.setPrecision(precision);
-    network.add((GramianLayer) RefUtil.addRef(gramianLayerMultiPrecision)).freeRef();
+    network.add(gramianLayerMultiPrecision).freeRef();
 
     assert result != null;
     double mag = balanced ? result.rms() : 1;
     network.add(loss(result, mag, isAveraging())).freeRef();
     network.freeze();
-    return network.addRef();
+    return network;
   }
 
   @Nonnull
@@ -171,19 +172,18 @@ public class GramMatrixEnhancer implements VisualModifier {
   public static class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
     @Nonnull
     public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
+      result.freeRef();
       PipelineNetwork rmsNetwork = new PipelineNetwork(1);
       rmsNetwork.setName(RefString.format("-RMS[x*C] / %.0E", mag));
       LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
       final double scale = -Math.pow(mag, -2);
       linearActivationLayer.setScale(scale);
-      final Layer nextHead = linearActivationLayer.addRef();
       final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
       BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
       boundedActivationLayer1.setMinValue(getMin());
-      BoundedActivationLayer boundedActivationLayer = boundedActivationLayer1.addRef();
-      boundedActivationLayer.setMaxValue(getMax());
-      rmsNetwork.add(nextHead1, rmsNetwork.add(boundedActivationLayer.addRef(),
-          rmsNetwork.add(nextHead, rmsNetwork.add(new AbsActivationLayer())))).freeRef();
+      boundedActivationLayer1.setMaxValue(getMax());
+      rmsNetwork.add(nextHead1, rmsNetwork.add(boundedActivationLayer1,
+          rmsNetwork.add(linearActivationLayer, rmsNetwork.add(new AbsActivationLayer())))).freeRef();
       return rmsNetwork;
     }
   }

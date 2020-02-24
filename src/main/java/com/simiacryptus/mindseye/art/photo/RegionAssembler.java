@@ -21,8 +21,11 @@ package com.simiacryptus.mindseye.art.photo;
 
 import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
+import com.simiacryptus.mindseye.lang.CoreSettings;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefSystem;
 
 import javax.annotation.Nonnull;
@@ -45,7 +48,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
   private final Predicate<Connection> connectionFilter;
 
   public RegionAssembler(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Map<Integer, Integer> assignments,
-                         @Nonnull IntFunction<double[]> pixelFunction, @Nonnull IntFunction<double[]> coordFunction,
+                         @Nonnull @RefAware IntFunction<double[]> pixelFunction, @Nonnull @RefAware IntFunction<double[]> coordFunction,
                          Predicate<Connection> connectionFilter) {
     graph.assertSymmetric();
     this.regionCount = graph.rows;
@@ -55,7 +58,9 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
         .toArray(i -> new Region[i]);
     final Map<Integer, List<Integer>> pixelAssignmentMap = IntStream.range(0, pixelMap.length).mapToObj(x -> x)
         .collect(Collectors.groupingBy(x -> pixelMap[x], Collectors.toList()));
-    final List<Region> collect = Arrays.stream(graph.activeRows()).parallel().mapToObj(row -> {
+    IntStream stream = Arrays.stream(graph.activeRows());
+    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    final List<Region> collect = stream.mapToObj(row -> {
       assert this.regionCount > row;
       final int[] cols = graph.getCols(row);
       final float[] vals = graph.getVals(row);
@@ -78,6 +83,8 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       region.original_regions.add(row);
       return region;
     }).collect(Collectors.toList());
+    RefUtil.freeRef(pixelFunction);
+    RefUtil.freeRef(coordFunction);
     this.regions.addAll(collect);
     assert this.regions.stream().flatMap(x -> x.connections.values().stream()).allMatch(connection -> {
       final Connection reciprical = connection.reciprical();
@@ -114,13 +121,15 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
 
   @Nonnull
   public static RegionAssembler wrap(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Function<Connection, Double> extractor,
-                                     @Nonnull final Tensor content, @Nonnull final RasterTopology topology, @Nonnull final Map<Integer, Integer> assignments) {
-    final IntFunction<double[]> pixelFunction = p -> content.getPixel(topology.getCoordsFromIndex(p));
-    final IntFunction<double[]> coordFunction = p -> Arrays.stream(topology.getCoordsFromIndex(p)).mapToDouble(x -> x)
-        .toArray();
-    final Predicate<Connection> connectionFilter = connection -> connection.to != connection.from
-        && extractor.apply(connection) < Double.POSITIVE_INFINITY;
-    return new RegionAssembler(graph, pixelMap, assignments, pixelFunction, coordFunction, connectionFilter) {
+                                     @Nonnull final Tensor content, @Nonnull @RefAware final RasterTopology topology, @Nonnull final Map<Integer, Integer> assignments) {
+    return new RegionAssembler(
+        graph,
+        pixelMap,
+        assignments,
+        RefUtil.wrapInterface(p -> content.getPixel(topology.getCoordsFromIndex(p)), content, RefUtil.addRef(topology)),
+        RefUtil.wrapInterface(p -> Arrays.stream(topology.getCoordsFromIndex(p)).mapToDouble(x -> x).toArray(), topology),
+        connection -> connection.to != connection.from && extractor.apply(connection) < Double.POSITIVE_INFINITY
+    ) {
       @Override
       public int compare(Connection o1, Connection o2) {
         return Comparator.comparing(extractor).compare(o1, o2);
@@ -164,9 +173,8 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
           return -Double.POSITIVE_INFINITY;
         if (0 == entry.from.getConnectionWeight())
           return -Double.POSITIVE_INFINITY;
-        final double entropy = reduce(-log(entry.value / entry.to.getConnectionWeight()),
+        return reduce(-log(entry.value / entry.to.getConnectionWeight()),
             -log(entry.value / entry.from.getConnectionWeight()));
-        return entropy;
       }
 
       double reduce(double a, double b) {

@@ -25,21 +25,22 @@ import com.simiacryptus.mindseye.art.models.VGG19;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.MeanSqLossLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
+import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.mindseye.test.unit.StandardLayerTests;
 import com.simiacryptus.notebook.NotebookOutput;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
-import com.simiacryptus.ref.wrappers.RefArrays;
-import com.simiacryptus.ref.wrappers.RefAssert;
+import com.simiacryptus.ref.wrappers.*;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.simiacryptus.mindseye.art.models.Inception5H.*;
 import static com.simiacryptus.mindseye.art.models.VGG16.*;
@@ -57,12 +58,12 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   @Nullable
   public abstract VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline();
 
-  public static void testDims(@Nonnull VisionPipelineLayer inceptionVision, int[] inputDims, @Nonnull int[] expectedOutputDims) {
+  public static void testDims(@Nonnull @RefAware VisionPipelineLayer inceptionVision, int[] inputDims, @Nonnull int[] expectedOutputDims) {
     Layer layer = inceptionVision.getLayer();
+    RefUtil.freeRef(inceptionVision);
     int[] dimensions = layer.evalDims(inputDims);
     layer.freeRef();
-    int[] actuals = dimensions;
-    RefAssert.assertArrayEquals(RefArrays.toString(actuals), expectedOutputDims, actuals);
+    RefAssert.assertArrayEquals(RefArrays.toString(dimensions), expectedOutputDims, dimensions);
   }
 
   @Nonnull
@@ -74,9 +75,14 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   }
 
   public static int[] testDims(@Nonnull VisionPipeline<? extends VisionPipelineLayer> pipeline, int... dims) {
-    for (VisionPipelineLayer layer : pipeline.getLayers().keySet())
-      dims = testDims(layer, dims);
-    return dims;
+    RefLinkedHashMap<? extends VisionPipelineLayer, PipelineNetwork> layers = pipeline.getLayers();
+    pipeline.freeRef();
+    RefSet<? extends VisionPipelineLayer> keySet = layers.keySet();
+    AtomicReference<int[]> reference = new AtomicReference<>(dims);
+    keySet.forEach(layer -> reference.set(testDims(layer, reference.get())));
+    keySet.freeRef();
+    layers.freeRef();
+    return reference.get();
   }
 
   public int[] testDims(int... dims) {
@@ -113,17 +119,27 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   public abstract void pipelineTest(NotebookOutput log);
 
   public void graphs(@Nonnull NotebookOutput log) {
-    getVisionPipeline().getLayers().keySet().forEach(e -> {
+    VisionPipeline<? extends VisionPipelineLayer> visionPipeline = getVisionPipeline();
+    RefLinkedHashMap<? extends VisionPipelineLayer, PipelineNetwork> layers = visionPipeline.getLayers();
+    RefSet<? extends VisionPipelineLayer> keySet = layers.keySet();
+    keySet.forEach(e -> {
       log.h1(e.name());
-      DAGNetwork layer = (DAGNetwork) e.getLayer();
-      TestUtil.graph(log, layer);
-      layer.freeRef();
+      TestUtil.graph(log, (DAGNetwork) e.getLayer());
+      RefUtil.freeRef(e);
     });
+    keySet.freeRef();
+    layers.freeRef();
+    visionPipeline.freeRef();
   }
 
   public void layers(@Nonnull NotebookOutput log) {
     final int[][] dims = {{226, 226, 3}};
-    getVisionPipeline().getLayers().keySet().forEach(e -> {
+    VisionPipeline<? extends VisionPipelineLayer> visionPipeline = getVisionPipeline();
+    RefLinkedHashMap<? extends VisionPipelineLayer, PipelineNetwork> layers = visionPipeline.getLayers();
+    RefSet<? extends VisionPipelineLayer> keySet = layers.keySet();
+    layers.freeRef();
+    visionPipeline.freeRef();
+    keySet.forEach(e -> {
       log.h1(e.name());
       DAGNetwork layer = (DAGNetwork) e.getLayer();
       log.subreport(sublog -> {
@@ -170,6 +186,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       dims[0] = dimensions;
       layer.freeRef();
     });
+    keySet.freeRef();
   }
 
   public static class VGG16Test extends VisionPipelineTest {

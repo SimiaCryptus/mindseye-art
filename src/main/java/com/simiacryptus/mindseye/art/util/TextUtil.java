@@ -96,8 +96,7 @@ public class TextUtil {
           .mapToInt(t -> (int) graphics.getFontMetrics().getStringBounds(t, graphics).getWidth()).max().getAsInt();
     }
     size -= 2;
-    final Font font = new Font(fontName, style, size);
-    return font;
+    return new Font(fontName, style, size);
   }
 
   @Nonnull
@@ -110,8 +109,7 @@ public class TextUtil {
       height = measure(new Font(fontName, style, size), text).getHeight();
     }
     size -= 2;
-    final Font font = new Font(fontName, style, size);
-    return font;
+    return new Font(fontName, style, size);
   }
 
   @Nonnull
@@ -127,7 +125,6 @@ public class TextUtil {
       width = measure.getWidth();
     }
     size -= 2;
-    final Font font = new Font(fontName, style, size);
-    return font;
+    return new Font(fontName, style, size);
   }
 }

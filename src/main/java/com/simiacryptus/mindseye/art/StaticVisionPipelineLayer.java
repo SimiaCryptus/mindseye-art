@@ -20,8 +20,10 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.ref.lang.RefIgnore;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.ref.wrappers.RefAtomicReference;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,7 +32,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class StaticVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
-  public final AtomicReference<VisionPipeline<?>> reference = new AtomicReference<>();
+  public final RefAtomicReference<VisionPipeline<?>> reference = new RefAtomicReference<>();
 
   private final Layer layer;
   private final String pipelineName;
@@ -49,28 +51,14 @@ public class StaticVisionPipelineLayer extends ReferenceCountingBase implements 
   @Nonnull
   @Override
   public VisionPipeline<?> getPipeline() {
-    return reference.get().addRef();
+    assertAlive();
+    return reference.get();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
     return pipelineName;
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  StaticVisionPipelineLayer[] addRefs(@Nullable StaticVisionPipelineLayer[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(staticVisionPipelineLayer -> staticVisionPipelineLayer.addRef())
-        .toArray(x -> new StaticVisionPipelineLayer[x]);
-  }
-
-  @Nullable
-  public static @SuppressWarnings("unused")
-  StaticVisionPipelineLayer[][] addRefs(@Nullable StaticVisionPipelineLayer[][] array) {
-    return RefUtil.addRefs(array);
   }
 
   @Nonnull
@@ -80,6 +68,7 @@ public class StaticVisionPipelineLayer extends ReferenceCountingBase implements 
   }
 
   @Override
+  @RefIgnore
   public boolean equals(@Nullable Object o) {
     if (this == o)
       return true;
@@ -100,6 +89,9 @@ public class StaticVisionPipelineLayer extends ReferenceCountingBase implements 
 
   public @SuppressWarnings("unused")
   void _free() {
+    super._free();
+    layer.freeRef();
+    reference.freeRef();
   }
 
   @Nonnull

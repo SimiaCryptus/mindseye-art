@@ -22,6 +22,8 @@ package com.simiacryptus.mindseye.art;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
+import com.simiacryptus.ref.wrappers.RefLinkedHashMap;
 import com.simiacryptus.ref.wrappers.RefString;
 
 import javax.annotation.Nonnull;
@@ -37,7 +39,11 @@ public interface VisionPipelineLayer {
   @Nonnull
   default PipelineNetwork getNetwork() {
     final VisionPipeline<?> pipeline = getPipeline();
-    final PipelineNetwork pipelineNetwork = pipeline.getLayers().get(this).copyPipeline();
+    RefLinkedHashMap<?, PipelineNetwork> layers = pipeline.getLayers();
+    PipelineNetwork network = layers.get(this);
+    final PipelineNetwork pipelineNetwork = network.copyPipeline();
+    layers.freeRef();
+    network.freeRef();
     pipeline.freeRef();
     assert pipelineNetwork != null;
     return pipelineNetwork;
@@ -83,11 +89,13 @@ public interface VisionPipelineLayer {
   }
 
   @Nonnull
+  @RefAware
   default VisionPipelineLayer prepend(Layer layer) {
     return new PrependVisionPipelineLayer(this, layer);
   }
 
   @Nonnull
+  @RefAware
   default VisionPipelineLayer append(Layer layer) {
     return new AppendVisionPipelineLayer(this, layer);
   }
@@ -103,12 +111,7 @@ public interface VisionPipelineLayer {
     @Nonnull
     @Override
     public VisionPipeline<Noop> getPipeline() {
-      return new VisionPipeline<Noop>(name(), this) {
-
-        public @SuppressWarnings("unused")
-        void _free() {
-        }
-      };
+      return new VisionPipeline<Noop>(name(), this);
     }
 
     @Nonnull

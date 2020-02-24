@@ -27,70 +27,70 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
 public class VisualModifierParameters extends ReferenceCountingBase {
   @Nullable
-  public final PipelineNetwork network;
+  private final PipelineNetwork network;
   @Nonnull
-  public final Tensor mask;
+  private final Tensor mask;
   public final UnaryOperator<Tensor> viewLayer;
-  public final Tensor[] style;
+  private final Tensor[] style;
   private final int[] contentDims;
 
   public VisualModifierParameters(@Nullable PipelineNetwork network, int[] contentDims, UnaryOperator<Tensor> viewLayer,
                                   @Nullable Tensor mask, Tensor... styleImages) {
-    this.network = null == network ? null : network.addRef();
-    assert mask != null;
-    this.mask = mask.addRef();
+    assert network != null;
+    this.network = network;
+    //assert mask != null;
+    this.mask = mask;
     this.contentDims = contentDims;
     this.viewLayer = viewLayer;
     this.style = styleImages;
-    for (Tensor tensor : this.style) {
-      if (null != tensor)
-        tensor.addRef();
-    }
+  }
+
+  @Nonnull
+  public Tensor getMask() {
+    assertAlive();
+    return null == mask? null : mask.addRef();
   }
 
   @Nullable
-  public static @SuppressWarnings("unused")
-  VisualModifierParameters[] addRefs(@Nullable VisualModifierParameters[] array) {
-    if (array == null)
-      return null;
-    return Arrays.stream(array).filter(x -> x != null).map(visualModifierParameters -> visualModifierParameters.addRef())
-        .toArray(x -> new VisualModifierParameters[x]);
+  public PipelineNetwork getNetwork() {
+    assertAlive();
+    return network.addRef();
   }
 
-  @Nullable
-  public static @SuppressWarnings("unused")
-  VisualModifierParameters[][] addRefs(@Nullable VisualModifierParameters[][] array) {
-    return RefUtil.addRefs(array);
+  public Tensor[] getStyle() {
+    assertAlive();
+    return RefUtil.addRefs(style);
+  }
+
+  public PipelineNetwork copyNetwork() {
+    assertAlive();
+    return network.copyPipeline();
   }
 
   public void _free() {
-    if (null != network)
-      network.freeRef();
-    mask.freeRef();
-    for (Tensor tensor : this.style) {
-      if (null != tensor)
-        tensor.freeRef();
-    }
+    RefUtil.freeRef(network);
+    RefUtil.freeRef(mask);
+    RefUtil.freeRef(style);
     super._free();
   }
 
   @Nonnull
   public VisualModifierParameters withMask(@Nullable Tensor mask) {
     if (null != mask) {
-      mask = Tensor.fromRGB(ImageUtil.resize(mask.toRgbImage(), contentDims[0], contentDims[1]));
-      if (null != viewLayer)
-        mask = viewLayer.apply(mask);
+      Tensor fromRGB = Tensor.fromRGB(ImageUtil.resize(mask.toRgbImage(), contentDims[0], contentDims[1]));
+      RefUtil.freeRef(mask);
+      mask = fromRGB;
+      if (null != viewLayer) {
+        Tensor apply = viewLayer.apply(mask);
+        mask = apply;
+      }
     }
-    final VisualModifierParameters visualModifierParameters = new VisualModifierParameters(network, contentDims,
-        viewLayer, mask, style);
-    if (null != mask)
-      mask.freeRef();
-    this.freeRef();
+    final VisualModifierParameters visualModifierParameters = new VisualModifierParameters(getNetwork(), contentDims,
+        viewLayer, mask, getStyle());
     return visualModifierParameters;
   }
 

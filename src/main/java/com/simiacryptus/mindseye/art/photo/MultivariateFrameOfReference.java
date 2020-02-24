@@ -27,6 +27,8 @@ import org.ejml.simple.SimpleMatrix;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class MultivariateFrameOfReference {
   @Nullable
@@ -49,11 +51,11 @@ public class MultivariateFrameOfReference {
     this.invCov = safeInvert(cov, epsilon);
   }
 
-  public MultivariateFrameOfReference(@Nonnull Supplier<RefStream<double[]>> fn, int channels) {
+  public MultivariateFrameOfReference(@Nonnull Supplier<Stream<double[]>> fn, int channels) {
     this(fn, channels, 1e-4);
   }
 
-  public MultivariateFrameOfReference(@Nonnull Supplier<RefStream<double[]>> fn, int channels, double epsilon) {
+  public MultivariateFrameOfReference(@Nonnull Supplier<Stream<double[]>> fn, int channels, double epsilon) {
     this.dimension = channels;
     means = ContextAffinity.means(fn, this.dimension);
     rms = ContextAffinity.magnitude(means, fn, channels);
@@ -73,7 +75,7 @@ public class MultivariateFrameOfReference {
   }
 
   public double[] adjust(@Nonnull double[] pixel) {
-    return RefIntStream.range(0, pixel.length).mapToDouble(c -> (pixel[c] - this.means.get(c)) / this.rms.get(c))
+    return IntStream.range(0, pixel.length).mapToDouble(c -> (pixel[c] - this.means.get(c)) / this.rms.get(c))
         .toArray();
   }
 
@@ -87,12 +89,10 @@ public class MultivariateFrameOfReference {
   }
 
   public double dist(@Nonnull MultivariateFrameOfReference right) {
-    final SimpleMatrix mu0 = this.means;
     final SimpleMatrix sigma0 = this.rawCov();
-    final SimpleMatrix mu1 = right.means;
     final SimpleMatrix sigma1 = right.rawCov();
     final SimpleMatrix sigma_ = new MultivariateFrameOfReference(this, right, 0.5).rawCov();
-    final SimpleMatrix mu_diff = mu0.minus(mu1);
+    final SimpleMatrix mu_diff = this.means.minus(right.means);
     final SimpleMatrix invert = safeInvert(sigma_, 1e-4);
     final double offset = null == invert ? mu_diff.dot(mu_diff) : mu_diff.dot(invert.mult(mu_diff.transpose()));
     final double volume = sigma_.determinant() / Math.sqrt(sigma0.determinant() * sigma1.determinant());

@@ -19,13 +19,11 @@
 
 package com.simiacryptus.mindseye.art;
 
+import com.simiacryptus.mindseye.art.ops.ContentInceptionMatcher;
 import com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer;
 import com.simiacryptus.mindseye.art.photo.SmoothSolver_EJML;
 import com.simiacryptus.mindseye.art.photo.WCTUtil;
-import com.simiacryptus.mindseye.art.photo.affinity.GaussianAffinity;
-import com.simiacryptus.mindseye.art.photo.affinity.MattingAffinity;
-import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
-import com.simiacryptus.mindseye.art.photo.affinity.RelativeAffinity;
+import com.simiacryptus.mindseye.art.photo.affinity.*;
 import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
 import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
 import com.simiacryptus.mindseye.art.photo.topology.ContentTopology;
@@ -41,8 +39,10 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.notebook.NotebookOutput;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefAtomicReference;
 import com.simiacryptus.ref.wrappers.RefString;
 import com.simiacryptus.ref.wrappers.RefSystem;
 import com.simiacryptus.util.Util;
@@ -207,39 +207,49 @@ public class WCTTest extends NotebookReportBase {
 
     final Layer encode_4 = VGG_WCT_Import.encode_4();
     final Layer decode_4 = VGG_WCT_Import.photo_decode_4();
-    final Tensor content_4 = transfer(contentImage, styleImage, encode_4, decode_4, 1.0, 1.0);
+    final Tensor content_4 = transfer(contentImage.addRef(), styleImage.addRef(), encode_4, decode_4, 1.0, 1.0);
     log.eval(() -> {
       return content_4.toImage();
     });
 
     final Layer encode_3 = VGG_WCT_Import.encode_3();
     final Layer decode_3 = VGG_WCT_Import.photo_decode_3();
-    final Tensor content_3 = transfer(content_4, styleImage, encode_3, decode_3, 1.0, 1.0);
+    final Tensor content_3 = transfer(content_4, styleImage.addRef(), encode_3, decode_3, 1.0, 1.0);
     log.eval(() -> {
       return content_3.toImage();
     });
 
     final Layer encode_2 = VGG_WCT_Import.encode_2();
     final Layer decode_2 = VGG_WCT_Import.photo_decode_2();
-    final Tensor content_2 = transfer(content_3, styleImage, encode_2, decode_2, 1.0, 1.0);
+    final Tensor content_2 = transfer(content_3, styleImage.addRef(), encode_2, decode_2, 1.0, 1.0);
     log.eval(() -> {
       return content_2.toImage();
     });
 
     final Layer encode_1 = VGG_WCT_Import.encode_1();
     final Layer decode_1 = VGG_WCT_Import.decode_1();
-    final Tensor encodedContent = encode_1.eval(content_2).getData().get(0);
-    final Tensor encodedStyle = encode_1.eval(styleImage).getData().get(0);
-    final Tensor encodedTransformed = WCTUtil.applicator(encodedStyle, 1.0, 1.0).eval(encodedContent).getData().get(0);
-    final Tensor content_1 = decode_1.eval(encodedTransformed).getData().get(0);
+    final Tensor encodedContent = ContentInceptionMatcher.getData0(encode_1.eval(content_2));
+    final Tensor encodedStyle = ContentInceptionMatcher.getData0(encode_1.eval(styleImage.addRef()));
+    PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, 1.0, 1.0);
+    final Tensor encodedTransformed = ContentInceptionMatcher.getData0(applicator.eval(encodedContent));
+    applicator.freeRef();
+    final Tensor content_1 = ContentInceptionMatcher.getData0(decode_1.eval(encodedTransformed));
     log.eval(() -> {
       return content_1.toImage();
     });
 
     log.eval(() -> {
-      final MattingAffinity affinity = new MattingAffinity(contentImage);
-      return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(content_1));
+      final MattingAffinity affinity = new MattingAffinity(contentImage.addRef());
+      RefOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
+      BufferedImage image = toImage(solve.apply(content_1.addRef()));
+      solve.freeRef();
+      return image;
     });
+    styleImage.freeRef();
+    decode_1.freeRef();
+    encode_1.freeRef();
+    content_1.freeRef();
+    contentImage.freeRef();
   }
 
   private void wct_api(@Nonnull NotebookOutput log) {
@@ -255,27 +265,31 @@ public class WCTTest extends NotebookReportBase {
     final FastPhotoStyleTransfer fastPhotoStyleTransfer = getFastPhotoStyleTransfer(log);
     if (verbose) {
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_1(styleImage, contentImage));
+        return toImage(fastPhotoStyleTransfer.photoWCT_1(styleImage.addRef(), contentImage.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_2(styleImage, contentImage));
+        return toImage(fastPhotoStyleTransfer.photoWCT_2(styleImage.addRef(), contentImage.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_3(styleImage, contentImage));
+        return toImage(fastPhotoStyleTransfer.photoWCT_3(styleImage.addRef(), contentImage.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_4(styleImage, contentImage));
+        return toImage(fastPhotoStyleTransfer.photoWCT_4(styleImage.addRef(), contentImage.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT(styleImage, contentImage));
+        return toImage(fastPhotoStyleTransfer.photoWCT(styleImage.addRef(), contentImage.addRef()));
       });
     }
     log.eval(() -> {
-      final RefOperator<Tensor> operator = fastPhotoStyleTransfer.setLambda(1e-4).setEpsilon(1e-4).apply(contentImage);
-      final BufferedImage image = toImage(operator.apply(styleImage));
+      fastPhotoStyleTransfer.setLambda(1e-4);
+      fastPhotoStyleTransfer.setEpsilon(1e-4);
+      final RefOperator<Tensor> operator = fastPhotoStyleTransfer.apply(contentImage.addRef());
+      final BufferedImage image = toImage(operator.apply(styleImage.addRef()));
       operator.freeRef();
       return image;
     });
+    styleImage.freeRef();
+    contentImage.freeRef();
     fastPhotoStyleTransfer.freeRef();
   }
 
@@ -283,8 +297,9 @@ public class WCTTest extends NotebookReportBase {
     File localFile = log.eval(() -> {
       return Util.cacheFile(new URI("https://simiacryptus.s3-us-west-2.amazonaws.com/photo_wct.zip"));
     });
-    final FastPhotoStyleTransfer fastPhotoStyleTransfer;
+    FastPhotoStyleTransfer fastPhotoStyleTransfer = null;
     if (localFile == null || !localFile.exists()) {
+      RefUtil.freeRef(fastPhotoStyleTransfer);
       fastPhotoStyleTransfer = log.eval(() -> {
         return VGG_WCT_Import.newFastPhotoStyleTransfer();
       });
@@ -292,6 +307,7 @@ public class WCTTest extends NotebookReportBase {
       fastPhotoStyleTransfer.writeZip(out, SerialPrecision.Float);
       log.p(log.link(out, "Model Package"));
     } else {
+      RefUtil.freeRef(fastPhotoStyleTransfer);
       fastPhotoStyleTransfer = log.eval(() -> {
         return FastPhotoStyleTransfer.fromZip(new ZipFile(localFile));
       });
@@ -307,7 +323,7 @@ public class WCTTest extends NotebookReportBase {
 
     final int[] dimensions = content.getDimensions();
     final Tensor[] tensors = new Tensor[]{new Plasma().paint(dimensions[0], dimensions[1]),
-        rawStyledContent(content, log), content};
+        rawStyledContent(content.addRef(), log), content.addRef()};
 
     for (boolean selfRef : new boolean[]{true, false}) {
       for (boolean sqrt : new boolean[]{true, false}) {
@@ -316,50 +332,75 @@ public class WCTTest extends NotebookReportBase {
         log.h3("RadiusRasterTopology - MattingAffinity");
         test(log, log.eval(() -> {
           RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-          RasterAffinity affinity = new MattingAffinity(content, topology).setGraphPower1(2).setMixing(0.5);
-          if (sqrt)
-            affinity = affinity
+          ContextAffinity contextAffinity = new MattingAffinity(content.addRef(), topology);
+          contextAffinity.setGraphPower1(2);
+          contextAffinity.setMixing(0.5);
+          @RefAware RasterAffinity affinity = contextAffinity;
+          if (sqrt) {
+            AffinityWrapper wrap = affinity
                 .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+            RefUtil.freeRef(affinity);
+            affinity = wrap;
+          }
           return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-        }), tensors);
+        }), RefUtil.addRefs(tensors));
 
         for (int contrast : new int[]{20, 50, 100}) {
           log.h2("Contrast: " + contrast);
 
           log.h3("SearchRadiusTopology");
           test(log, log.eval(() -> {
-            ContentTopology topology = new SearchRadiusTopology(content).setSelfRef(selfRef).setVerbose(true);
-            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2)
-                .setMixing(0.5);
-            if (sqrt)
-              affinity = affinity
+            SearchRadiusTopology searchRadiusTopology = new SearchRadiusTopology(content.addRef());
+            searchRadiusTopology.setSelfRef(selfRef);
+            searchRadiusTopology.setVerbose(true);
+            RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), searchRadiusTopology.addRef());
+            relativeAffinity.setContrast(contrast);
+            relativeAffinity.setGraphPower1(2);
+            relativeAffinity.setMixing(0.5);
+            @RefAware RasterAffinity affinity = relativeAffinity;
+            if (sqrt) {
+              AffinityWrapper wrap = affinity
                   .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-          }), tensors);
+              RefUtil.freeRef(affinity);
+              affinity = wrap;
+            }
+            return new SmoothSolver_Cuda().solve(searchRadiusTopology, affinity, 1e-4);
+          }), RefUtil.addRefs(tensors));
 
           log.h3("RadiusRasterTopology");
           test(log, log.eval(() -> {
             RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2)
-                .setMixing(0.5);
-            if (sqrt)
-              affinity = affinity
+            RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), topology);
+            relativeAffinity.setContrast(contrast);
+            relativeAffinity.setGraphPower1(2);
+            relativeAffinity.setMixing(0.5);
+            @RefAware RasterAffinity affinity = relativeAffinity;
+            if (sqrt) {
+              AffinityWrapper wrap = affinity
                   .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+              RefUtil.freeRef(affinity);
+              affinity = wrap;
+            }
             return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-          }), tensors);
+          }), RefUtil.addRefs(tensors));
 
           log.h3("RadiusRasterTopology - GaussianAffinity");
           test(log, log.eval(() -> {
-            RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-            RasterAffinity affinity = new GaussianAffinity(content, contrast, topology);
-            if (sqrt)
-              affinity = affinity
+            @RefAware RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
+            @RefAware RasterAffinity affinity = new GaussianAffinity(content.addRef(), contrast, RefUtil.addRef(topology));
+            if (sqrt) {
+              AffinityWrapper wrap = affinity
                   .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
+              RefUtil.freeRef(affinity);
+              affinity = wrap;
+            }
             return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-          }), tensors);
+          }), RefUtil.addRefs(tensors));
         }
       }
     }
+    RefUtil.freeRef(tensors);
+    content.freeRef();
   }
 
   private void photoBlur_Survey(@Nonnull NotebookOutput log) {
@@ -369,8 +410,11 @@ public class WCTTest extends NotebookReportBase {
     });
 
     final int[] dimensions = content.getDimensions();
-    final Tensor[] tensors = new Tensor[]{new Plasma().paint(dimensions[0], dimensions[1]),
-        rawStyledContent(content, log), content};
+    final Tensor[] tensors = new Tensor[]{
+        new Plasma().paint(dimensions[0], dimensions[1]),
+        rawStyledContent(content.addRef(), log),
+        content.addRef()
+    };
 
     for (boolean selfRef : new boolean[]{true, false}) {
       for (boolean sqrt : new boolean[]{true, false}) {
@@ -389,14 +433,22 @@ public class WCTTest extends NotebookReportBase {
 
           log.h3("SearchRadiusTopology");
           test(log, log.eval(() -> {
-            ContentTopology topology = new SearchRadiusTopology(content).setSelfRef(selfRef).setVerbose(true);
-            RasterAffinity affinity = new RelativeAffinity(content, topology).setContrast(contrast).setGraphPower1(2)
-                .setMixing(0.5);
-            if (sqrt)
-              affinity = affinity
+            SearchRadiusTopology searchRadiusTopology = new SearchRadiusTopology(content.addRef());
+            searchRadiusTopology.setSelfRef(selfRef);
+            searchRadiusTopology.setVerbose(true);
+            RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), searchRadiusTopology.addRef());
+            relativeAffinity.setContrast(contrast);
+            relativeAffinity.setGraphPower1(2);
+            relativeAffinity.setMixing(0.5);
+            @RefAware RasterAffinity affinity = relativeAffinity;
+            if (sqrt) {
+              AffinityWrapper wrap = affinity
                   .wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5));
-            return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-          }), tensors);
+              RefUtil.freeRef(affinity);
+              affinity = wrap;
+            }
+            return new SmoothSolver_Cuda().solve(searchRadiusTopology, affinity, 1e-4);
+          }), RefUtil.addRefs(tensors));
 
           //          log.h3("RadiusRasterTopology");
           //          test(log, log.eval(() -> {
@@ -416,6 +468,8 @@ public class WCTTest extends NotebookReportBase {
         }
       }
     }
+    RefUtil.freeRef(tensors);
+    content.freeRef();
   }
 
   private Tensor rawStyledContent(Tensor content, @Nonnull NotebookOutput log) {
@@ -426,19 +480,33 @@ public class WCTTest extends NotebookReportBase {
     final FastPhotoStyleTransfer fastPhotoStyleTransfer = getFastPhotoStyleTransfer(log);
     final AtomicReference<Tensor> styledImage = new AtomicReference<>();
     log.eval(() -> {
-      styledImage.set(fastPhotoStyleTransfer.setLambda(1e-4).setEpsilon(1e-4).photoWCT(styleImage, content));
-      return styledImage.get().toImage();
+      fastPhotoStyleTransfer.setLambda(1e-4);
+      fastPhotoStyleTransfer.setEpsilon(1e-4);
+      styledImage.set(fastPhotoStyleTransfer.photoWCT(styleImage.addRef(), content.addRef()));
+      Tensor tensor = styledImage.get();
+      BufferedImage image = tensor.toImage();
+      tensor.freeRef();
+      return image;
     });
-    Tensor styled = styledImage.get();
-    return styled;
+    styleImage.freeRef();
+    content.freeRef();
+    fastPhotoStyleTransfer.freeRef();
+    return styledImage.get();
   }
 
   private void test(@Nonnull NotebookOutput log, @Nonnull RefOperator<Tensor> smoothingTransform, @Nonnull Tensor... styled) {
     try {
-      RefArrays.stream(styled).filter(x -> x != null).forEach(tensor -> {
-        log.eval(() -> {
-          return smoothingTransform.apply(tensor).toImage();
-        });
+      RefArrays.stream(styled).filter(tensor -> {
+        boolean notNull = tensor != null;
+        RefUtil.freeRef(tensor);
+        return notNull;
+      }).forEach(tensor -> {
+        log.eval(RefUtil.wrapInterface(() -> {
+          Tensor apply = smoothingTransform.apply(tensor.addRef());
+          BufferedImage image = apply.toImage();
+          apply.freeRef();
+          return image;
+        }, tensor));
       });
       smoothingTransform.freeRef();
     } catch (Throwable e) {
@@ -455,85 +523,108 @@ public class WCTTest extends NotebookReportBase {
   }
 
   private void wct_test(@Nonnull NotebookOutput log, @Nonnull Layer encoder, @Nonnull Layer decoder, @Nonnull Tensor contentImage, @Nonnull Tensor styleImage) {
-    log.h2("Input");
-    log.eval(() -> {
-      return contentImage.toImage();
-    });
-    log.eval(() -> {
-      return styleImage.toImage();
-    });
-    final Tensor originalFeatures = log.eval(() -> {
-      return encoder.eval(contentImage).getData().get(0);
-    });
-
-    log.h2("Encoding");
-    log.eval(() -> {
-      return RefUtil.get(RefArrays.stream(originalFeatures.getDimensions()).mapToObj(i -> Integer.toString(i))
-          .reduce((a, b) -> a + ", " + b));
-    });
-    final Tensor encodedStyle = log.eval(() -> {
-      return encoder.eval(styleImage).getData().get(0);
-    });
-
-    final Tensor restyledFeatures;
-    if (verbose) {
-      log.h2("Style Signal Stats");
-      log.h3("Content");
-      stats(log, encodedStyle);
-
-      log.h3("Normalized");
-      stats(log, log.eval(() -> {
-        final Layer normalizer = WCTUtil.normalizer();
-        final Tensor tensor = normalizer.eval(originalFeatures).getData().get(0);
-        normalizer.freeRef();
-        return tensor;
-      }));
-      log.h3("Stylized");
-      final PipelineNetwork styleNetwork = log.eval(() -> {
-        return WCTUtil.applicator(encodedStyle);
-      });
-      restyledFeatures = log.eval(() -> {
-        return styleNetwork.eval(originalFeatures).getData().get(0);
-      });
-      stats(log, restyledFeatures);
-    } else {
-      restyledFeatures = WCTUtil.applicator(encodedStyle).eval(originalFeatures).getData().get(0);
-    }
-
-    log.h2("Result Images");
-    RefSystem.setProperty("spark.master", "local[*]");
-    RefSystem.setProperty("spark.app.name", getClass().getSimpleName());
-    if (getNetwork(decoder).inputHandles.size() == 2) {
-      final Tensor restyled = log.eval(() -> {
-        return decoder.eval(restyledFeatures, contentImage).getData().get(0);
+    try {
+      log.h2("Input");
+      log.eval(() -> {
+        return contentImage.toImage();
       });
       log.eval(() -> {
-        return restyled.toImage();
+        return styleImage.toImage();
       });
+      final Tensor originalFeatures = log.eval(() -> {
+        return ContentInceptionMatcher.getData0(encoder.eval(contentImage.addRef()));
+      });
+
+      log.h2("Encoding");
       log.eval(() -> {
-        final MattingAffinity affinity = new MattingAffinity(contentImage);
-        return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(restyled));
+        return RefUtil.get(RefArrays.stream(originalFeatures.getDimensions()).mapToObj(i -> Integer.toString(i))
+            .reduce((a, b) -> a + ", " + b));
       });
-      restyled.freeRef();
-      if (verbose)
-        log.eval(() -> {
-          return toImage(decoder.eval(originalFeatures, contentImage).getData().get(0));
+      final Tensor encodedStyle = log.eval(() -> {
+        return ContentInceptionMatcher.getData0(encoder.eval(styleImage.addRef()));
+      });
+
+      RefAtomicReference<Tensor> restyledFeatures = new RefAtomicReference<>();
+      if (verbose) {
+        log.h2("Style Signal Stats");
+        log.h3("Content");
+        stats(log, encodedStyle.addRef());
+
+        log.h3("Normalized");
+        stats(log, log.eval(() -> {
+          final Layer normalizer = WCTUtil.normalizer();
+          final Tensor tensor = ContentInceptionMatcher.getData0(normalizer.eval(originalFeatures.addRef()));
+          normalizer.freeRef();
+          return tensor;
+        }));
+        log.h3("Stylized");
+        final PipelineNetwork styleNetwork = log.eval(() -> {
+          return WCTUtil.applicator(encodedStyle.addRef());
         });
-    } else {
-      final Tensor restyled = log.eval(() -> {
-        return decoder.eval(restyledFeatures).getData().get(0);
-      });
-      log.eval(() -> {
-        return restyled.toImage();
-      });
-      log.eval(() -> {
-        final MattingAffinity affinity = new MattingAffinity(contentImage);
-        return toImage(new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4).apply(restyled));
-      });
-      if (verbose)
-        log.eval(() -> {
-          return toImage(decoder.eval(originalFeatures).getData().get(0));
+        restyledFeatures.set(log.eval(() -> {
+          return ContentInceptionMatcher.getData0(styleNetwork.eval(originalFeatures.addRef()));
+        }));
+        styleNetwork.freeRef();
+        stats(log, restyledFeatures.get());
+      } else {
+        PipelineNetwork applicator = WCTUtil.applicator(encodedStyle.addRef());
+        restyledFeatures.set(ContentInceptionMatcher.getData0(applicator.eval(originalFeatures.addRef())));
+        applicator.freeRef();
+      }
+
+      log.h2("Result Images");
+      RefSystem.setProperty("spark.master", "local[*]");
+      RefSystem.setProperty("spark.app.name", getClass().getSimpleName());
+      PipelineNetwork network = getNetwork(decoder.addRef());
+      int inputCount = network.inputHandles.size();
+      network.freeRef();
+      if (inputCount == 2) {
+        final Tensor restyled = log.eval(() -> {
+          return ContentInceptionMatcher.getData0(decoder.eval(restyledFeatures.get(), contentImage.addRef()));
         });
+        log.eval(() -> {
+          return restyled.toImage();
+        });
+        log.eval(() -> {
+          final MattingAffinity affinity = new MattingAffinity(contentImage.addRef());
+          RefOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
+          BufferedImage image = toImage(solve.apply(restyled.addRef()));
+          solve.freeRef();
+          return image;
+        });
+        restyled.freeRef();
+        if (verbose)
+          log.eval(() -> {
+            return toImage(ContentInceptionMatcher.getData0(decoder.eval(originalFeatures.addRef(), contentImage.addRef())));
+          });
+      } else {
+        final Tensor restyled = log.eval(() -> {
+          return ContentInceptionMatcher.getData0(decoder.eval(restyledFeatures.get()));
+        });
+        log.eval(() -> {
+          return restyled.toImage();
+        });
+        log.eval(() -> {
+          final MattingAffinity affinity = new MattingAffinity(contentImage.addRef());
+          RefOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
+          BufferedImage image = toImage(solve.apply(restyled.addRef()));
+          solve.freeRef();
+          return image;
+        });
+        restyled.freeRef();
+        if (verbose)
+          log.eval(() -> {
+            return toImage(ContentInceptionMatcher.getData0(decoder.eval(originalFeatures.addRef())));
+          });
+      }
+      restyledFeatures.freeRef();
+      originalFeatures.freeRef();
+      encodedStyle.freeRef();
+    } finally {
+      contentImage.freeRef();
+      styleImage.freeRef();
+      decoder.freeRef();
+      encoder.freeRef();
     }
   }
 
@@ -541,18 +632,24 @@ public class WCTTest extends NotebookReportBase {
   private PipelineNetwork getNetwork(Layer decoder) {
     if (decoder instanceof PipelineNetwork)
       return (PipelineNetwork) decoder;
-    if (decoder instanceof WrapperLayer)
-      return getNetwork(((WrapperLayer) decoder).getInner());
-    throw new RuntimeException(decoder.getClass().getSimpleName());
+    try {
+      if (decoder instanceof WrapperLayer)
+        return getNetwork(((WrapperLayer) decoder).getInner());
+      throw new RuntimeException(decoder.getClass().getSimpleName());
+    } finally {
+      decoder.freeRef();
+    }
   }
 
   private void stats(@Nonnull NotebookOutput log, Tensor normalFeatures) {
     final Tensor normalMeanSignal = log.eval(() -> {
-      return WCTUtil.means(normalFeatures);
+      return WCTUtil.means(normalFeatures.addRef());
     });
     log.eval(() -> {
-      return WCTUtil.rms(normalFeatures, normalMeanSignal);
+      return WCTUtil.rms(normalFeatures.addRef(), normalMeanSignal.addRef());
     }).freeRef();
+    normalMeanSignal.freeRef();
+    normalFeatures.freeRef();
   }
 
 }
