@@ -296,8 +296,8 @@ public class MomentMatcher implements VisualModifier {
     assert mask==null || test(maskedNetwork.addRef(), mask.addRef());
     final MomentParams params = getMomentParams(network, maskFactor, visualModifierParameters.getStyle());
     assert mask==null || test(maskedNetwork.addRef(), mask.addRef());
-    final DAGNode head = maskedNetwork.getHead();
     if(null != boolMask) {
+      final DAGNode head = maskedNetwork.getHead();
       maskedNetwork.add(new ProductLayer(), head, maskedNetwork.constValue(boolMask)).freeRef();
     }
     assert mask==null || test(maskedNetwork.addRef(), mask.addRef());
@@ -314,6 +314,7 @@ public class MomentMatcher implements VisualModifier {
     visualModifierParameters.freeRef();
     MultiPrecision.setPrecision(maskedNetwork.addRef(), getPrecision());
     maskedNetwork.freeze();
+    RefUtil.freeRef(mask);
     return maskedNetwork;
   }
 

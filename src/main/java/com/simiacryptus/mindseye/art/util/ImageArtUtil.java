@@ -191,7 +191,7 @@ public class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +")).map(x -> getImageTensor(x, log, width)).findFirst());
+        Tensor sampleImage = getImageTensor(fileStr.split(" +\\+ +")[0], log, width);
         int[] sampleImageDimensions = sampleImage.getDimensions();
         sampleImage.freeRef();
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
@@ -217,10 +217,16 @@ public class ImageArtUtil {
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
         return new Plasma().paint(width, width);
       } else if (fileStr.trim().toLowerCase().equals("noise")) {
-        return new Tensor(width, width, 3).map(x -> FastRandom.INSTANCE.random() * 100);
+        Tensor baseTensor = new Tensor(width, width, 3);
+        Tensor map = baseTensor.map(x -> FastRandom.INSTANCE.random() * 100);
+        baseTensor.freeRef();
+        return map;
       } else if (fileStr.matches("\\-?\\d+(?:\\.\\d*)?(?:[eE]\\-?\\d+)?")) {
         double v = Double.parseDouble(fileStr);
-        return new Tensor(width, width, 3).map(x -> v);
+        Tensor baseTensor = new Tensor(width, width, 3);
+        Tensor map = baseTensor.map(x -> v);
+        baseTensor.freeRef();
+        return map;
       }
     }
     Tensor tensor = getTensor(log, file);
@@ -235,8 +241,7 @@ public class ImageArtUtil {
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {
-        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
-            .map(x -> getImageTensor(x, log, width, height)).findFirst());
+        Tensor sampleImage = getImageTensor(fileStr.split(" +\\+ +")[0], log, width, height);
         int[] sampleImageDimensions = sampleImage.getDimensions();
         sampleImage.freeRef();
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
@@ -248,24 +253,33 @@ public class ImageArtUtil {
               return r;
             }));
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).map(x -> getImageTensor(x, log, width, height)).findFirst());
+        Tensor sampleImage = getImageTensor(fileStr.split(" +\\* +")[0], log, width, height);;
         int[] sampleImageDimensions = sampleImage.getDimensions();
         sampleImage.freeRef();
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +"))
             .map(x -> getImageTensor(x, log, sampleImageDimensions[0], sampleImageDimensions[1]))
             .reduce((a, b) -> {
-              Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));
-              b.freeRef();
-              a.freeRef();
-              return r;
+              try {
+                return a.mapCoords(c -> a.get(c) * b.get(c));
+              } finally {
+                b.freeRef();
+                a.freeRef();
+              }
             }));
       } else if (fileStr.trim().toLowerCase().equals("plasma")) {
         return new Plasma().paint(width, height);
-      } else if (fileStr.trim().toLowerCase().equals("noise")) {
-        return new Tensor(width, height, 3).map(x -> FastRandom.INSTANCE.random() * 100);
-      } else if (fileStr.matches("\\-?\\d+(?:\\.\\d*)?(?:[eE]\\-?\\d+)?")) {
-        double v = Double.parseDouble(fileStr);
-        return new Tensor(width, height, 3).map(x -> v);
+      } else {
+        Tensor dims = new Tensor(width, height, 3);
+        try {
+          if (fileStr.trim().toLowerCase().equals("noise")) {
+            return dims.map(x -> FastRandom.INSTANCE.random() * 100);
+          } else if (fileStr.matches("\\-?\\d+(?:\\.\\d*)?(?:[eE]\\-?\\d+)?")) {
+            double v = Double.parseDouble(fileStr);
+            return dims.map(x -> v);
+          }
+        } finally {
+          dims.freeRef();
+        }
       }
     }
     Tensor tensor = getTensor(log, file);

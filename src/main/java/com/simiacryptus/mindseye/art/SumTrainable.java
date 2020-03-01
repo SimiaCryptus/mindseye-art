@@ -60,7 +60,11 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
   public Layer getLayer() {
     PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
     pipelineNetwork.add(new SumInputsLayer(), RefArrays.stream(getInner())
-        .map(trainable -> trainable.getLayer())
+        .map(trainable -> {
+          Layer layer = trainable.getLayer();
+          trainable.freeRef();
+          return layer;
+        })
         .map(node -> pipelineNetwork.add(node, pipelineNetwork.getInput(0)))
         .toArray(i->new DAGNode[i])
     ).freeRef();
