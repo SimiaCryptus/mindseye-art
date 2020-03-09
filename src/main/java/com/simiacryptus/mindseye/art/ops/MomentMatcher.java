@@ -285,7 +285,7 @@ public class MomentMatcher implements VisualModifier {
     if (null != mask) {
       boolMask = toMask(transform(network.addRef(), mask.addRef(), getPrecision()));
       log.info("Mask: " + RefArrays.toString(boolMask.getDimensions()));
-      maskFactor = RefArrays.stream(boolMask.getData()).average().getAsDouble();
+      maskFactor = boolMask.doubleStream().average().getAsDouble();
     } else {
       maskFactor = 1;
       boolMask = null;
@@ -293,16 +293,16 @@ public class MomentMatcher implements VisualModifier {
     PipelineNetwork maskedNetwork = network.copyPipeline();
     MultiPrecision.setPrecision(maskedNetwork.addRef(), getPrecision());
     assert maskedNetwork != null;
-    assert mask==null || test(maskedNetwork.addRef(), mask.addRef());
+    assert mask == null || test(maskedNetwork.addRef(), mask.addRef());
     final MomentParams params = getMomentParams(network, maskFactor, visualModifierParameters.getStyle());
-    assert mask==null || test(maskedNetwork.addRef(), mask.addRef());
-    if(null != boolMask) {
+    assert mask == null || test(maskedNetwork.addRef(), mask.addRef());
+    if (null != boolMask) {
       final DAGNode head = maskedNetwork.getHead();
       maskedNetwork.add(new ProductLayer(), head, maskedNetwork.constValue(boolMask)).freeRef();
     }
-    assert mask==null || test(maskedNetwork.addRef(), mask.addRef());
+    assert mask == null || test(maskedNetwork.addRef(), mask.addRef());
     final MomentParams nodes = getMomentNodes(maskedNetwork.addRef(), maskFactor);
-    assert mask==null || test(maskedNetwork.addRef(), mask.addRef());
+    assert mask == null || test(maskedNetwork.addRef(), mask.addRef());
     final MomentParams momentParams = new MomentParams(nodes.avgNode.addRef(), params.avgValue.addRef(),
         nodes.rmsNode.addRef(), params.rmsValue.addRef(), nodes.covNode.addRef(), params.covValue.addRef(),
         MomentMatcher.this);
@@ -310,7 +310,7 @@ public class MomentMatcher implements VisualModifier {
     nodes.freeRef();
     momentParams.addLoss(maskedNetwork.addRef()).freeRef();
     momentParams.freeRef();
-    assert mask==null || test(maskedNetwork.addRef(), mask.addRef());
+    assert mask == null || test(maskedNetwork.addRef(), mask.addRef());
     visualModifierParameters.freeRef();
     MultiPrecision.setPrecision(maskedNetwork.addRef(), getPrecision());
     maskedNetwork.freeze();
@@ -328,12 +328,12 @@ public class MomentMatcher implements VisualModifier {
 
   @Nonnull
   public MomentMatcher.MomentParams getMomentParams(@Nonnull PipelineNetwork network, double maskFactor, @Nonnull Tensor... images) {
-    int pixels = getPixels(RefUtil.addRefs(images));
+    int pixels = getPixels(RefUtil.addRef(images));
     DAGNode mainIn = network.getHead();
     BandAvgReducerLayer bandAvgReducerLayerMultiPrecision1 = new BandAvgReducerLayer();
     bandAvgReducerLayerMultiPrecision1.setPrecision(getPrecision());
     InnerNode avgNode = network.add(bandAvgReducerLayerMultiPrecision1, mainIn.addRef()); // Scale the average metrics by 1/x
-    Tensor avgValue = eval(pixels, network.addRef(), getTileSize(), 1.0, RefUtil.addRefs(images));
+    Tensor avgValue = eval(pixels, network.addRef(), getTileSize(), 1.0, RefUtil.addRef(images));
 
     ScaleLayer scaleLayerMultiPrecision2 = new ScaleLayer(-1 / maskFactor);
     scaleLayerMultiPrecision2.setPrecision(getPrecision());
@@ -353,7 +353,7 @@ public class MomentMatcher implements VisualModifier {
         network.add(scaleLayerMultiPrecision1,
             network.add(bandAvgReducerLayerMultiPrecision,
                 network.add(squareActivationLayerMultiPrecision, recentered.addRef()))));
-    Tensor rmsValue = eval(pixels, network.addRef(), getTileSize(), 2.0, RefUtil.addRefs(images));
+    Tensor rmsValue = eval(pixels, network.addRef(), getTileSize(), 2.0, RefUtil.addRef(images));
 
     BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
     boundedActivationLayer1.setMinValue(0.0);

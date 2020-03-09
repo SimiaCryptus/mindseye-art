@@ -19,13 +19,14 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-import com.simiacryptus.ref.wrappers.RefCollectors;
-import com.simiacryptus.ref.wrappers.RefIntStream;
-import com.simiacryptus.ref.wrappers.RefList;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-public class RadiusRasterTopology implements RasterTopology {
+public class RadiusRasterTopology extends ReferenceCountingBase implements RasterTopology {
   protected final int[] dimensions;
   private final double maxRadius;
   private final double minRadius;
@@ -46,21 +47,21 @@ public class RadiusRasterTopology implements RasterTopology {
   }
 
   @Override
-  public RefList<int[]> connectivity() {
+  public List<int[]> connectivity() {
     final int maxRadius = (int) Math.ceil(this.maxRadius);
     final double maxSq = this.maxRadius * this.maxRadius;
     final double minSq = Math.signum(this.minRadius) * (this.minRadius * this.minRadius);
-    return RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
+    return IntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
       final int[] coordsFromIndex = getCoordsFromIndex(i);
-      return RefIntStream.range(-maxRadius, maxRadius).flatMap(x -> {
+      return IntStream.range(-maxRadius, maxRadius).flatMap(x -> {
         final int xx = x + coordsFromIndex[0];
-        return RefIntStream.range(-maxRadius, maxRadius).filter(y -> {
+        return IntStream.range(-maxRadius, maxRadius).filter(y -> {
           final int radiusSq = x * x + y * y;
           return radiusSq > minSq && radiusSq <= maxSq;
         }).map(y -> y + coordsFromIndex[1]).filter(yy -> yy >= 0 && xx >= 0)
             .filter(yy -> yy < dimensions[1] && xx < dimensions[0]).map(yy -> getIndexFromCoords(xx, yy));
       }).toArray();
-    }).collect(RefCollectors.toList());
+    }).collect(Collectors.toList());
   }
 
   @Override
@@ -74,5 +75,15 @@ public class RadiusRasterTopology implements RasterTopology {
     final int x = i % dimensions[0];
     final int y = (i - x) / dimensions[0];
     return new int[]{x, y};
+  }
+
+  @Override
+  public RadiusRasterTopology addRef() {
+    return (RadiusRasterTopology) super.addRef();
+  }
+
+  @Override
+  protected void _free() {
+    super._free();
   }
 }

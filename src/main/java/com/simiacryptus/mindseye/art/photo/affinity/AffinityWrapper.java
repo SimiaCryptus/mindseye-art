@@ -19,8 +19,6 @@
 
 package com.simiacryptus.mindseye.art.photo.affinity;
 
-import com.simiacryptus.ref.wrappers.RefList;
-
 import java.util.List;
 
 public abstract class AffinityWrapper implements RasterAffinity {

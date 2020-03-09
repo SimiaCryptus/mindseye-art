@@ -23,7 +23,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.ref.lang.RefUtil;
-import com.simiacryptus.ref.wrappers.*;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefString;
+import com.simiacryptus.ref.wrappers.RefSystem;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.FloatPointer;
@@ -341,8 +343,7 @@ public class Hdf5Archive {
     float[] dataBuffer;
     FloatPointer fp;
     switch (nbDims) {
-      case 4: /* 2D Convolution weights */
-      {
+      case 4: /* 2D Convolution weights */ {
         dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2] * dims[3])];
         fp = new FloatPointer(dataBuffer);
         dataset.read(fp, dataType);
@@ -355,8 +356,7 @@ public class Hdf5Archive {
                 data.set(i1, i2, i3, i4, dataBuffer[j++]);
         return data;
       }
-      case 3:
-      {
+      case 3: {
         dataBuffer = new float[(int) (dims[0] * dims[1] * dims[2])];
         fp = new FloatPointer(dataBuffer);
         dataset.read(fp, dataType);
@@ -368,8 +368,7 @@ public class Hdf5Archive {
               data.set(i1, i2, i3, dataBuffer[j++]);
         return data;
       }
-      case 2: /* Dense and Recurrent weights */
-      {
+      case 2: /* Dense and Recurrent weights */ {
         dataBuffer = new float[(int) (dims[0] * dims[1])];
         fp = new FloatPointer(dataBuffer);
         dataset.read(fp, dataType);
@@ -380,8 +379,7 @@ public class Hdf5Archive {
             data.set(i1, i2, dataBuffer[j++]);
         return data;
       }
-      case 1: /* Bias */
-      {
+      case 1: /* Bias */ {
         dataBuffer = new float[(int) dims[0]];
         fp = new FloatPointer(dataBuffer);
         dataset.read(fp, dataType);

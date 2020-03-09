@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art.ops;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
@@ -63,7 +64,7 @@ public class ChannelPowerEnhancer implements VisualModifier {
     PipelineNetwork network = visualModifierParameters.copyNetwork();
     double mag;
     if (balanced) {
-      Tensor data0 = ContentInceptionMatcher.getData0(network.eval(visualModifierParameters.getStyle()));
+      Tensor data0 = Result.getData0(network.eval(visualModifierParameters.getStyle()));
       mag = data0.rms();
       data0.freeRef();
     } else mag = 1;

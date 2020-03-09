@@ -19,14 +19,15 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-import com.simiacryptus.ref.wrappers.RefArrays;
-import com.simiacryptus.ref.wrappers.RefCollectors;
-import com.simiacryptus.ref.wrappers.RefIntStream;
-import com.simiacryptus.ref.wrappers.RefList;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-public class SimpleRasterTopology implements RasterTopology {
+public class SimpleRasterTopology extends ReferenceCountingBase implements RasterTopology {
   protected final int[] dimensions;
   private final int max_neighborhood_size = 9;
 
@@ -40,12 +41,12 @@ public class SimpleRasterTopology implements RasterTopology {
   }
 
   @Override
-  public RefList<int[]> connectivity() {
+  public List<int[]> connectivity() {
     final ThreadLocal<int[]> neighbors = ThreadLocal.withInitial(() -> new int[max_neighborhood_size]);
-    return RefIntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
+    return IntStream.range(0, dimensions[0] * dimensions[1]).parallel().mapToObj(i -> {
       final int[] original = neighbors.get();
-      return RefArrays.copyOf(original, getNeighbors(getCoordsFromIndex(i), original));
-    }).collect(RefCollectors.toList());
+      return Arrays.copyOf(original, getNeighbors(getCoordsFromIndex(i), original));
+    }).collect(Collectors.toList());
   }
 
   @Override
@@ -59,6 +60,16 @@ public class SimpleRasterTopology implements RasterTopology {
     final int x = i % dimensions[0];
     final int y = (i - x) / dimensions[0];
     return new int[]{x, y};
+  }
+
+  @Override
+  public SimpleRasterTopology addRef() {
+    return (SimpleRasterTopology) super.addRef();
+  }
+
+  @Override
+  protected void _free() {
+    super._free();
   }
 
   private int getNeighbors(int[] coords, int[] neighbors) {

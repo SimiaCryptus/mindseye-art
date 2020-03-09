@@ -20,7 +20,6 @@
 package com.simiacryptus.mindseye.art;
 
 import com.google.common.util.concurrent.AtomicDouble;
-import com.simiacryptus.mindseye.art.ops.ContentInceptionMatcher;
 import com.simiacryptus.mindseye.eval.BasicTrainable;
 import com.simiacryptus.mindseye.eval.Trainable;
 import com.simiacryptus.mindseye.lang.*;
@@ -55,7 +54,6 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   private final Layer[] selectors;
   @Nullable
   private final PipelineNetwork[] networks;
-  private final Singleton<PipelineNetwork> networkSingleton = new Singleton<>();
   private final BasicTrainable basicTrainable;
   @Nonnull
   public Precision precision;
@@ -70,7 +68,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     this.canvas = canvas.addRef();
     this.filter = filter;
     this.setPrecision(precision);
-    Tensor filteredCanvas = ContentInceptionMatcher.getData0(this.filter.eval(canvas.addRef()));
+    Tensor filteredCanvas = Result.getData0(this.filter.eval(canvas.addRef()));
     assert 3 == filteredCanvas.getDimensions().length;
     int width = filteredCanvas.getDimensions()[0];
     int height = filteredCanvas.getDimensions()[1];
@@ -88,8 +86,9 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       networks = null;
     }
     if (null == selectors || 0 == selectors.length) {
-      this.basicTrainable = new BasicTrainable(PipelineNetwork.build(1, this.filter.addRef(),
-          networkSingleton.getOrInit(() -> getNetwork(this.filter.addRef()))));
+      this.basicTrainable = new BasicTrainable(PipelineNetwork.build(1,
+          this.filter.addRef(),
+          getNetwork(this.filter.addRef())));
       basicTrainable.setMask(isMutableCanvas());
       basicTrainable.setData(RefArrays.asList(new Tensor[][]{{canvas}}));
     } else {
@@ -201,7 +200,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
         assert tileInput != null;
         Result tileOutput = networks[i].eval(tileInput);
         assert tileOutput != null;
-        Tensor tensor = ContentInceptionMatcher.getData0(tileOutput.addRef());
+        Tensor tensor = Result.getData0(tileOutput.addRef());
         assert 1 == tensor.length();
         resultSum.addAndGet(tensor.get(0));
         tileOutput.accumulate(deltaSet.addRef());
@@ -218,7 +217,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       final StateSet<UUID> weights = new StateSet<>(delta.addRef());
       RefMap<UUID, Delta<UUID>> deltaMap = delta.getMap();
       if (deltaMap.containsKey(canvas.getId())) {
-        weights.get(canvas.getId(), canvas.getData()).freeRef();
+        weights.get(canvas.getId(), canvas.addRef()).freeRef();
       }
       RefSet<UUID> keySet = deltaMap.keySet();
       RefMap<UUID, State<UUID>> weightsMap = weights.getMap();
@@ -235,7 +234,6 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     RefUtil.freeRef(basicTrainable);
     RefUtil.freeRef(selectors);
     RefUtil.freeRef(networks);
-    networkSingleton.freeRef();
     filter.freeRef();
     canvas.freeRef();
   }

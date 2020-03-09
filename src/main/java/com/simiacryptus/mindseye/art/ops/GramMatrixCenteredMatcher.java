@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
@@ -99,10 +100,10 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
       return RefArrays.stream(TiledTrainable.selectors(0, imageDimensions[0], imageDimensions[1], tileSize, false))
           .map(RefUtil.wrapInterface((Function<Layer, Tensor>) selector -> {
             //log.info(selector.toString());
-            Tensor tile = ContentInceptionMatcher.getData0(selector.eval(img.addRef()));
+            Tensor tile = Result.getData0(selector.eval(img.addRef()));
             selector.freeRef();
             int[] tileDimensions = tile.getDimensions();
-            Tensor tensor = ContentInceptionMatcher.getData0(network.eval(tile));
+            Tensor tensor = Result.getData0(network.eval(tile));
             tensor.scaleInPlace(tileDimensions[0] * tileDimensions[1]);
             return tensor;
           }, img));
@@ -156,7 +157,7 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
     GramianLayer gramianLayerMultiPrecision = new GramianLayer(getAppendUUID(network.addRef(), GramianLayer.class));
     gramianLayerMultiPrecision.setPrecision(precision);
     network.add(gramianLayerMultiPrecision).freeRef();
-    int pixels = RefArrays.stream(RefUtil.addRefs(images)).mapToInt(x -> {
+    int pixels = RefArrays.stream(RefUtil.addRef(images)).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       x.freeRef();
       return dimensions[0] * dimensions[1];

@@ -24,16 +24,17 @@ import com.simiacryptus.mindseye.lang.CoreSettings;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.util.JsonUtil;
 
 import javax.annotation.Nonnull;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.function.IntFunction;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -44,21 +45,21 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
   protected final MultivariateFrameOfReference contentRegion;
   @Nonnull
   protected final Tensor content;
-  private RefList<double[]> pixels;
+  private List<double[]> pixels;
 
   public ContentTopology(@Nonnull Tensor content) {
     this.content = content;
     this.dimensions = this.content.getDimensions();
     this.contentRegion = new MultivariateFrameOfReference(() -> {
-      RefStream<double[]> stream = ContentTopology.this.content.getPixelStream();
+      Stream<double[]> stream = ContentTopology.this.content.getPixelStream();
       if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
       return stream;
     }, dimensions[2]);
-    pixels = RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+    pixels = IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final int[] coords = getCoordsFromIndex(i);
       return contentRegion.adjust(
-          RefIntStream.range(0, dimensions[2]).mapToDouble(c -> ContentTopology.this.content.get(coords[0], coords[1], c)).toArray());
-    }).collect(RefCollectors.toList());
+          IntStream.range(0, dimensions[2]).mapToDouble(c -> ContentTopology.this.content.get(coords[0], coords[1], c)).toArray());
+    }).collect(Collectors.toList());
   }
 
   @Nonnull
@@ -68,20 +69,19 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
   }
 
   public static List<int[]> dual(@Nonnull List<int[]> asymmetric, int[] dimensions) {
-    final int[] rows = RefIntStream.range(0, asymmetric.size()).flatMap(i -> {
+    final int[] rows = IntStream.range(0, asymmetric.size()).flatMap(i -> {
       int[] data2 = asymmetric.get(i);
-      return RefArrays.stream(data2).map(x -> i);
+      return Arrays.stream(data2).map(x -> i);
     }).toArray();
-    final int[] cols = RefIntStream.range(0, asymmetric.size()).flatMap(i -> {
+    final int[] cols = IntStream.range(0, asymmetric.size()).flatMap(i -> {
       int[] data2 = asymmetric.get(i);
-      return RefArrays.stream(data2);
+      return Arrays.stream(data2);
     }).toArray();
-    RefMap<Integer, RefList<Integer>> map = RefIntStream.range(0, cols.length).mapToObj(x -> x)
-        .collect(RefCollectors.groupingBy(x -> cols[x], RefCollectors.toList()));
-    RefSet<Map.Entry<Integer, RefList<Integer>>> entries = map.entrySet();
-    map.freeRef();
-    final RefMap<Integer, int[]> transposed = entries.stream()
-        .collect(RefCollectors.toMap(entry -> {
+    Map<Integer, List<Integer>> map = IntStream.range(0, cols.length).mapToObj(x -> x)
+        .collect(Collectors.groupingBy(x -> cols[x], Collectors.toList()));
+    Set<Map.Entry<Integer, List<Integer>>> entries = map.entrySet();
+    final Map<Integer, int[]> transposed = entries.stream()
+        .collect(Collectors.toMap(entry -> {
           Integer key = entry.getKey();
           RefUtil.freeRef(entry);
           return key;
@@ -90,16 +90,14 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
           RefUtil.freeRef(entry);
           return ints;
         }));
-    entries.freeRef();
     List<int[]> list = IntStream.range(0, dimensions[0] * dimensions[1])
         .mapToObj(i -> {
           int[] data = transposed.getOrDefault(i, new int[]{});
           int[] data1 = asymmetric.get(i);
           return IntStream
-              .concat(RefArrays.stream(data1), RefArrays.stream(data))
+              .concat(Arrays.stream(data1), Arrays.stream(data))
               .distinct().sorted().toArray();
         }).collect(toList());
-    transposed.freeRef();
     return list;
   }
 
@@ -107,37 +105,37 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
   public abstract List<int[]> connectivity();
 
   public void log(@Nonnull List<int[]> graph) {
-    log(graph, RefSystem.out);
+    log(graph, System.out);
   }
 
   public void log(@Nonnull List<int[]> graph, @Nonnull PrintStream out) {
     out.println("Connectivity Statistics: " + graph.stream().mapToInt(x -> x.length).summaryStatistics());
     out.println("Connectivity Histogram: "
         + JsonUtil.toJson(graph.stream().collect(Collectors.groupingBy(x -> x.length, Collectors.counting()))));
-    out.println("Spatial Distance Statistics: " + RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+    out.println("Spatial Distance Statistics: " + IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final int[] pos = getCoordsFromIndex(i);
       int[] data = graph.get(i);
-      return RefArrays.stream(data).mapToObj(j -> getCoordsFromIndex(j))
+      return Arrays.stream(data).mapToObj(j -> getCoordsFromIndex(j))
           .mapToDouble(
-              posJ -> RefIntStream.range(0, pos.length).mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
+              posJ -> IntStream.range(0, pos.length).mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
           .map(a -> Math.sqrt(a)).toArray();
-    }).flatMapToDouble(data2 -> RefArrays.stream(data2)).summaryStatistics());
+    }).flatMapToDouble(data2 -> Arrays.stream(data2)).summaryStatistics());
     out.println("Spatial Distance Histogram: "
-        + JsonUtil.toJson(RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+        + JsonUtil.toJson(IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final int[] pos = getCoordsFromIndex(i);
       int[] data = graph.get(i);
-      return RefArrays.stream(data).mapToObj(j -> getCoordsFromIndex(j))
+      return Arrays.stream(data).mapToObj(j -> getCoordsFromIndex(j))
           .mapToDouble(
-              posJ -> RefIntStream.range(0, pos.length).mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
+              posJ -> IntStream.range(0, pos.length).mapToDouble(c -> pos[c] - posJ[c]).map(x1 -> x1 * x1).sum())
           .map(a1 -> Math.sqrt(a1)).map(a -> Math.round(a)).mapToInt(x -> (int) x).toArray();
-    }).flatMapToInt(data1 -> RefArrays.stream(data1)).mapToObj(x -> x)
-        .collect(RefCollectors.groupingBy(x -> x, RefCollectors.counting()))));
-    out.println("Color Distance Statistics: " + RefIntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
+    }).flatMapToInt(data1 -> Arrays.stream(data1)).mapToObj(x -> x)
+        .collect(Collectors.groupingBy(x -> x, Collectors.counting()))));
+    out.println("Color Distance Statistics: " + IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {
       final double[] pixel = pixel(i);
       int[] data = graph.get(i);
-      return RefArrays.stream(data).mapToObj(i1 -> pixel(i1)).collect(toList()).stream()
+      return Arrays.stream(data).mapToObj(i1 -> pixel(i1)).collect(toList()).stream()
           .mapToDouble(p -> chromaDistance(p, pixel)).toArray();
-    }).flatMapToDouble(data -> RefArrays.stream(data)).summaryStatistics());
+    }).flatMapToDouble(data -> Arrays.stream(data)).summaryStatistics());
   }
 
   public List<int[]> dual(@Nonnull List<int[]> asymmetric) {
@@ -161,7 +159,6 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
   void _free() {
     super._free();
     content.freeRef();
-    pixels.freeRef();
   }
 
   @Nonnull
@@ -176,6 +173,6 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
   }
 
   protected double chromaDistance(@Nonnull double[] a, double[] b) {
-    return contentRegion.dist(RefIntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i]).toArray());
+    return contentRegion.dist(IntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i]).toArray());
   }
 }

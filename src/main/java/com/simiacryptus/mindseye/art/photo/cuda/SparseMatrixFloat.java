@@ -23,7 +23,6 @@ import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.ref.lang.RefUtil;
-import com.simiacryptus.ref.wrappers.*;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.jblas.Eigen;
 import org.jblas.FloatMatrix;
@@ -189,14 +188,14 @@ public class SparseMatrixFloat {
   }
 
   public static int[] project(@Nonnull int[] assignments, int[] projection) {
-    return RefArrays.stream(assignments).map(i -> projection[i]).toArray();
+    return Arrays.stream(assignments).map(i -> projection[i]).toArray();
   }
 
   @Nonnull
   public SparseMatrixFloat recalculateConnectionWeights(@Nonnull RasterTopology topology, @Nonnull Tensor content, @Nonnull int[] pixelMap,
                                                         double scale, double mixing, double minValue) {
     final MultivariateFrameOfReference globalFOR = new MultivariateFrameOfReference(() -> content.getPixelStream(), 3);
-    final Map<Integer, MultivariateFrameOfReference> islandDistributions = RefIntStream.range(0, pixelMap.length)
+    final Map<Integer, MultivariateFrameOfReference> islandDistributions = IntStream.range(0, pixelMap.length)
         .mapToObj(x -> x).collect(Collectors.groupingBy(x -> pixelMap[x], Collectors.toList())).entrySet()
         .stream().collect(Collectors.toMap(entry -> {
           Integer key = entry.getKey();
@@ -209,6 +208,7 @@ public class SparseMatrixFloat {
           return new MultivariateFrameOfReference(globalFOR, localFOR, mixing);
         }));
     content.freeRef();
+    topology.freeRef();
     return new SparseMatrixFloat(this.rowIndices, this.colIndices,
         toFloat(IntStream.range(0, this.rowIndices.length).mapToDouble(i -> {
           final MultivariateFrameOfReference a = islandDistributions.get(this.rowIndices[i]);

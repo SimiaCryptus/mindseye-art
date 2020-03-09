@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
@@ -82,7 +83,13 @@ public class GramMatrixMatcher implements VisualModifier {
   public static Layer loss(@Nonnull Tensor result, double mag, boolean averaging) {
     result.scaleInPlace(-1);
     LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
-    linearActivationLayer.setScale(Math.pow(mag, -2));
+    double scale;
+    if (Double.isFinite(mag) && mag > 0) {
+      scale = Math.pow(mag, -2);
+    } else {
+      scale = 1;
+    }
+    linearActivationLayer.setScale(scale);
     Layer layer1 = PipelineNetwork.build(1,
         new ImgBandBiasLayer(result),
         new SquareActivationLayer(),
@@ -99,17 +106,17 @@ public class GramMatrixMatcher implements VisualModifier {
       return RefArrays.stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
           .map(RefUtil.wrapInterface((Function<Layer, Tensor>) selector -> {
             //log.info(selector.toString());
-            Tensor tile = ContentInceptionMatcher.getData0(selector.eval(img.addRef()));
+            Tensor tile = Result.getData0(selector.eval(img.addRef()));
             selector.freeRef();
             int[] tileDimensions = tile.getDimensions();
-            Tensor tensor1 = ContentInceptionMatcher.getData0(network.eval(tile));
+            Tensor tensor1 = Result.getData0(network.eval(tile));
             tensor1.scaleInPlace(tileDimensions[0] * tileDimensions[1]);
             return tensor1;
           }, img));
     }).reduce((a, b) -> {
       a.addInPlace(b);
       return a;
-    }),null);
+    }), null);
     network.freeRef();
     if (null == tensor)
       return null;
@@ -153,7 +160,7 @@ public class GramMatrixMatcher implements VisualModifier {
     network.freeRef();
     network = copyPipeline;
     MultiPrecision.setPrecision(network.addRef(), precision);
-    int pixels = RefArrays.stream(RefUtil.addRefs(images)).mapToInt(x -> {
+    int pixels = RefArrays.stream(RefUtil.addRef(images)).mapToInt(x -> {
       int[] dimensions = x.getDimensions();
       x.freeRef();
       return dimensions[0] * dimensions[1];
@@ -166,7 +173,7 @@ public class GramMatrixMatcher implements VisualModifier {
         final PipelineNetwork build = PipelineNetwork.build(1, network.addRef(),
             gramianLayerMultiPrecision);
         RefUtil.freeRef(model);
-        model = eval(pixels == 0 ? 1 : pixels, build, getTileSize(), 8, RefUtil.addRefs(images));
+        model = eval(pixels == 0 ? 1 : pixels, build, getTileSize(), 8, RefUtil.addRef(images));
       }
       final Tensor boolMask = MomentMatcher.toMask(MomentMatcher.transform(network.addRef(), mask, Precision.Float));
       assert network != null;
@@ -176,7 +183,7 @@ public class GramMatrixMatcher implements VisualModifier {
       GramianLayer gramianLayerMultiPrecision = new GramianLayer(getAppendUUID(network.addRef(), GramianLayer.class));
       gramianLayerMultiPrecision.setPrecision(precision);
       GramianLayer gramianLayer = gramianLayerMultiPrecision;
-      gramianLayer.setAlpha(1.0 / RefArrays.stream(boolMask.getData()).average().getAsDouble());
+      gramianLayer.setAlpha(1.0 / boolMask.doubleStream().average().getAsDouble());
       boolMask.freeRef();
       network.add(gramianLayer).freeRef();
     } else {
@@ -186,7 +193,7 @@ public class GramMatrixMatcher implements VisualModifier {
       network.add(gramianLayerMultiPrecision).freeRef();
       if (null == model) {
         RefUtil.freeRef(model);
-        model = eval(pixels == 0 ? 1 : pixels, network.addRef(), getTileSize(), 8, RefUtil.addRefs(images));
+        model = eval(pixels == 0 ? 1 : pixels, network.addRef(), getTileSize(), 8, RefUtil.addRef(images));
       }
     }
     RefUtil.freeRef(images);

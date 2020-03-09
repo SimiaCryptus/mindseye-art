@@ -21,7 +21,6 @@ package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.lang.Singleton;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.RefList;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -63,6 +62,7 @@ public class RasterTopologyWrapper extends ReferenceCountingBase implements Rast
   @Override
   protected void _free() {
     super._free();
+    inner.freeRef();
   }
 
   public static class CachedRasterTopology extends RasterTopologyWrapper {
@@ -76,6 +76,7 @@ public class RasterTopologyWrapper extends ReferenceCountingBase implements Rast
     @Nonnull
     @Override
     public List<int[]> connectivity() {
+      assertAlive();
       return cache.getOrInit(() -> super.connectivity());
     }
 

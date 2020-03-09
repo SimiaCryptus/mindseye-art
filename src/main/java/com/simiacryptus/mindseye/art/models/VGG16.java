@@ -66,7 +66,7 @@ public enum VGG16 implements VisionPipelineLayer {
   });
 
   @Nullable
-  private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
+  private static volatile VisionPipeline visionPipeline = null;
   @Nullable
   private static VGG16_HDF5 vgg16_hdf5 = null;
   private final RefConsumer<PipelineNetwork> fn;
@@ -87,14 +87,14 @@ public enum VGG16 implements VisionPipelineLayer {
 
   @Nonnull
   @Override
-  public VisionPipeline<?> getPipeline() {
+  public VisionPipeline getPipeline() {
     return getVisionPipeline();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
-    VisionPipeline<VisionPipelineLayer> visionPipeline = getVisionPipeline();
+    VisionPipeline visionPipeline = getVisionPipeline();
     String name = visionPipeline.name;
     visionPipeline.freeRef();
     return name;
@@ -109,11 +109,11 @@ public enum VGG16 implements VisionPipelineLayer {
   }
 
   @Nullable
-  public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
+  public static VisionPipeline getVisionPipeline() {
     if (null == visionPipeline) {
       synchronized (VGG16.class) {
         if (null == visionPipeline) {
-          visionPipeline = new VisionPipeline<>(VGG16.class.getSimpleName(), VGG16.values());
+          visionPipeline = new VisionPipeline(VGG16.class.getSimpleName(), VGG16.values());
         }
       }
     }

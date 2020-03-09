@@ -22,7 +22,6 @@ package com.simiacryptus.mindseye.art.models;
 import com.simiacryptus.mindseye.art.VisionPipeline;
 import com.simiacryptus.mindseye.art.VisionPipelineLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.wrappers.RefConsumer;
 
 import javax.annotation.Nonnull;
@@ -71,7 +70,7 @@ public enum VGG19 implements VisionPipelineLayer {
   //  VGG19_3b(getVGG19_hdf5()::phase3b);
 
   @Nullable
-  private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
+  private static volatile VisionPipeline visionPipeline = null;
   @Nullable
   private static VGG19_HDF5 VGG19_hdf5 = null;
   private final RefConsumer<PipelineNetwork> fn;
@@ -92,14 +91,14 @@ public enum VGG19 implements VisionPipelineLayer {
 
   @Nonnull
   @Override
-  public VisionPipeline<?> getPipeline() {
+  public VisionPipeline getPipeline() {
     return getVisionPipeline();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
-    VisionPipeline<VisionPipelineLayer> visionPipeline = getVisionPipeline();
+    VisionPipeline visionPipeline = getVisionPipeline();
     String name = visionPipeline.name;
     visionPipeline.freeRef();
     return name;
@@ -114,11 +113,11 @@ public enum VGG19 implements VisionPipelineLayer {
   }
 
   @Nullable
-  public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
+  public static VisionPipeline getVisionPipeline() {
     if (null == visionPipeline) {
       synchronized (VGG19.class) {
         if (null == visionPipeline) {
-          visionPipeline = new VisionPipeline<>(VGG19.class.getSimpleName(), VGG19.values());
+          visionPipeline = new VisionPipeline(VGG19.class.getSimpleName(), VGG19.values());
         }
       }
     }

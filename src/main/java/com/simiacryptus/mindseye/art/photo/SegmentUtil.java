@@ -20,7 +20,7 @@
 package com.simiacryptus.mindseye.art.photo;
 
 import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
-import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
+import com.simiacryptus.mindseye.art.photo.cuda.RefUnaryOperator;
 import com.simiacryptus.mindseye.art.photo.cuda.SparseMatrixFloat;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.CoreSettings;
@@ -28,7 +28,7 @@ import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
-import com.simiacryptus.ref.wrappers.*;
+import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.util.FastRandom;
 
 import javax.annotation.Nonnull;
@@ -100,9 +100,10 @@ public class SegmentUtil {
           if (marks[row] == 0) {
             final int thisIsland = islandNumber.incrementAndGet();
             marks[row] = thisIsland;
-            _markIslands(topology, extract, test, marks, maxRecursion, thisIsland, x, y);
+            _markIslands(topology.addRef(), extract, test, marks, maxRecursion, thisIsland, x, y);
           }
         }));
+    topology.freeRef();
     return marks;
   }
 
@@ -138,11 +139,11 @@ public class SegmentUtil {
   @Nonnull
   public static BufferedImage flattenColors(@Nonnull Tensor content, RasterTopology topology, @RefAware @Nonnull RasterAffinity affinity, int n,
                                             @Nonnull SmoothSolver solver) {
-    final RefOperator<Tensor> refOperator = solver.solve(topology,
+    final RefUnaryOperator<Tensor> refUnaryOperator = solver.solve(topology,
         affinity.wrap((graphEdges, innerResult) -> adjust(graphEdges, innerResult, degree(innerResult), 0.5)), 1e-4);
     RefUtil.freeRef(affinity);
-    final Tensor tensor = refOperator.iterate(n, content);
-    refOperator.freeRef();
+    final Tensor tensor = refUnaryOperator.iterate(n, content);
+    refUnaryOperator.freeRef();
     final BufferedImage image = tensor.toRgbImage();
     tensor.freeRef();
     return image;
@@ -155,14 +156,17 @@ public class SegmentUtil {
 
   @Nonnull
   public static BufferedImage paint(@Nonnull RasterTopology topology, int[] pixelMap, @Nonnull Map<Integer, double[]> colors) {
-    final Tensor tensor = new Tensor(topology.getDimensions()).mapCoords(c -> {
+    Tensor blank = new Tensor(topology.getDimensions());
+    final Tensor tensor = blank.mapCoords(c -> {
       final int[] coords = c.getCoords();
       final int regionId = pixelMap[topology.getIndexFromCoords(coords[0], coords[1])];
       final double[] color = colors.get(regionId);
       return null == color ? 0 : color[coords[2]];
     });
     final BufferedImage image = tensor.toImage();
+    blank.freeRef();
     tensor.freeRef();
+    topology.freeRef();
     return image;
   }
 
@@ -179,12 +183,13 @@ public class SegmentUtil {
           if (test.test(rowColor, extract.apply(toCoords))) {
             if (0 == marks[col]) {
               marks[col] = indexNumber;
-              _markIslands(topology, extract, test, marks, maxRecursion - 1, indexNumber, toCoords);
+              _markIslands(topology.addRef(), extract, test, marks, maxRecursion - 1, indexNumber, toCoords);
             }
           }
         }
       });
     }
+    topology.freeRef();
   }
 
   private static Map<Integer, double[]> randomColors(@Nonnull SparseMatrixFloat graph, int iterations) {
@@ -194,7 +199,7 @@ public class SegmentUtil {
   }
 
   private static Map<Integer, double[]> randomColors(@Nonnull SparseMatrixFloat graph, @Nonnull Function<Integer, double[]> seedColor,
-                                                        @Nonnull Map<Integer, double[]> colors, int n) {
+                                                     @Nonnull Map<Integer, double[]> colors, int n) {
     if (n <= 0) {
       if (colors.isEmpty()) {
         return Arrays.stream(graph.activeRows()).mapToObj(x -> x).collect(Collectors.toMap(x -> x, seedColor));
@@ -206,7 +211,7 @@ public class SegmentUtil {
   }
 
   private static Map<Integer, double[]> iterateColors(@Nonnull SparseMatrixFloat graph, @Nonnull Function<Integer, double[]> seedColor,
-                                                         @Nonnull Map<Integer, double[]> colors) {
+                                                      @Nonnull Map<Integer, double[]> colors) {
     IntStream stream = Arrays.stream(graph.activeRows());
     if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
     return stream.mapToObj(x -> x)

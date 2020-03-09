@@ -20,15 +20,12 @@
 package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.wrappers.*;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 public class SearchRadiusTopology extends ContentTopology {
@@ -113,18 +110,18 @@ public class SearchRadiusTopology extends ContentTopology {
     final int[] dimensions = content.getDimensions();
     Tensor mapCoords = content.mapCoords(c -> {
       final int[] pos = c.getCoords();
-      final double[] neighbors = RefIntStream
+      final double[] neighbors = IntStream
           .range(Math.max(0, pos[0] - window), Math.min(dimensions[0], pos[0] + window + 1))
-          .mapToObj(x -> RefIntStream.range(Math.max(0, pos[1] - window), Math.min(dimensions[1], pos[1] + window + 1))
+          .mapToObj(x -> IntStream.range(Math.max(0, pos[1] - window), Math.min(dimensions[1], pos[1] + window + 1))
               .mapToDouble(y -> content.get(x, y, pos[2])).toArray())
-          .flatMapToDouble(x -> RefArrays.stream(x)).sorted().toArray();
+          .flatMapToDouble(x -> Arrays.stream(x)).sorted().toArray();
       return neighbors[neighbors.length / 2];
     });
     content.freeRef();
     return mapCoords;
   }
 
-  private static double median(@Nonnull RefDoubleStream doubleStream) {
+  private static double median(@Nonnull DoubleStream doubleStream) {
     return doubleStream.average().getAsDouble();
   }
 
@@ -141,9 +138,9 @@ public class SearchRadiusTopology extends ContentTopology {
               && window.get() < (maxSpatialDist > 0 ? Math.min(dimensions[0], maxSpatialDist) : dimensions[0])) {
             final int windowSize = window.get();
             final int windowMin = windowSize > 2 ? windowSize / 2 : -1;
-            final int[] matchingGlobal = RefIntStream
+            final int[] matchingGlobal = IntStream
                 .range(Math.max(0, pos[0] - windowSize), Math.min(dimensions[0], pos[0] + windowSize + 1))
-                .mapToObj(x -> RefIntStream
+                .mapToObj(x -> IntStream
                     .range(Math.max(0, pos[1] - windowSize), Math.min(dimensions[1], pos[1] + windowSize + 1))
                     .filter(y -> {
                       final int index = getIndexFromCoords(x, y);
@@ -162,7 +159,7 @@ public class SearchRadiusTopology extends ContentTopology {
                       final double dist = chromaDistance(pixel, pixel(index));
                       return dist <= getMaxChromaDist();
                     }).map(y -> getIndexFromCoords(x, y)).toArray())
-                .flatMapToInt(x -> RefArrays.stream(x)).toArray();
+                .flatMapToInt(x -> Arrays.stream(x)).toArray();
             if (isSpatialPriority()) {
               collectSpacialNeighbors(pos, neighbors, matchingGlobal);
             } else {
@@ -170,7 +167,7 @@ public class SearchRadiusTopology extends ContentTopology {
             }
             window.set(Math.max((int) (windowSize * growth), windowSize + 1));
           }
-          return neighbors.stream().flatMapToInt(data -> RefArrays.stream(data)).toArray();
+          return neighbors.stream().flatMapToInt(data -> Arrays.stream(data)).toArray();
         }).collect(Collectors.toList()));
     if (isVerbose())
       log(symmetric);
@@ -199,15 +196,15 @@ public class SearchRadiusTopology extends ContentTopology {
         }, Collectors.toList()));
     final long[] globalRadii = collect.keySet().stream().mapToLong(x -> x).sorted().toArray();
     for (int ring = 0; ring < globalRadii.length; ring++) {
-      if (neighbors.stream().flatMapToInt(data -> RefArrays.stream(data)).distinct().count() >= getNeighborhoodSize())
+      if (neighbors.stream().flatMapToInt(data -> Arrays.stream(data)).distinct().count() >= getNeighborhoodSize())
         break;
       neighbors.add(collect.get(globalRadii[ring]).stream().mapToInt(x -> x).toArray());
     }
   }
 
   private void collectChromaNeighbors(double[] fromPixel, @Nonnull ArrayList<int[]> neighbors, @Nonnull int[] matchingGlobal) {
-    neighbors.add(RefArrays.stream(matchingGlobal).mapToObj(x -> x)
-        .sorted(RefComparator.comparingDouble(x -> chromaDistance(pixel(x), fromPixel)))
+    neighbors.add(Arrays.stream(matchingGlobal).mapToObj(x -> x)
+        .sorted(Comparator.comparingDouble(x -> chromaDistance(pixel(x), fromPixel)))
         .mapToInt(x -> x).distinct()
         .limit(getNeighborhoodSize() - neighbors.stream().mapToInt(x -> x.length).sum()).toArray());
   }

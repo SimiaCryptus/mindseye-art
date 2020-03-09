@@ -19,7 +19,6 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
-import com.simiacryptus.mindseye.art.ops.ContentInceptionMatcher;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
@@ -73,7 +72,7 @@ public class WCTUtil {
   public static Tensor means(Tensor encodedStyle) {
     final BandAvgReducerLayer avgReducerLayer = new BandAvgReducerLayer();
     Result eval = avgReducerLayer.eval(encodedStyle);
-    final Tensor tensor = ContentInceptionMatcher.getData0(eval);
+    final Tensor tensor = Result.getData0(eval);
     avgReducerLayer.freeRef();
     return tensor;
   }

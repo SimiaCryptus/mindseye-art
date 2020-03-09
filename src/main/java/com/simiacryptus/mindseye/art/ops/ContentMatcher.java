@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art.ops;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
 import com.simiacryptus.mindseye.layers.cudnn.*;
@@ -58,6 +59,13 @@ public class ContentMatcher implements VisualModifier {
     return this;
   }
 
+  public static void setName(DAGNode constNode, String name) {
+    Layer layer = constNode.getLayer();
+    constNode.freeRef();
+    layer.setName(name);
+    layer.freeRef();
+  }
+
   @Nonnull
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
@@ -75,7 +83,7 @@ public class ContentMatcher implements VisualModifier {
     layer.freeRef();
 
     Tensor mask = visualModifierParameters.getMask();
-    if(mask != null) {
+    if (mask != null) {
       network.add(new ProductLayer(),
           network.getHead(),
           network.constValue(
@@ -84,7 +92,7 @@ public class ContentMatcher implements VisualModifier {
       ).freeRef();
     }
 
-    Tensor baseContent = ContentInceptionMatcher.getData0(network.eval(style));
+    Tensor baseContent = Result.getData0(network.eval(style));
     visualModifierParameters.freeRef();
     double mag = balanced ? baseContent.rms() : 1;
     if (!Double.isFinite(mag) || mag < 0) {
@@ -112,12 +120,5 @@ public class ContentMatcher implements VisualModifier {
     network.add(layer1).freeRef();
     network.freeze();
     return network;
-  }
-
-  public static void setName(DAGNode constNode, String name) {
-    Layer layer = constNode.getLayer();
-    constNode.freeRef();
-    layer.setName(name);
-    layer.freeRef();
   }
 }

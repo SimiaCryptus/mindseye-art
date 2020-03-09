@@ -29,7 +29,6 @@ import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
 import com.simiacryptus.ref.lang.RefUtil;
-import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefCollectors;
@@ -38,8 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.UUID;
 
 public class SumTrainable extends ReferenceCountingBase implements Trainable {
@@ -53,6 +50,7 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
   }
 
   public Trainable[] getInner() {
+    assertAlive();
     return RefUtil.addRef(inner);
   }
 
@@ -65,8 +63,8 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
           trainable.freeRef();
           return layer;
         })
-        .map(node -> pipelineNetwork.add(node, pipelineNetwork.getInput(0)))
-        .toArray(i->new DAGNode[i])
+        .map(layer -> pipelineNetwork.add(layer, pipelineNetwork.getInput(0)))
+        .toArray(i -> new DAGNode[i])
     ).freeRef();
     return pipelineNetwork;
   }

@@ -25,9 +25,6 @@ import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
-import com.simiacryptus.ref.wrappers.RefArrays;
-import com.simiacryptus.ref.wrappers.RefIntStream;
-import com.simiacryptus.ref.wrappers.RefList;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -58,12 +55,12 @@ public class SmoothSolver_Cuda implements SmoothSolver {
 
   @Nonnull
   @Override
-  public RefOperator<Tensor> solve(@Nonnull @RefAware RasterTopology topology, @Nonnull @RefAware RasterAffinity affinity, double lambda) {
+  public RefUnaryOperator<Tensor> solve(@Nonnull @RefAware RasterTopology topology, @Nonnull @RefAware RasterAffinity affinity, double lambda) {
     double alpha = 1.0 / (1.0 + lambda);
     final CudaSparseMatrix laplacian = laplacian(affinity, RefUtil.addRef(topology));
     final SparseMatrixFloat forwardMatrix = forwardMatrix(laplacian, alpha);
     CudaMatrixSolver solver = new CudaMatrixSolver(forwardMatrix, 1 - alpha);
-    return new TensorOperator(new SingleChannelWrapper(solver), topology.getDimensions(), topology);
+    return new TensorUnaryOperator(new SingleChannelWrapper(solver), topology.getDimensions(), topology);
   }
 
   @Nonnull

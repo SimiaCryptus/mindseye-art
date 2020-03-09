@@ -19,36 +19,32 @@
 
 package com.simiacryptus.mindseye.art.photo.cuda;
 
-import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.RefArrays;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 
-class SingleChannelWrapper extends ReferenceCountingBase implements RefOperator<double[][]> {
-  private final RefOperator<double[][]> unaryOperator;
+class SingleChannelWrapper extends ReferenceCountingBase implements RefUnaryOperator<double[][]> {
+  private final RefUnaryOperator<double[][]> unaryOperator;
 
-  public SingleChannelWrapper(RefOperator<double[][]> unaryOperator) {
+  public SingleChannelWrapper(RefUnaryOperator<double[][]> unaryOperator) {
     this.unaryOperator = unaryOperator;
   }
 
   @Nonnull
   @Override
   public double[][] apply(@Nonnull double[][] img) {
-    return RefArrays.stream(img).map(x -> unaryOperator.apply(new double[][]{x})[0]).toArray(i -> new double[i][]);
+    return Arrays.stream(img).map(x -> unaryOperator.apply(new double[][]{x})[0]).toArray(i -> new double[i][]);
   }
 
-  public void _free() {
-    unaryOperator.freeRef();
-    super._free();
-  }
-
-  @Nonnull
-  public @Override
-  @SuppressWarnings("unused")
-  SingleChannelWrapper addRef() {
+  @Override
+  public SingleChannelWrapper addRef() {
     return (SingleChannelWrapper) super.addRef();
+  }
+
+  @Override
+  public void _free() {
+    super._free();
+    unaryOperator.freeRef();
   }
 }

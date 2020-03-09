@@ -20,8 +20,6 @@
 package com.simiacryptus.mindseye.art.photo;
 
 import com.simiacryptus.mindseye.art.photo.affinity.ContextAffinity;
-import com.simiacryptus.ref.wrappers.RefIntStream;
-import com.simiacryptus.ref.wrappers.RefStream;
 import org.ejml.simple.SimpleMatrix;
 
 import javax.annotation.Nonnull;

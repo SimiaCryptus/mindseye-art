@@ -30,11 +30,11 @@ import javax.annotation.Nullable;
 import java.util.function.UnaryOperator;
 
 public class VisualModifierParameters extends ReferenceCountingBase {
+  public final UnaryOperator<Tensor> viewLayer;
   @Nullable
   private final PipelineNetwork network;
   @Nonnull
   private final Tensor mask;
-  public final UnaryOperator<Tensor> viewLayer;
   private final Tensor[] style;
   private final int[] contentDims;
 
@@ -52,7 +52,7 @@ public class VisualModifierParameters extends ReferenceCountingBase {
   @Nonnull
   public Tensor getMask() {
     assertAlive();
-    return null == mask? null : mask.addRef();
+    return null == mask ? null : mask.addRef();
   }
 
   @Nullable
@@ -63,7 +63,7 @@ public class VisualModifierParameters extends ReferenceCountingBase {
 
   public Tensor[] getStyle() {
     assertAlive();
-    return RefUtil.addRefs(style);
+    return RefUtil.addRef(style);
   }
 
   public PipelineNetwork copyNetwork() {

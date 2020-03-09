@@ -19,10 +19,6 @@
 
 package com.simiacryptus.mindseye.art.photo.affinity;
 
-import com.simiacryptus.ref.wrappers.RefArrays;
-import com.simiacryptus.ref.wrappers.RefCollectors;
-import com.simiacryptus.ref.wrappers.RefList;
-
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.List;

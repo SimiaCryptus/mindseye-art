@@ -19,52 +19,74 @@
 
 package com.simiacryptus.mindseye.art;
 
-import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
+import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.RefLinkedHashMap;
+import com.simiacryptus.ref.wrappers.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
 
-public class VisionPipeline<T extends VisionPipelineLayer> extends ReferenceCountingBase {
+public final class VisionPipeline extends ReferenceCountingBase {
   private static final Logger logger = LoggerFactory.getLogger(VisionPipeline.class);
 
   public final String name;
 
-  private final RefLinkedHashMap<T, PipelineNetwork> layers = new RefLinkedHashMap<>();
+  private final RefLinkedHashMap<String, PipelineNetwork> networks = new RefLinkedHashMap<>();
 
-  public VisionPipeline(String name, @Nonnull T... values) {
+  private final RefArrayList<VisionPipelineLayer> layers = new RefArrayList<>();
+
+  public VisionPipeline(String name, @Nonnull @RefAware VisionPipelineLayer... values) {
+    this(name, RefArrays.asList(values));
+  }
+
+  public VisionPipeline(String name, @Nonnull @RefAware RefCollection<VisionPipelineLayer> values) {
     this.name = name;
-    PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
-    for (T value : values) {
-      pipelineNetwork.add(value.getLayer()).freeRef();
-      PipelineNetwork layer = pipelineNetwork.copyPipeline();
-      layer.freeze();
-      RefUtil.freeRef(layers.put(value, layer));
+    final PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
+    try {
+      values.forEach(value -> {
+        pipelineNetwork.add(value.getLayer()).freeRef();
+        PipelineNetwork layer = pipelineNetwork.copyPipeline();
+        layer.freeze();
+        RefUtil.freeRef(networks.put(value.name(), layer));
+        layers.add(value);
+      });
+    } catch (Throwable e) {
+      logger.warn("Error", e);
+      throw new RuntimeException(e);
+    } finally {
+      pipelineNetwork.freeRef();
+      values.freeRef();
     }
-    pipelineNetwork.freeRef();
   }
 
   @Nonnull
-  public RefLinkedHashMap<T, PipelineNetwork> getLayers() {
+  public RefList<VisionPipelineLayer> getLayerList() {
+    return new RefArrayList<>(layers.addRef());
+  }
+
+  @Nonnull
+  public RefLinkedHashMap<String, PipelineNetwork> getNetworks() {
     assertAlive();
-    return new RefLinkedHashMap<>(layers.addRef());
+    return new RefLinkedHashMap<>(networks.addRef());
   }
 
   public void _free() {
-    layers.freeRef();
     super._free();
+    layers.freeRef();
+    networks.freeRef();
   }
 
   @Nonnull
   public @Override
   @SuppressWarnings("unused")
-  VisionPipeline<T> addRef() {
-    return (VisionPipeline<T>) super.addRef();
+  VisionPipeline addRef() {
+    return (VisionPipeline) super.addRef();
+  }
+
+  public PipelineNetwork get(String name) {
+    return networks.get(name);
   }
 }

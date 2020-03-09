@@ -30,6 +30,7 @@ import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.mindseye.util.TFConverter;
 import com.simiacryptus.notebook.MarkdownNotebookOutput;
 import com.simiacryptus.notebook.NotebookOutput;
+import com.simiacryptus.notebook.OptionalUploadImageQuery;
 import com.simiacryptus.notebook.UploadImageQuery;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
@@ -39,9 +40,8 @@ import com.simiacryptus.util.JsonUtil;
 import com.simiacryptus.util.Util;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.fs.s3a.S3AFileSystem;
 import org.tensorflow.framework.GraphDef;
 
@@ -55,8 +55,8 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 public class ImageArtUtil {
@@ -170,7 +170,7 @@ public class ImageArtUtil {
   }
 
   @Nonnull
-  public static BufferedImage load(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int imageSize) {
+  public static BufferedImage loadImage(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int imageSize) {
     Tensor imageTensor = getImageTensor(image, log, imageSize);
     BufferedImage bufferedImage = imageTensor.toImage();
     imageTensor.freeRef();
@@ -178,11 +178,30 @@ public class ImageArtUtil {
   }
 
   @Nonnull
-  public static BufferedImage load(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int width, final int height) {
+  public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int imageSize) {
+    return RefArrays.stream(getImageTensors(image, log, imageSize)).map(tensor -> {
+      BufferedImage bufferedImage = tensor.toImage();
+      tensor.freeRef();
+      return bufferedImage;
+    }).toArray(BufferedImage[]::new);
+  }
+
+  @Nonnull
+  public static BufferedImage loadImage(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int width, final int height) {
     Tensor imageTensor = getImageTensor(image, log, width, height);
     BufferedImage bufferedImage = imageTensor.toImage();
     imageTensor.freeRef();
     return bufferedImage;
+  }
+
+  @Nonnull
+  public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int width, final int height) {
+    return RefArrays.stream(getImageTensors(image, log, width, height))
+        .map(tensor -> {
+          BufferedImage img = tensor.toImage();
+          tensor.freeRef();
+          return img;
+        }).toArray(BufferedImage[]::new);
   }
 
   @Nonnull
@@ -236,6 +255,31 @@ public class ImageArtUtil {
   }
 
   @Nonnull
+  public static Tensor[] getImageTensors(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width) {
+    return RefArrays.stream(getTensors(log, file))
+        .map(tensor -> {
+          BufferedImage bufferedImage = tensor.toImage();
+          tensor.freeRef();
+          return bufferedImage;
+        }).map(image -> ImageUtil.resize(image, width, true))
+        .map(resize -> Tensor.fromRGB(resize))
+        .toArray(Tensor[]::new);
+  }
+
+  @Nonnull
+  public static Tensor[] getImageTensors(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width, int height) {
+    return RefArrays.stream(getTensors(log, file))
+        .map(tensor -> {
+          BufferedImage img = tensor.toImage();
+          tensor.freeRef();
+          return img;
+        })
+        .map(image -> ImageUtil.resize(image, width, height))
+        .map(resize -> Tensor.fromRGB(resize))
+        .toArray(Tensor[]::new);
+  }
+
+  @Nonnull
   public static Tensor getImageTensor(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width, int height) {
     String fileStr = file.toString();
     int length = fileStr.split("\\:")[0].length();
@@ -253,7 +297,8 @@ public class ImageArtUtil {
               return r;
             }));
       } else if (fileStr.contains(" * ")) {
-        Tensor sampleImage = getImageTensor(fileStr.split(" +\\* +")[0], log, width, height);;
+        Tensor sampleImage = getImageTensor(fileStr.split(" +\\* +")[0], log, width, height);
+        ;
         int[] sampleImageDimensions = sampleImage.getDimensions();
         sampleImage.freeRef();
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +"))
@@ -286,6 +331,62 @@ public class ImageArtUtil {
     Tensor resized = Tensor.fromRGB(ImageUtil.resize(tensor.toImage(), width, height));
     tensor.freeRef();
     return resized;
+  }
+
+  @Nonnull
+  public static Tensor[] getTensors(@Nonnull NotebookOutput log, @Nonnull CharSequence file) {
+    String fileStr = file.toString();
+    try {
+      String uploadPrefix = "upload:";
+      if (fileStr.trim().toLowerCase().startsWith(uploadPrefix)) {
+        String key = fileStr.substring(uploadPrefix.length());
+        return (Tensor[]) MarkdownNotebookOutput.uploadCache.computeIfAbsent(key, (RefFunction<String, Tensor[]>) k -> {
+          try {
+            RefArrayList<Tensor> tensors = new RefArrayList<>();
+            while (true) {
+              OptionalUploadImageQuery uploadImageQuery = new OptionalUploadImageQuery(k, log);
+              Optional<File> optionalFile = uploadImageQuery.print().get();
+              if (optionalFile.isPresent()) {
+                tensors.add(Tensor.fromRGB(ImageIO.read(optionalFile.get())));
+              } else {
+                break;
+              }
+            }
+            Tensor[] array = tensors.toArray(new Tensor[]{});
+            tensors.freeRef();
+            return array;
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
+      } else if (fileStr.startsWith("http")) {
+        BufferedImage read = ImageIO.read(new URL(fileStr));
+        if (null == read)
+          throw new IllegalArgumentException("Error reading " + file);
+        return new Tensor[]{Tensor.fromRGB(read)};
+      } else {
+        FileSystem fileSystem = getFileSystem(fileStr);
+        Path path = new Path(fileStr);
+        if (!fileSystem.exists(path))
+          throw new IllegalArgumentException("Not Found: " + path);
+        RefArrayList<Tensor> tensors = new RefArrayList<>();
+        RemoteIterator<LocatedFileStatus> iterator = fileSystem.listFiles(path, true);
+        while (iterator.hasNext()) {
+          LocatedFileStatus locatedFileStatus = iterator.next();
+          try (FSDataInputStream open = fileSystem.open(locatedFileStatus.getPath())) {
+            byte[] bytes = IOUtils.toByteArray(open);
+            try (ByteArrayInputStream in = new ByteArrayInputStream(bytes)) {
+              tensors.add(Tensor.fromRGB(ImageIO.read(in)));
+            }
+          }
+        }
+        Tensor[] array = tensors.toArray(new Tensor[]{});
+        tensors.freeRef();
+        return array;
+      }
+    } catch (Throwable e) {
+      throw new RuntimeException("Error reading " + file, e);
+    }
   }
 
   @Nonnull

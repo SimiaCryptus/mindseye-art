@@ -20,26 +20,23 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefIgnore;
-import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.RefAtomicReference;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
-public class StaticVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
-  public final RefAtomicReference<VisionPipeline<?>> reference = new RefAtomicReference<>();
+public class AnonymousVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
 
   private final Layer layer;
   private final String pipelineName;
+  private String name;
 
-  public StaticVisionPipelineLayer(String pipelineName, Layer layer) {
+  public AnonymousVisionPipelineLayer(String pipelineName, Layer layer, String name) {
     this.layer = layer;
     this.pipelineName = pipelineName;
+    this.name = name;
   }
 
   @Nonnull
@@ -50,9 +47,14 @@ public class StaticVisionPipelineLayer extends ReferenceCountingBase implements 
 
   @Nonnull
   @Override
-  public VisionPipeline<?> getPipeline() {
-    assertAlive();
-    return reference.get();
+  public PipelineNetwork getNetwork() {
+    throw new RuntimeException("Not Implemented");
+  }
+
+  @Nonnull
+  @Override
+  public VisionPipeline getPipeline() {
+    throw new RuntimeException("Not Implemented");
   }
 
   @Nonnull
@@ -64,41 +66,36 @@ public class StaticVisionPipelineLayer extends ReferenceCountingBase implements 
   @Nonnull
   @Override
   public String name() {
-    return layer.getName();
+    return name;
   }
 
   @Override
   @RefIgnore
-  public boolean equals(@Nullable Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
-    StaticVisionPipelineLayer that = (StaticVisionPipelineLayer) o;
-    if (!Objects.equals(getPipelineName(), that.getPipelineName()))
-      return false;
-    if (!Objects.equals(name(), that.name()))
-      return false;
-    return true;
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    AnonymousVisionPipelineLayer that = (AnonymousVisionPipelineLayer) o;
+    return Objects.equals(layer, that.layer) &&
+        Objects.equals(pipelineName, that.pipelineName);
   }
 
   @Override
+  @RefIgnore
   public int hashCode() {
-    return getPipelineName().hashCode() ^ name().hashCode();
+    return Objects.hash(layer, pipelineName);
   }
 
   public @SuppressWarnings("unused")
   void _free() {
     super._free();
     layer.freeRef();
-    reference.freeRef();
   }
 
   @Nonnull
   public @Override
   @SuppressWarnings("unused")
-  StaticVisionPipelineLayer addRef() {
-    return (StaticVisionPipelineLayer) super.addRef();
+  AnonymousVisionPipelineLayer addRef() {
+    return (AnonymousVisionPipelineLayer) super.addRef();
   }
 
 }

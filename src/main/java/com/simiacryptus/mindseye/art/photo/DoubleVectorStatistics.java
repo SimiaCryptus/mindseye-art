@@ -19,7 +19,10 @@
 
 package com.simiacryptus.mindseye.art.photo;
 
-import com.simiacryptus.ref.wrappers.*;
+import com.simiacryptus.ref.wrappers.RefCollectors;
+import com.simiacryptus.ref.wrappers.RefIntStream;
+import com.simiacryptus.ref.wrappers.RefSet;
+import com.simiacryptus.ref.wrappers.RefStream;
 
 import javax.annotation.Nonnull;
 import java.util.DoubleSummaryStatistics;

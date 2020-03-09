@@ -31,14 +31,22 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public enum Inception5H implements VisionPipelineLayer {
-  Inc5H_1a("conv2d0"), Inc5H_2a("localresponsenorm1"), Inc5H_3a("mixed3a"), Inc5H_3b("mixed3b"), Inc5H_4a("mixed4a"),
-  Inc5H_4b("mixed4b"), Inc5H_4c("mixed4c"), Inc5H_4d("mixed4d"), Inc5H_4e("mixed4e"), Inc5H_5a("mixed5a"),
+  Inc5H_1a("conv2d0"),
+  Inc5H_2a("localresponsenorm1"),
+  Inc5H_3a("mixed3a"),
+  Inc5H_3b("mixed3b"),
+  Inc5H_4a("mixed4a"),
+  Inc5H_4b("mixed4b"),
+  Inc5H_4c("mixed4c"),
+  Inc5H_4d("mixed4d"),
+  Inc5H_4e("mixed4e"),
+  Inc5H_5a("mixed5a"),
   Inc5H_5b("mixed5b");
 
   @Nullable
   private static transient RefMap<String, PipelineNetwork> inception5h = null;
   @Nullable
-  private static volatile VisionPipeline<Inception5H> visionPipeline = null;
+  private static volatile VisionPipeline visionPipeline = null;
   private final String layerId;
 
   Inception5H(String layerId) {
@@ -59,25 +67,25 @@ public enum Inception5H implements VisionPipelineLayer {
 
   @Nonnull
   @Override
-  public VisionPipeline<?> getPipeline() {
+  public VisionPipeline getPipeline() {
     return getVisionPipeline();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
-    VisionPipeline<Inception5H> visionPipeline = getVisionPipeline();
+    VisionPipeline visionPipeline = getVisionPipeline();
     String name = visionPipeline.name;
     visionPipeline.freeRef();
     return name;
   }
 
   @Nullable
-  public static VisionPipeline<Inception5H> getVisionPipeline() {
+  public static VisionPipeline getVisionPipeline() {
     if (null == visionPipeline) {
       synchronized (Inception5H.class) {
         if (null == visionPipeline) {
-          visionPipeline = new VisionPipeline<>(Inception5H.class.getSimpleName(), Inception5H.values());
+          visionPipeline = new VisionPipeline(Inception5H.class.getSimpleName(), Inception5H.values());
         }
       }
     }
@@ -98,7 +106,7 @@ public enum Inception5H implements VisionPipelineLayer {
         }
       }
     }
-    return inception5h;
+    return inception5h.addRef();
   }
 
 }

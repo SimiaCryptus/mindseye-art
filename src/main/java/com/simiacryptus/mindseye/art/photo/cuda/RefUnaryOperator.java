@@ -23,14 +23,12 @@ import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
-public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
+public interface RefUnaryOperator<T> extends ReferenceCounting, UnaryOperator<T> {
   @Nonnull
-  static <T> RefOperator<T> wrap(UnaryOperator<T> inner) {
-    return new RefOperatorWrapper<T>(inner);
+  static <T> RefUnaryOperator<T> wrap(UnaryOperator<T> inner) {
+    return new RefUnaryOperatorWrapper<T>(inner);
   }
 
 
@@ -41,13 +39,13 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
   void _free();
 
   @Nonnull
-  RefOperator<T> addRef();
+  RefUnaryOperator<T> addRef();
 
-  class RefOperatorWrapper<T> extends ReferenceCountingBase implements RefOperator<T> {
+  class RefUnaryOperatorWrapper<T> extends ReferenceCountingBase implements RefUnaryOperator<T> {
 
     private UnaryOperator<T> inner;
 
-    public RefOperatorWrapper(UnaryOperator<T> inner) {
+    public RefUnaryOperatorWrapper(UnaryOperator<T> inner) {
       this.inner = inner;
     }
 
@@ -64,8 +62,8 @@ public interface RefOperator<T> extends ReferenceCounting, UnaryOperator<T> {
     @Nonnull
     public @Override
     @SuppressWarnings("unused")
-    RefOperatorWrapper<T> addRef() {
-      return (RefOperatorWrapper<T>) super.addRef();
+    RefUnaryOperatorWrapper<T> addRef() {
+      return (RefUnaryOperatorWrapper<T>) super.addRef();
     }
   }
 }

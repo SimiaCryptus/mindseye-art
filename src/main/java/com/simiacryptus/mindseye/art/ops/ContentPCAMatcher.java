@@ -23,6 +23,7 @@ import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.art.util.PCA;
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.ValueLayer;
 import com.simiacryptus.mindseye.layers.cudnn.*;
@@ -84,7 +85,7 @@ public class ContentPCAMatcher implements VisualModifier {
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.copyNetwork();
-    Tensor baseContent = ContentInceptionMatcher.getData0(network.eval(visualModifierParameters.getStyle()));
+    Tensor baseContent = Result.getData0(network.eval(visualModifierParameters.getStyle()));
     visualModifierParameters.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
     RefList<Tensor> components;
@@ -113,13 +114,13 @@ public class ContentPCAMatcher implements VisualModifier {
     }
     int bands = Math.min(getBands(), contentDimensions[2]);
 
-    Tensor prefixPattern = ContentInceptionMatcher.getData0(signalProjection.eval(baseContent.addRef()));
+    Tensor prefixPattern = Result.getData0(signalProjection.eval(baseContent.addRef()));
     ConvolutionLayer convolutionLayer2 = new ConvolutionLayer(1, 1, contentDimensions[2], bands);
     convolutionLayer2.setPaddingXY(0, 0);
     ConvolutionLayer convolutionLayer12 = getConvolutionLayer1(convolutionLayer2, components.addRef(), bands);
     Layer explode1 = convolutionLayer12.explode();
     convolutionLayer12.freeRef();
-    channelStats(ContentInceptionMatcher.getData0(explode1.eval(prefixPattern.addRef())), bands);
+    channelStats(Result.getData0(explode1.eval(prefixPattern.addRef())), bands);
     explode1.freeRef();
     ConvolutionLayer convolutionLayer1 = new ConvolutionLayer(1, 1, contentDimensions[2], bands);
     convolutionLayer1.setPaddingXY(0, 0);
@@ -127,7 +128,7 @@ public class ContentPCAMatcher implements VisualModifier {
         components.addRef(), bands);
     Layer explode = convolutionLayer21.explode();
     convolutionLayer21.freeRef();
-    channelStats(ContentInceptionMatcher.getData0(explode.eval(prefixPattern)), bands);
+    channelStats(Result.getData0(explode.eval(prefixPattern)), bands);
     explode.freeRef();
 
 
@@ -136,7 +137,7 @@ public class ContentPCAMatcher implements VisualModifier {
     ConvolutionLayer convolutionLayer11 = getConvolutionLayer1(convolutionLayer, components, bands);
     signalProjection.add(convolutionLayer11.explode()).freeRef();
     convolutionLayer11.freeRef();
-    Tensor spacialPattern = ContentInceptionMatcher.getData0(signalProjection.eval(baseContent));
+    Tensor spacialPattern = Result.getData0(signalProjection.eval(baseContent));
     channelStats(spacialPattern.addRef(), bands);
 
     double mag = spacialPattern.rms();
@@ -181,8 +182,7 @@ public class ContentPCAMatcher implements VisualModifier {
   @Nonnull
   public ConvolutionLayer getConvolutionLayer1(@Nonnull ConvolutionLayer convolutionLayer, @Nonnull RefList<Tensor> components,
                                                int stride) {
-    Tensor kernel = convolutionLayer.getKernel();
-    kernel.setByCoord(c -> {
+    convolutionLayer.setByCoord(c -> {
       int[] coords = c.getCoords();
       Tensor tensor = components.get(coords[2] % stride);
       double v = tensor.get(coords[2] / stride);
@@ -190,15 +190,13 @@ public class ContentPCAMatcher implements VisualModifier {
       return v;
     });
     components.freeRef();
-    kernel.freeRef();
     return convolutionLayer;
   }
 
   @Nonnull
   public ConvolutionLayer getConvolutionLayer2(@Nonnull ConvolutionLayer convolutionLayer, @Nonnull RefList<Tensor> components,
                                                int stride) {
-    Tensor kernel = convolutionLayer.getKernel();
-    kernel.setByCoord(c -> {
+    convolutionLayer.setByCoord(c -> {
       int[] coords = c.getCoords();
       Tensor tensor = components.get(coords[2] / stride);
       double v = tensor.get(coords[2] % stride);
@@ -206,7 +204,6 @@ public class ContentPCAMatcher implements VisualModifier {
       return v;
     });
     components.freeRef();
-    kernel.freeRef();
     return convolutionLayer;
   }
 }

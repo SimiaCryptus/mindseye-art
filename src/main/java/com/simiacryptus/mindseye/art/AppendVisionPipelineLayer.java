@@ -21,22 +21,16 @@ package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
-import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.RefLinkedHashMap;
-import com.simiacryptus.ref.wrappers.RefSet;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.Objects;
 
-public class AppendVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
+public class AppendVisionPipelineLayer<T extends VisionPipelineLayer> extends ReferenceCountingBase implements VisionPipelineLayer {
 
-  private final VisionPipelineLayer inner;
+  private final T inner;
   private final Layer layer;
 
-  public AppendVisionPipelineLayer(VisionPipelineLayer inner, Layer layer) {
+  public AppendVisionPipelineLayer(T inner, Layer layer) {
     this.inner = inner;
     this.layer = layer;
   }
@@ -57,54 +51,28 @@ public class AppendVisionPipelineLayer extends ReferenceCountingBase implements 
 
   @Nonnull
   @Override
-  public VisionPipeline<VisionPipelineLayer> getPipeline() {
+  public VisionPipeline getPipeline() {
     assertAlive();
-    final VisionPipeline<? extends VisionPipelineLayer> innerPipeline = inner.getPipeline();
-    RefLinkedHashMap<? extends VisionPipelineLayer, PipelineNetwork> layers = innerPipeline.getLayers();
-    RefSet<? extends VisionPipelineLayer> keySet = layers.keySet();
-    final VisionPipeline<VisionPipelineLayer> pipeline = new VisionPipeline<>(getPipelineName(),
-        keySet.stream().map(x -> new AppendVisionPipelineLayer(x, layer.addRef())).toArray(i -> new VisionPipelineLayer[i]));
-    keySet.freeRef();
-    layers.freeRef();
-    innerPipeline.freeRef();
-    return pipeline;
+    return inner.getPipeline();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
-    return inner.getPipelineName();
+    return inner.getPipelineName() + "/append=" + layer.getName();
   }
 
   @Nonnull
   @Override
   public String name() {
-    return inner.name() + "/append=" + layer.getName();
-  }
-
-  @Override
-  public boolean equals(@Nullable Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
-    VisionPipelineLayer that = (VisionPipelineLayer) o;
-    if (!Objects.equals(getPipelineName(), that.getPipelineName()))
-      return false;
-    if (!Objects.equals(name(), that.name()))
-      return false;
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    return getPipelineName().hashCode() ^ name().hashCode();
+    return inner.name();
   }
 
   public @SuppressWarnings("unused")
   void _free() {
     super._free();
     layer.freeRef();
+    inner.freeRef();
   }
 
   @Nonnull

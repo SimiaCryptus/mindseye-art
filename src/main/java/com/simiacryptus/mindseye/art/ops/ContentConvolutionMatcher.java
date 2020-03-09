@@ -22,6 +22,7 @@ package com.simiacryptus.mindseye.art.ops;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.AvgReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
@@ -107,7 +108,7 @@ public class ContentConvolutionMatcher implements VisualModifier {
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.copyNetwork();
-    Tensor baseContent = ContentInceptionMatcher.getData0(network.eval(visualModifierParameters.getStyle()));
+    Tensor baseContent = Result.getData0(network.eval(visualModifierParameters.getStyle()));
     visualModifierParameters.freeRef();
     double mag = balanced ? baseContent.rms() : 1;
     int[] baseContentDimensions = baseContent.getDimensions();
@@ -116,7 +117,7 @@ public class ContentConvolutionMatcher implements VisualModifier {
     poolingLayer.setMode(getPoolingMode());
     poolingLayer.setStrideXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)));
     poolingLayer.setWindowXY((int) Math.max(1, Math.floor((double) baseContentDimensions[0] / patternSize)), (int) Math.max(1, Math.floor((double) baseContentDimensions[1] / patternSize)));
-    Tensor pooledContent = ContentInceptionMatcher.getData0(poolingLayer.eval(baseContent));
+    Tensor pooledContent = Result.getData0(poolingLayer.eval(baseContent));
     network.add(poolingLayer).freeRef();
     int[] pooledContentDimensions = pooledContent.getDimensions();
     pooledContent.scaleInPlace(Math.pow(pooledContent.rms(), -2));

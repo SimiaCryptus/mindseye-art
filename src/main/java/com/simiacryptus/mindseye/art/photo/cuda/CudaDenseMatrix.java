@@ -20,7 +20,6 @@
 package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.ref.lang.RefLazyVal;
-import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import jcuda.Pointer;
 import jcuda.Sizeof;
@@ -29,8 +28,6 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
 
 import static jcuda.jcusolver.JCusolverSp.cusolverSpCreate;
 import static jcuda.jcusparse.JCusparse.*;

@@ -24,19 +24,19 @@ import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.RefArrays;
-import com.simiacryptus.ref.wrappers.RefIntStream;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
-public class TensorOperator extends ReferenceCountingBase implements RefOperator<Tensor> {
-  private final RefOperator<double[][]> inner;
+public class TensorUnaryOperator extends ReferenceCountingBase implements RefUnaryOperator<Tensor> {
+  private final RefUnaryOperator<double[][]> inner;
   private final int[] dimensions;
-  private final @RefAware RasterTopology topology;
+  private final @RefAware
+  RasterTopology topology;
 
-  public TensorOperator(RefOperator<double[][]> inner, int[] dimensions, @RefAware RasterTopology topology) {
+  public TensorUnaryOperator(RefUnaryOperator<double[][]> inner, int[] dimensions, @RefAware RasterTopology topology) {
     this.inner = inner;
     this.dimensions = dimensions;
     this.topology = topology;
@@ -46,13 +46,13 @@ public class TensorOperator extends ReferenceCountingBase implements RefOperator
   @Override
   public Tensor apply(@Nonnull Tensor tensor) {
     int[] tensorDimensions = tensor.getDimensions();
-    if (!RefArrays.equals(this.dimensions, tensorDimensions)) {
+    if (!Arrays.equals(this.dimensions, tensorDimensions)) {
       tensor.freeRef();
       throw new IllegalArgumentException(
-          RefArrays.toString(this.dimensions) + " != " + RefArrays.toString(tensorDimensions));
+          Arrays.toString(this.dimensions) + " != " + Arrays.toString(tensorDimensions));
     }
     final int channels = 3 <= this.dimensions.length ? this.dimensions[2] : 1;
-    final double[][] imageMatrix = RefIntStream.range(0, channels).mapToObj(c -> {
+    final double[][] imageMatrix = IntStream.range(0, channels).mapToObj(c -> {
       final double[] doubles = new double[this.dimensions[0] * this.dimensions[1]];
       for (int y = 0; y < this.dimensions[1]; y++) {
         for (int x = 0; x < this.dimensions[0]; x++) {
@@ -73,15 +73,15 @@ public class TensorOperator extends ReferenceCountingBase implements RefOperator
 
   public void _free() {
     super._free();
-    inner.freeRef();
     RefUtil.freeRef(topology);
+    inner.freeRef();
   }
 
   @Nonnull
   public @Override
   @SuppressWarnings("unused")
-  TensorOperator addRef() {
-    return (TensorOperator) super.addRef();
+  TensorUnaryOperator addRef() {
+    return (TensorUnaryOperator) super.addRef();
   }
 
 }

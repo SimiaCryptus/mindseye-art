@@ -19,7 +19,7 @@
 
 package com.simiacryptus.mindseye.art.util;
 
-import com.simiacryptus.mindseye.art.ops.ContentInceptionMatcher;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.cudnn.BandReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.ImgBandBiasLayer;
@@ -168,7 +168,7 @@ public class PCA {
           nthPowerActivationLayer
       );
       try {
-        Tensor data0 = ContentInceptionMatcher.getData0(network.eval(image));
+        Tensor data0 = Result.getData0(network.eval(image));
         Tensor map = data0.map(x -> x == 0.0 ? 1.0 : x);
         data0.freeRef();
         return map;
@@ -182,10 +182,10 @@ public class PCA {
   public Tensor getChannelMeans(Tensor image) {
     BandReducerLayer bandReducerLayer = new BandReducerLayer();
     bandReducerLayer.setMode(PoolingLayer.PoolingMode.Avg);
-    Tensor meanTensor = ContentInceptionMatcher.getData0(bandReducerLayer.eval(image));
+    Tensor meanTensor = Result.getData0(bandReducerLayer.eval(image));
     bandReducerLayer.freeRef();
     if (!isRecenter())
-      RefArrays.fill(meanTensor.getData(), 0);
+      meanTensor.fill(0);
     return meanTensor;
   }
 

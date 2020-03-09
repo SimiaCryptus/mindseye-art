@@ -51,7 +51,7 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
   }
 
   public RasterTopology getTopology() {
-    return topology;
+    return topology.addRef();
   }
 
   public void setTopology(RasterTopology topology) {
@@ -71,6 +71,7 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
   void _free() {
     super._free();
     content.freeRef();
+    topology.freeRef();
   }
 
   @Nonnull
@@ -89,7 +90,9 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
   }
 
   private double[] pixel(int i) {
-    final int[] coords = getTopology().getCoordsFromIndex(i);
+    RasterTopology topology = getTopology();
+    final int[] coords = topology.getCoordsFromIndex(i);
+    topology.freeRef();
     return IntStream.range(0, dimensions[2]).mapToDouble(c -> {
       return content.get(coords[0], coords[1], c);
     }).toArray();

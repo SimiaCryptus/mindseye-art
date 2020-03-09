@@ -23,12 +23,9 @@ import com.simiacryptus.mindseye.art.photo.MultivariateFrameOfReference;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefUtil;
 import org.ejml.simple.SimpleMatrix;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
 
 /**
  * Implements experimenal pixel affinity based on logistic model and covariance-normalized distance

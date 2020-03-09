@@ -19,19 +19,18 @@
 
 package com.simiacryptus.mindseye.art;
 
-import com.simiacryptus.mindseye.art.ops.ContentInceptionMatcher;
 import com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer;
 import com.simiacryptus.mindseye.art.photo.SmoothSolver_EJML;
 import com.simiacryptus.mindseye.art.photo.WCTUtil;
 import com.simiacryptus.mindseye.art.photo.affinity.*;
-import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
+import com.simiacryptus.mindseye.art.photo.cuda.RefUnaryOperator;
 import com.simiacryptus.mindseye.art.photo.cuda.SmoothSolver_Cuda;
-import com.simiacryptus.mindseye.art.photo.topology.ContentTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SearchRadiusTopology;
 import com.simiacryptus.mindseye.art.util.Plasma;
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.SerialPrecision;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.WrapperLayer;
@@ -52,7 +51,6 @@ import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URI;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipFile;
 
 import static com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer.transfer;
@@ -71,7 +69,7 @@ public class WCTTest extends NotebookReportBase {
   @Nonnull
   private String styleImage =
       //"file:///C:/Users/andre/Downloads/5212832572_4388ede3fc_o.jpg";
-      "file:///C:/Users/andre/Downloads/pictures/1920x1080-kaufman_63748_5.jpg";
+      "file:///C:/Users/andre/Downloads/postable_pics/2017-nyr-14183-0012a-000-pablo-picasso-femme-assise-robe-bleue.jpg";
 
   //  private String contentImage = "https://upload.wikimedia.org/wikipedia/commons/b/b0/Group_portrait_of_Civil_War_generals_n.d._%283200501542%29.jpg";
   //  private String styleImage = "https://upload.wikimedia.org/wikipedia/commons/b/b6/Gilbert_Stuart_Williamstown_Portrait_of_George_Washington.jpg";
@@ -228,19 +226,19 @@ public class WCTTest extends NotebookReportBase {
 
     final Layer encode_1 = VGG_WCT_Import.encode_1();
     final Layer decode_1 = VGG_WCT_Import.decode_1();
-    final Tensor encodedContent = ContentInceptionMatcher.getData0(encode_1.eval(content_2));
-    final Tensor encodedStyle = ContentInceptionMatcher.getData0(encode_1.eval(styleImage.addRef()));
+    final Tensor encodedContent = Result.getData0(encode_1.eval(content_2));
+    final Tensor encodedStyle = Result.getData0(encode_1.eval(styleImage.addRef()));
     PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, 1.0, 1.0);
-    final Tensor encodedTransformed = ContentInceptionMatcher.getData0(applicator.eval(encodedContent));
+    final Tensor encodedTransformed = Result.getData0(applicator.eval(encodedContent));
     applicator.freeRef();
-    final Tensor content_1 = ContentInceptionMatcher.getData0(decode_1.eval(encodedTransformed));
+    final Tensor content_1 = Result.getData0(decode_1.eval(encodedTransformed));
     log.eval(() -> {
       return content_1.toImage();
     });
 
     log.eval(() -> {
       final MattingAffinity affinity = new MattingAffinity(contentImage.addRef());
-      RefOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
+      RefUnaryOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
       BufferedImage image = toImage(solve.apply(content_1.addRef()));
       solve.freeRef();
       return image;
@@ -283,7 +281,7 @@ public class WCTTest extends NotebookReportBase {
     log.eval(() -> {
       fastPhotoStyleTransfer.setLambda(1e-4);
       fastPhotoStyleTransfer.setEpsilon(1e-4);
-      final RefOperator<Tensor> operator = fastPhotoStyleTransfer.apply(contentImage.addRef());
+      final RefUnaryOperator<Tensor> operator = fastPhotoStyleTransfer.apply(contentImage.addRef());
       final BufferedImage image = toImage(operator.apply(styleImage.addRef()));
       operator.freeRef();
       return image;
@@ -332,7 +330,7 @@ public class WCTTest extends NotebookReportBase {
         log.h3("RadiusRasterTopology - MattingAffinity");
         test(log, log.eval(() -> {
           RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-          ContextAffinity contextAffinity = new MattingAffinity(content.addRef(), topology);
+          ContextAffinity contextAffinity = new MattingAffinity(content.addRef(), topology.addRef());
           contextAffinity.setGraphPower1(2);
           contextAffinity.setMixing(0.5);
           @RefAware RasterAffinity affinity = contextAffinity;
@@ -343,7 +341,7 @@ public class WCTTest extends NotebookReportBase {
             affinity = wrap;
           }
           return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-        }), RefUtil.addRefs(tensors));
+        }), RefUtil.addRef(tensors));
 
         for (int contrast : new int[]{20, 50, 100}) {
           log.h2("Contrast: " + contrast);
@@ -365,12 +363,12 @@ public class WCTTest extends NotebookReportBase {
               affinity = wrap;
             }
             return new SmoothSolver_Cuda().solve(searchRadiusTopology, affinity, 1e-4);
-          }), RefUtil.addRefs(tensors));
+          }), RefUtil.addRef(tensors));
 
           log.h3("RadiusRasterTopology");
           test(log, log.eval(() -> {
             RasterTopology topology = new RadiusRasterTopology(dimensions, getRadius(1, 1), selfRef ? -1 : 0);
-            RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), topology);
+            RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), topology.addRef());
             relativeAffinity.setContrast(contrast);
             relativeAffinity.setGraphPower1(2);
             relativeAffinity.setMixing(0.5);
@@ -382,7 +380,7 @@ public class WCTTest extends NotebookReportBase {
               affinity = wrap;
             }
             return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-          }), RefUtil.addRefs(tensors));
+          }), RefUtil.addRef(tensors));
 
           log.h3("RadiusRasterTopology - GaussianAffinity");
           test(log, log.eval(() -> {
@@ -395,7 +393,7 @@ public class WCTTest extends NotebookReportBase {
               affinity = wrap;
             }
             return new SmoothSolver_Cuda().solve(topology, affinity, 1e-4);
-          }), RefUtil.addRefs(tensors));
+          }), RefUtil.addRef(tensors));
         }
       }
     }
@@ -448,7 +446,7 @@ public class WCTTest extends NotebookReportBase {
               affinity = wrap;
             }
             return new SmoothSolver_Cuda().solve(searchRadiusTopology, affinity, 1e-4);
-          }), RefUtil.addRefs(tensors));
+          }), RefUtil.addRef(tensors));
 
           //          log.h3("RadiusRasterTopology");
           //          test(log, log.eval(() -> {
@@ -478,7 +476,7 @@ public class WCTTest extends NotebookReportBase {
       return styleImage.toImage();
     });
     final FastPhotoStyleTransfer fastPhotoStyleTransfer = getFastPhotoStyleTransfer(log);
-    final AtomicReference<Tensor> styledImage = new AtomicReference<>();
+    final RefAtomicReference<Tensor> styledImage = new RefAtomicReference<>();
     log.eval(() -> {
       fastPhotoStyleTransfer.setLambda(1e-4);
       fastPhotoStyleTransfer.setEpsilon(1e-4);
@@ -491,10 +489,12 @@ public class WCTTest extends NotebookReportBase {
     styleImage.freeRef();
     content.freeRef();
     fastPhotoStyleTransfer.freeRef();
-    return styledImage.get();
+    Tensor tensor = styledImage.get();
+    styledImage.freeRef();
+    return tensor;
   }
 
-  private void test(@Nonnull NotebookOutput log, @Nonnull RefOperator<Tensor> smoothingTransform, @Nonnull Tensor... styled) {
+  private void test(@Nonnull NotebookOutput log, @Nonnull RefUnaryOperator<Tensor> smoothingTransform, @Nonnull Tensor... styled) {
     try {
       RefArrays.stream(styled).filter(tensor -> {
         boolean notNull = tensor != null;
@@ -532,7 +532,7 @@ public class WCTTest extends NotebookReportBase {
         return styleImage.toImage();
       });
       final Tensor originalFeatures = log.eval(() -> {
-        return ContentInceptionMatcher.getData0(encoder.eval(contentImage.addRef()));
+        return Result.getData0(encoder.eval(contentImage.addRef()));
       });
 
       log.h2("Encoding");
@@ -541,7 +541,7 @@ public class WCTTest extends NotebookReportBase {
             .reduce((a, b) -> a + ", " + b));
       });
       final Tensor encodedStyle = log.eval(() -> {
-        return ContentInceptionMatcher.getData0(encoder.eval(styleImage.addRef()));
+        return Result.getData0(encoder.eval(styleImage.addRef()));
       });
 
       RefAtomicReference<Tensor> restyledFeatures = new RefAtomicReference<>();
@@ -553,7 +553,7 @@ public class WCTTest extends NotebookReportBase {
         log.h3("Normalized");
         stats(log, log.eval(() -> {
           final Layer normalizer = WCTUtil.normalizer();
-          final Tensor tensor = ContentInceptionMatcher.getData0(normalizer.eval(originalFeatures.addRef()));
+          final Tensor tensor = Result.getData0(normalizer.eval(originalFeatures.addRef()));
           normalizer.freeRef();
           return tensor;
         }));
@@ -562,13 +562,13 @@ public class WCTTest extends NotebookReportBase {
           return WCTUtil.applicator(encodedStyle.addRef());
         });
         restyledFeatures.set(log.eval(() -> {
-          return ContentInceptionMatcher.getData0(styleNetwork.eval(originalFeatures.addRef()));
+          return Result.getData0(styleNetwork.eval(originalFeatures.addRef()));
         }));
         styleNetwork.freeRef();
         stats(log, restyledFeatures.get());
       } else {
         PipelineNetwork applicator = WCTUtil.applicator(encodedStyle.addRef());
-        restyledFeatures.set(ContentInceptionMatcher.getData0(applicator.eval(originalFeatures.addRef())));
+        restyledFeatures.set(Result.getData0(applicator.eval(originalFeatures.addRef())));
         applicator.freeRef();
       }
 
@@ -580,14 +580,14 @@ public class WCTTest extends NotebookReportBase {
       network.freeRef();
       if (inputCount == 2) {
         final Tensor restyled = log.eval(() -> {
-          return ContentInceptionMatcher.getData0(decoder.eval(restyledFeatures.get(), contentImage.addRef()));
+          return Result.getData0(decoder.eval(restyledFeatures.get(), contentImage.addRef()));
         });
         log.eval(() -> {
           return restyled.toImage();
         });
         log.eval(() -> {
           final MattingAffinity affinity = new MattingAffinity(contentImage.addRef());
-          RefOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
+          RefUnaryOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
           BufferedImage image = toImage(solve.apply(restyled.addRef()));
           solve.freeRef();
           return image;
@@ -595,18 +595,18 @@ public class WCTTest extends NotebookReportBase {
         restyled.freeRef();
         if (verbose)
           log.eval(() -> {
-            return toImage(ContentInceptionMatcher.getData0(decoder.eval(originalFeatures.addRef(), contentImage.addRef())));
+            return toImage(Result.getData0(decoder.eval(originalFeatures.addRef(), contentImage.addRef())));
           });
       } else {
         final Tensor restyled = log.eval(() -> {
-          return ContentInceptionMatcher.getData0(decoder.eval(restyledFeatures.get()));
+          return Result.getData0(decoder.eval(restyledFeatures.get()));
         });
         log.eval(() -> {
           return restyled.toImage();
         });
         log.eval(() -> {
           final MattingAffinity affinity = new MattingAffinity(contentImage.addRef());
-          RefOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
+          RefUnaryOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
           BufferedImage image = toImage(solve.apply(restyled.addRef()));
           solve.freeRef();
           return image;
@@ -614,7 +614,7 @@ public class WCTTest extends NotebookReportBase {
         restyled.freeRef();
         if (verbose)
           log.eval(() -> {
-            return toImage(ContentInceptionMatcher.getData0(decoder.eval(originalFeatures.addRef())));
+            return toImage(Result.getData0(decoder.eval(originalFeatures.addRef())));
           });
       }
       restyledFeatures.freeRef();

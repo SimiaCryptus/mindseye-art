@@ -24,7 +24,6 @@ import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.mindseye.lang.TensorList;
 import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
@@ -85,17 +84,17 @@ public class ContentInceptionMatcher implements VisualModifier {
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.copyNetwork();
-    Tensor baseContent = getData0(network.eval(visualModifierParameters.getStyle()));
+    Tensor baseContent = Result.getData0(network.eval(visualModifierParameters.getStyle()));
     visualModifierParameters.freeRef();
     BandAvgReducerLayer bandAvgReducerLayer = new BandAvgReducerLayer();
-    Tensor bandAvg = getData0(bandAvgReducerLayer.eval(baseContent.addRef()));
+    Tensor bandAvg = Result.getData0(bandAvgReducerLayer.eval(baseContent.addRef()));
     ImgBandBiasLayer offsetLayer = new ImgBandBiasLayer(bandAvg.scale(-1));
     bandAvg.freeRef();
     NthPowerActivationLayer nthPowerActivationLayer = new NthPowerActivationLayer();
     nthPowerActivationLayer.setPower(0.5);
     PipelineNetwork build = PipelineNetwork.build(1, offsetLayer, new SquareActivationLayer(), bandAvgReducerLayer,
         nthPowerActivationLayer);
-    Tensor bandPowers = getData0(build.eval(baseContent.addRef()));
+    Tensor bandPowers = Result.getData0(build.eval(baseContent.addRef()));
     build.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
     ConvolutionLayer convolutionLayer2 = new ConvolutionLayer(1, 1, contentDimensions[2], 1);
@@ -104,7 +103,7 @@ public class ContentInceptionMatcher implements VisualModifier {
     bandPowers.freeRef();
     Layer colorProjection = convolutionLayer2.explode();
     convolutionLayer2.freeRef();
-    Tensor spacialPattern = getData0(colorProjection.eval(baseContent));
+    Tensor spacialPattern = Result.getData0(colorProjection.eval(baseContent));
     double mag = balanced ? spacialPattern.rms() : 1;
     network.add(colorProjection).freeRef();
     spacialPattern.scaleInPlace(Math.pow(spacialPattern.rms(), -2));
@@ -123,13 +122,5 @@ public class ContentInceptionMatcher implements VisualModifier {
     network.add(layer).freeRef();
     network.freeze();
     return network;
-  }
-
-  public static Tensor getData0(Result eval) {
-    TensorList data = eval.getData();
-    Tensor tensor = data.get(0);
-    data.freeRef();
-    eval.freeRef();
-    return tensor;
   }
 }

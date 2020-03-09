@@ -106,7 +106,7 @@ public class GramMatrixEnhancer implements VisualModifier {
     PipelineNetwork rmsNetwork = new PipelineNetwork(1);
     rmsNetwork.setName(RefString.format("-RMS[x*C] / %.0E", mag));
     LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
-    final double scale = mag==0?1:-Math.pow(mag, -2);
+    final double scale = mag == 0 ? 1 : -Math.pow(mag, -2);
     linearActivationLayer.setScale(scale);
     final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
     BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
@@ -141,7 +141,7 @@ public class GramMatrixEnhancer implements VisualModifier {
     Tensor result = GramMatrixMatcher.eval(pixels, copy, getTileSize(), padding, visualModifierParameters.getStyle());
 
     Tensor mask = visualModifierParameters.getMask();
-    if(mask != null) {
+    if (mask != null) {
       network.add(new ProductLayer(),
           network.getHead(),
           network.constValue(

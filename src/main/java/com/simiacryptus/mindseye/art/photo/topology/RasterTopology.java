@@ -20,12 +20,12 @@
 package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.ref.lang.RefAware;
-import com.simiacryptus.ref.wrappers.RefList;
+import com.simiacryptus.ref.lang.ReferenceCounting;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
-public interface RasterTopology {
+public interface RasterTopology extends ReferenceCounting {
 
   int[] getDimensions();
 
@@ -41,4 +41,6 @@ public interface RasterTopology {
 
   int[] getCoordsFromIndex(int i);
 
+  @Override
+  RasterTopology addRef();
 }

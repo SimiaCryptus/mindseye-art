@@ -36,7 +36,10 @@ import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.*;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefIntStream;
+import com.simiacryptus.ref.wrappers.RefString;
+import com.simiacryptus.ref.wrappers.RefSystem;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;
@@ -87,16 +90,17 @@ public class SegmentTest extends NotebookReportBase {
   private void segment_volumeEntropy(@Nonnull NotebookOutput log) {
     Tensor content = contentImage();
     log.eval(() -> content.toImage());
-    final int[] pixelMap = getSmoothedRegions(log, content);
+    final int[] pixelMap = getSmoothedRegions(log, content.addRef());
     Assemble_volumeEntropy eval = log.eval(() -> {
       final SimpleRasterTopology topology = new SimpleRasterTopology(content.getDimensions());
-      RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), topology);
+      RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), topology.addRef());
       relativeAffinity.setContrast(50);
       relativeAffinity.setGraphPower1(2);
       relativeAffinity.setMixing(0.1);
       return new Assemble_volumeEntropy(content.addRef(), topology,
           relativeAffinity, pixelMap);
     });
+    content.freeRef();
     eval.run(log);
     eval.freeRef();
   }
@@ -104,17 +108,18 @@ public class SegmentTest extends NotebookReportBase {
   private void segment_minCut(@Nonnull NotebookOutput log) {
     Tensor content = contentImage();
     log.eval(() -> content.toImage());
-    final int[] pixelMap = getSmoothedRegions(log, content);
+    final int[] pixelMap = getSmoothedRegions(log, content.addRef());
     Assemble_minCut minCut = log.eval(() -> {
       final RadiusRasterTopology topology = new RadiusRasterTopology(content.getDimensions(),
           RadiusRasterTopology.getRadius(1, 1), -1);
-      RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), topology);
+      RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), topology.addRef());
       relativeAffinity.setContrast(30);
       relativeAffinity.setGraphPower1(2);
       relativeAffinity.setMixing(0.5);
       return new Assemble_minCut(content.addRef(), topology,
           relativeAffinity, pixelMap);
     });
+    content.freeRef();
     minCut.run(log);
     minCut.freeRef();
   }
@@ -128,11 +133,11 @@ public class SegmentTest extends NotebookReportBase {
       searchRadiusTopology.setSelfRef(true);
       searchRadiusTopology.setVerbose(true);
       RasterTopology topology = searchRadiusTopology.cached();
-      RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), topology);
+      RelativeAffinity relativeAffinity = new RelativeAffinity(content.addRef(), topology.addRef());
       relativeAffinity.setContrast(50);
       relativeAffinity.setGraphPower1(2);
       relativeAffinity.setMixing(0.1);
-      final BufferedImage flattenedColors = flattenColors(content.addRef(), topology,
+      final BufferedImage flattenedColors = flattenColors(content.addRef(), topology.addRef(),
           relativeAffinity, 4,
           new SmoothSolver_Cuda());
       final Tensor flattenedTensor = Tensor.fromRGB(flattenedColors);
@@ -158,7 +163,7 @@ public class SegmentTest extends NotebookReportBase {
 
     public Assemble_minCut(Tensor content, @Nonnull RasterTopology topology, @Nonnull ContextAffinity affinity, int[] pixelMap) {
       this.pixelMap = pixelMap;
-      CudaSparseMatrix laplacian = SmoothSolver_Cuda.laplacian(affinity, topology);
+      CudaSparseMatrix laplacian = SmoothSolver_Cuda.laplacian(affinity, topology.addRef());
       this.graph = laplacian.matrix.assertSymmetric().project(this.pixelMap);
       laplacian.freeRef();
       this.content = content;
@@ -167,16 +172,16 @@ public class SegmentTest extends NotebookReportBase {
 
     public void run(@Nonnull NotebookOutput log) {
       display(log);
-      update(volumeEntropy(graph, pixelMap, content.addRef(), topology).reduceTo(10000).getProjection());
+      update(volumeEntropy(graph, pixelMap, content.addRef(), topology.addRef()).reduceTo(10000).getProjection());
       update(graph.getDenseProjection());
       display(log);
 
       final double scale = 5e-3;
-      this.graph = this.graph.recalculateConnectionWeights(topology, content.addRef(), pixelMap, scale, 0.5, 1e-9);
-      update(volumeEntropy(graph, pixelMap, content.addRef(), topology).reduceTo(1000).getProjection());
+      this.graph = this.graph.recalculateConnectionWeights(topology.addRef(), content.addRef(), pixelMap, scale, 0.5, 1e-9);
+      update(volumeEntropy(graph, pixelMap, content.addRef(), topology.addRef()).reduceTo(1000).getProjection());
       update(graph.getDenseProjection());
       display(log);
-      this.graph = this.graph.recalculateConnectionWeights(topology, content.addRef(), pixelMap, scale, 0.5, 1e-9);
+      this.graph = this.graph.recalculateConnectionWeights(topology.addRef(), content.addRef(), pixelMap, scale, 0.5, 1e-9);
       update(graph.getDenseProjection());
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).mapToObj(x->x).sorted(Comparator.comparing(x->-x)).mapToDouble(x->x).toArray()
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).sorted().toArray()
@@ -265,7 +270,7 @@ public class SegmentTest extends NotebookReportBase {
         RefSystem.out
             .println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
-        return paintWithRandomColors(topology, pixelMap, graph);
+        return paintWithRandomColors(topology.addRef(), pixelMap, graph);
       });
     }
 
@@ -273,6 +278,7 @@ public class SegmentTest extends NotebookReportBase {
     void _free() {
       super._free();
       content.freeRef();
+      topology.freeRef();
     }
 
     @Nonnull
@@ -292,7 +298,7 @@ public class SegmentTest extends NotebookReportBase {
 
     public Assemble_volumeEntropy(Tensor content, @Nonnull RasterTopology topology, @Nonnull ContextAffinity affinity, int[] pixelMap) {
       this.pixelMap = pixelMap;
-      CudaSparseMatrix laplacian = SmoothSolver_Cuda.laplacian(affinity, topology);
+      CudaSparseMatrix laplacian = SmoothSolver_Cuda.laplacian(affinity, topology.addRef());
       this.graph = laplacian.matrix.assertSymmetric().project(this.pixelMap);
       laplacian.freeRef();
       this.content = content;
@@ -302,15 +308,15 @@ public class SegmentTest extends NotebookReportBase {
     public void run(@Nonnull NotebookOutput log) {
       display(log);
       update(log.eval(() -> {
-        return volumeEntropy(graph, pixelMap, content.addRef(), topology).reduceTo(5000).getProjection();
+        return volumeEntropy(graph, pixelMap, content.addRef(), topology.addRef()).reduceTo(5000).getProjection();
       }));
       display(log);
       update(log.eval(() -> {
-        return volumeEntropy(graph, pixelMap, content.addRef(), topology).reduceTo(500).getProjection();
+        return volumeEntropy(graph, pixelMap, content.addRef(), topology.addRef()).reduceTo(500).getProjection();
       }));
       display(log);
       update(log.eval(() -> {
-        return volumeEntropy(graph, pixelMap, content.addRef(), topology).reduceTo(50).getProjection();
+        return volumeEntropy(graph, pixelMap, content.addRef(), topology.addRef()).reduceTo(50).getProjection();
       }));
       display(log);
     }
@@ -325,7 +331,7 @@ public class SegmentTest extends NotebookReportBase {
         RefSystem.out
             .println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
-        return paintWithRandomColors(topology, pixelMap, graph);
+        return paintWithRandomColors(topology.addRef(), pixelMap, graph);
       });
     }
 
@@ -333,6 +339,7 @@ public class SegmentTest extends NotebookReportBase {
     void _free() {
       super._free();
       content.freeRef();
+      topology.freeRef();
     }
 
     @Nonnull

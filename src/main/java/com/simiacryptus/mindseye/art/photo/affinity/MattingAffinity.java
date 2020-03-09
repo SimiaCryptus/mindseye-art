@@ -22,12 +22,9 @@ package com.simiacryptus.mindseye.art.photo.affinity;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefUtil;
 import org.ejml.simple.SimpleMatrix;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
 
 /**
  * Implements Matting Affinity

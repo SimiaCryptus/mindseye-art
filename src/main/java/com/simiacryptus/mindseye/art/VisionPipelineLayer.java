@@ -20,17 +20,18 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.layers.LoggingLayer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
-import com.simiacryptus.ref.wrappers.RefLinkedHashMap;
+import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.wrappers.RefString;
 
 import javax.annotation.Nonnull;
 
 import static com.simiacryptus.mindseye.layers.cudnn.PoolingLayer.getPoolingLayer;
 
-public interface VisionPipelineLayer {
+public interface VisionPipelineLayer extends ReferenceCounting {
   VisionPipelineLayer.Noop NOOP = new VisionPipelineLayer.Noop();
 
   @Nonnull
@@ -38,19 +39,18 @@ public interface VisionPipelineLayer {
 
   @Nonnull
   default PipelineNetwork getNetwork() {
-    final VisionPipeline<?> pipeline = getPipeline();
-    RefLinkedHashMap<?, PipelineNetwork> layers = pipeline.getLayers();
-    PipelineNetwork network = layers.get(this);
-    final PipelineNetwork pipelineNetwork = network.copyPipeline();
-    layers.freeRef();
-    network.freeRef();
-    pipeline.freeRef();
-    assert pipelineNetwork != null;
-    return pipelineNetwork;
+    final VisionPipeline pipeline = getPipeline();
+    PipelineNetwork network;
+    try {
+      network = pipeline.get(name());
+    } finally {
+      pipeline.freeRef();
+    }
+    return PipelineNetwork.getCopy(network);
   }
 
   @Nonnull
-  VisionPipeline<?> getPipeline();
+  VisionPipeline getPipeline();
 
   @Nonnull
   String getPipelineName();
@@ -80,27 +80,42 @@ public interface VisionPipelineLayer {
 
   @Nonnull
   default VisionPipelineLayer prependPool(int radius, PoolingLayer.PoolingMode mode) {
-    return prepend(getPoolingLayer(radius, mode, RefString.format("prepend(%s)", this)));
+    return prepend(getPoolingLayer(radius, mode, RefString.format("prepend(%s)", this.addRef())));
   }
 
   @Nonnull
   default VisionPipelineLayer appendPool(int radius, PoolingLayer.PoolingMode mode) {
-    return append(getPoolingLayer(radius, mode, RefString.format("append(%s)", this)));
+    return append(getPoolingLayer(radius, mode, RefString.format("append(%s)", this.addRef())));
   }
 
   @Nonnull
   @RefAware
   default VisionPipelineLayer prepend(Layer layer) {
-    return new PrependVisionPipelineLayer(this, layer);
+    return new PrependVisionPipelineLayer(this.addRef(), layer);
+  }
+
+  @Override
+  default VisionPipelineLayer addRef() {
+    return this;
   }
 
   @Nonnull
   @RefAware
   default VisionPipelineLayer append(Layer layer) {
-    return new AppendVisionPipelineLayer(this, layer);
+    return new AppendVisionPipelineLayer(this.addRef(), layer);
+  }
+
+  @Nonnull
+  @RefAware
+  default VisionPipelineLayer withLogging() {
+    LoggingLayer loggingLayer = new LoggingLayer(LoggingLayer.DetailLevel.Statistics);
+    loggingLayer.setName(name());
+    loggingLayer.setLogFeedback(false);
+    return new AppendVisionPipelineLayer<>(this.addRef(), loggingLayer);
   }
 
   class Noop implements VisionPipelineLayer {
+
 
     @Nonnull
     @Override
@@ -110,14 +125,19 @@ public interface VisionPipelineLayer {
 
     @Nonnull
     @Override
-    public VisionPipeline<Noop> getPipeline() {
-      return new VisionPipeline<Noop>(name(), this);
+    public VisionPipeline getPipeline() {
+      return new VisionPipeline(name(), this.addRef());
     }
 
     @Nonnull
     @Override
     public String getPipelineName() {
       return name();
+    }
+
+    @Override
+    public Noop addRef() {
+      return (Noop) this;
     }
 
     @Nonnull

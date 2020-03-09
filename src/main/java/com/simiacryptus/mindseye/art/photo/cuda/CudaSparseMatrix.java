@@ -20,7 +20,6 @@
 package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.ref.lang.RefLazyVal;
-import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import jcuda.Pointer;
 import jcuda.Sizeof;
@@ -29,8 +28,6 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
 
 import static jcuda.jcusolver.JCusolverSp.cusolverSpCreate;
 import static jcuda.jcusparse.JCusparse.*;
@@ -88,12 +85,12 @@ public class CudaSparseMatrix extends RefLazyVal<CudaSparseMatrix.GpuCopy> {
   @Override
   @Nonnull
   public CudaSparseMatrix.GpuCopy build() {
-    return new GpuCopy(this);
+    return new GpuCopy(this.matrix);
   }
 
   public @SuppressWarnings("unused")
   void _free() {
-    super.freeRef();
+    super._free();
   }
 
   @Nonnull
@@ -113,13 +110,12 @@ public class CudaSparseMatrix extends RefLazyVal<CudaSparseMatrix.GpuCopy> {
     public final SparseMatrixFloat matrix;
     public final int rows;
 
-    public GpuCopy(@Nonnull CudaSparseMatrix cudaCoo) {
-      this.matrix = cudaCoo.matrix;
-      cudaCoo.freeRef();
-      rows = matrix.rows;
-      rowIndices = toDevice(matrix.rowIndices);
-      columnIndices = toDevice(matrix.colIndices);
-      values = toDevice(matrix.values);
+    public GpuCopy(SparseMatrixFloat matrix) {
+      this.matrix = matrix;
+      rows = this.matrix.rows;
+      rowIndices = toDevice(this.matrix.rowIndices);
+      columnIndices = toDevice(this.matrix.colIndices);
+      values = toDevice(this.matrix.values);
     }
 
     @Nonnull

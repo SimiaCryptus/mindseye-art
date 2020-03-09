@@ -22,7 +22,9 @@ package com.simiacryptus.mindseye.art.photo.cuda;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.*;
+import com.simiacryptus.ref.wrappers.RefArrayList;
+import com.simiacryptus.ref.wrappers.RefCollection;
+import com.simiacryptus.ref.wrappers.RefList;
 import com.simiacryptus.util.FastRandom;
 import jcuda.Pointer;
 import jcuda.Sizeof;
@@ -33,7 +35,9 @@ import jcuda.jcusparse.cusparseHandle;
 import jcuda.runtime.JCuda;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import static jcuda.jcusolver.JCusolverSp.cusolverSpScsreigvsi;
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
@@ -41,7 +45,7 @@ import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
-public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements RefOperator<double[][]> {
+public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements RefUnaryOperator<double[][]> {
   @Nonnull
   final CudaSparseMatrix laplacian;
   final int pixels;
@@ -64,7 +68,9 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
 
   @Nonnull
   public static int[] get2D(@Nonnull RasterTopology topology) {
-    return get2D(topology.getDimensions());
+    int[] dimensions = topology.getDimensions();
+    topology.freeRef();
+    return get2D(dimensions);
   }
 
   @Nonnull
@@ -98,7 +104,7 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
   public RefList<Tensor> eigenVectors(@Nonnull RasterTopology topology, int n) {
     final RefList<Tensor> eigenVectors = new RefArrayList<>();
     final int[] dimensions = topology.getDimensions();
-    final TensorOperator eigenSolver = eigenRefiner(topology);
+    final TensorUnaryOperator eigenSolver = eigenRefiner(topology);
     for (int i = 0; i < n; i++) {
       final Tensor remaining = remaining(eigenVectors.addRef(), dimensions[0], dimensions[1]);
       eigenVectors.add(eigenSolver.apply(remaining));
@@ -109,8 +115,9 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
   }
 
   @Nonnull
-  public TensorOperator eigenRefiner(@Nonnull RasterTopology topology) {
-    return new TensorOperator(this, get2D(topology), topology);
+  public TensorUnaryOperator eigenRefiner(@Nonnull RasterTopology topology) {
+    int[] dimensions = get2D(topology.addRef());
+    return new TensorUnaryOperator(this, dimensions, topology);
   }
 
   public void _free() {
@@ -121,7 +128,7 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
   @Nonnull
   public double[][] apply(@Nonnull double[][] img) {
     final int channels = img.length;
-    final float[] flattened = new float[RefArrays.stream(img).mapToInt(x -> x.length).sum()];
+    final float[] flattened = new float[Arrays.stream(img).mapToInt(x -> x.length).sum()];
     for (int i = 0; i < flattened.length; i++) {
       flattened[i] = (float) img[i / pixels][i % pixels];
     }
@@ -143,8 +150,8 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
     final float[] floats = new float[channels * pixels];
     cudaMemcpy(Pointer.to(floats), gpuResult, (long) channels * Sizeof.FLOAT * pixels, cudaMemcpyDeviceToHost);
     cudaFree(gpuResult);
-    return RefIntStream.range(0, channels)
-        .mapToObj(c -> RefIntStream.range(0, pixels).mapToDouble(i -> floats[c * pixels + i] * mu[0]).toArray())
+    return IntStream.range(0, channels)
+        .mapToObj(c -> IntStream.range(0, pixels).mapToDouble(i -> floats[c * pixels + i] * mu[0]).toArray())
         .toArray(i -> new double[i][]);
   }
 

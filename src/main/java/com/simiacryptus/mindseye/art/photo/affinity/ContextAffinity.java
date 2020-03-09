@@ -24,13 +24,10 @@ import com.simiacryptus.mindseye.art.photo.topology.IteratedRasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.CoreSettings;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.*;
 import org.ejml.simple.SimpleMatrix;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
@@ -79,7 +76,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
   }
 
   public RasterTopology getTopology() {
-    return topology;
+    return topology.addRef();
   }
 
   public void setTopology(RasterTopology topology) {
@@ -176,6 +173,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
   public @SuppressWarnings("unused")
   void _free() {
     super._free();
+    topology.freeRef();
     content.freeRef();
   }
 
@@ -194,7 +192,9 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
                                  int globalSize);
 
   protected double[] pixel(int i) {
-    final int[] coords = getTopology().getCoordsFromIndex(i);
+    RasterTopology topology = getTopology();
+    final int[] coords = topology.getCoordsFromIndex(i);
+    topology.freeRef();
     return IntStream.range(0, dimensions[2]).mapToDouble(c -> {
       return content.get(coords[0], coords[1], c);
     }).toArray();

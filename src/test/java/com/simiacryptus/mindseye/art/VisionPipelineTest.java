@@ -25,20 +25,22 @@ import com.simiacryptus.mindseye.art.models.VGG19;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.MeanSqLossLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
-import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.mindseye.test.unit.StandardLayerTests;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
-import com.simiacryptus.ref.wrappers.*;
+import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.ref.wrappers.RefAssert;
+import com.simiacryptus.ref.wrappers.RefList;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -56,7 +58,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   }
 
   @Nullable
-  public abstract VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline();
+  public abstract VisionPipeline getVisionPipeline();
 
   public static void testDims(@Nonnull @RefAware VisionPipelineLayer inceptionVision, int[] inputDims, @Nonnull int[] expectedOutputDims) {
     Layer layer = inceptionVision.getLayer();
@@ -71,17 +73,16 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     Layer layer = inceptionVision.getLayer();
     int[] dimensions = layer.evalDims(inputDims);
     layer.freeRef();
+    inceptionVision.freeRef();
     return dimensions;
   }
 
-  public static int[] testDims(@Nonnull VisionPipeline<? extends VisionPipelineLayer> pipeline, int... dims) {
-    RefLinkedHashMap<? extends VisionPipelineLayer, PipelineNetwork> layers = pipeline.getLayers();
+  public static int[] testDims(@Nonnull VisionPipeline pipeline, int... dims) {
+    RefList<? extends VisionPipelineLayer> keyList = pipeline.getLayerList();
     pipeline.freeRef();
-    RefSet<? extends VisionPipelineLayer> keySet = layers.keySet();
     AtomicReference<int[]> reference = new AtomicReference<>(dims);
-    keySet.forEach(layer -> reference.set(testDims(layer, reference.get())));
-    keySet.freeRef();
-    layers.freeRef();
+    keyList.forEach(layer -> reference.set(testDims(layer, reference.get())));
+    keyList.freeRef();
     return reference.get();
   }
 
@@ -119,29 +120,35 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   public abstract void pipelineTest(NotebookOutput log);
 
   public void graphs(@Nonnull NotebookOutput log) {
-    VisionPipeline<? extends VisionPipelineLayer> visionPipeline = getVisionPipeline();
-    RefLinkedHashMap<? extends VisionPipelineLayer, PipelineNetwork> layers = visionPipeline.getLayers();
-    RefSet<? extends VisionPipelineLayer> keySet = layers.keySet();
-    keySet.forEach(e -> {
+    VisionPipeline visionPipeline = getVisionPipeline();
+    RefList<? extends VisionPipelineLayer> keyList = visionPipeline.getLayerList();
+    keyList.forEach(e -> {
       log.h1(e.name());
       TestUtil.graph(log, (DAGNetwork) e.getLayer());
       RefUtil.freeRef(e);
     });
-    keySet.freeRef();
-    layers.freeRef();
+    keyList.freeRef();
     visionPipeline.freeRef();
   }
 
   public void layers(@Nonnull NotebookOutput log) {
     final int[][] dims = {{226, 226, 3}};
-    VisionPipeline<? extends VisionPipelineLayer> visionPipeline = getVisionPipeline();
-    RefLinkedHashMap<? extends VisionPipelineLayer, PipelineNetwork> layers = visionPipeline.getLayers();
-    RefSet<? extends VisionPipelineLayer> keySet = layers.keySet();
-    layers.freeRef();
+    VisionPipeline visionPipeline = getVisionPipeline();
+    RefList<? extends VisionPipelineLayer> keyList = visionPipeline.getLayerList();
     visionPipeline.freeRef();
-    keySet.forEach(e -> {
-      log.h1(e.name());
-      DAGNetwork layer = (DAGNetwork) e.getLayer();
+    keyList.forEach(visionPipelineLayer -> {
+      String name = visionPipelineLayer.name();
+      Layer layer = visionPipelineLayer.getLayer();
+      Class<? extends VisionPipelineLayer> visionPipelineLayerClass = visionPipelineLayer.getClass();
+      visionPipelineLayer.freeRef();
+      log.h1(name);
+      int[] inputDims = dims[0];
+      log.eval(() -> {
+        return Arrays.toString(inputDims);
+      });
+      int[] dimensions = log.eval(() -> {
+        return layer.evalDims(inputDims);
+      });
       log.subreport(sublog -> {
         new StandardLayerTests() {
           {
@@ -153,7 +160,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
           @Override
           public Class<?> getTestClass() {
-            return e.getClass();
+            return visionPipelineLayerClass;
           }
 
           @Nonnull
@@ -179,14 +186,11 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
           }
         }.run(sublog);
         return null;
-      }, log.getName() + "_" + e.name());
-      Layer layer1 = e.getLayer();
-      int[] dimensions = layer1.evalDims(dims[0]);
-      layer1.freeRef();
+      }, log.getName() + "_" + name);
       dims[0] = dimensions;
       layer.freeRef();
     });
-    keySet.freeRef();
+    keyList.freeRef();
   }
 
   public static class VGG16Test extends VisionPipelineTest {
@@ -198,27 +202,37 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
     @Nullable
     @Override
-    public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
+    public VisionPipeline getVisionPipeline() {
       return VGG16.getVisionPipeline();
     }
 
     @Nullable
     public static @SuppressWarnings("unused")
-    VGG16Test[] addRefs(@Nullable VGG16Test[] array) {
-      return RefUtil.addRefs(array);
+    VGG16Test[] addRef(@Nullable VGG16Test[] array) {
+      return RefUtil.addRef(array);
+    }
+
+    @Override
+    public void layers() {
+      super.layers();
+    }
+
+    @Override
+    public void inoutDims() {
+      super.inoutDims();
     }
 
     public void inoutDims(@Nonnull NotebookOutput log) {
       log.run(() -> {
-        testDims(VGG16_0b, new int[]{226, 226, 3}, new int[]{226, 226, 3});
-        testDims(VGG16_1a, new int[]{226, 226, 3}, new int[]{226, 226, 64});
+        testDims(VGG16_0b, new int[]{226, 226, 3}, new int[]{226, 226, 64});
+        testDims(VGG16_1a, new int[]{226, 226, 64}, new int[]{226, 226, 64});
         testDims(VGG16_1b1, new int[]{226, 226, 64}, new int[]{113, 113, 128});
         testDims(VGG16_1c1, new int[]{113, 113, 128}, new int[]{57, 57, 256});
         testDims(VGG16_1d1, new int[]{57, 57, 256}, new int[]{29, 29, 512});
         testDims(VGG16_1e1, new int[]{29, 29, 512}, new int[]{15, 15, 512});
-        testDims(VGG16_2, new int[]{15, 15, 512}, new int[]{8, 8, 512});
-        testDims(VGG16_3a, new int[]{14, 14, 4096}, new int[]{14, 14, 1000});
-        testDims(VGG16_3b, new int[]{14, 14, 1000}, new int[]{7, 7, 1000});
+        testDims(VGG16_2, new int[]{15, 15, 512}, new int[]{14, 14, 4096});
+        testDims(VGG16_3a, new int[]{1, 1, 4096}, new int[]{1, 1, 4096});
+        testDims(VGG16_3b, new int[]{1, 1, 4096}, new int[]{1, 1, 1000});
       });
     }
 
@@ -241,20 +255,20 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
     @Nullable
     @Override
-    public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
+    public VisionPipeline getVisionPipeline() {
       return VGG19.getVisionPipeline();
     }
 
     @Nullable
     public static @SuppressWarnings("unused")
-    VGG19Test[] addRefs(@Nullable VGG19Test[] array) {
-      return RefUtil.addRefs(array);
+    VGG19Test[] addRef(@Nullable VGG19Test[] array) {
+      return RefUtil.addRef(array);
     }
 
     public void inoutDims(@Nonnull NotebookOutput log) {
       log.run(() -> {
-        testDims(VGG19_0b, new int[]{226, 226, 3}, new int[]{226, 226, 3});
-        testDims(VGG19_1a, new int[]{226, 226, 3}, new int[]{226, 226, 64});
+        testDims(VGG19_0b, new int[]{226, 226, 3}, new int[]{226, 226, 64});
+        testDims(VGG19_1a, new int[]{226, 226, 64}, new int[]{226, 226, 64});
         testDims(VGG19_1b1, new int[]{226, 226, 64}, new int[]{113, 113, 128});
         testDims(VGG19_1c1, new int[]{113, 113, 128}, new int[]{57, 57, 256});
         testDims(VGG19_1d1, new int[]{57, 57, 256}, new int[]{29, 29, 512});
@@ -284,7 +298,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
     @Nullable
     @Override
-    public VisionPipeline<? extends VisionPipelineLayer> getVisionPipeline() {
+    public VisionPipeline getVisionPipeline() {
       return Inception5H.getVisionPipeline();
     }
 

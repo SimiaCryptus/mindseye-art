@@ -207,14 +207,6 @@ class VGG19_HDF5 {
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
 
-  @NotNull
-  private Tensor readPermuted(String datasetName, int[] permutationOrder, String... groups) {
-    Tensor dataSet = hdf5.readDataSet(datasetName, groups);
-    Tensor permuteDimensions = dataSet.permuteDimensions(permutationOrder);
-    dataSet.freeRef();
-    return permuteDimensions;
-  }
-
   public void addPoolingLayer(final int size, @Nonnull PipelineNetwork pipeline) {
     add(new ImgModulusPaddingLayer(size, size), pipeline.addRef());
     PoolingLayer poolingLayer = new PoolingLayer();
@@ -251,6 +243,14 @@ class VGG19_HDF5 {
     BandReducerLayer bandReducerLayer = new BandReducerLayer();
     bandReducerLayer.setMode(PoolingLayer.PoolingMode.Max);
     add(bandReducerLayer, pipeline);
+  }
+
+  @NotNull
+  private Tensor readPermuted(String datasetName, int[] permutationOrder, String... groups) {
+    Tensor dataSet = hdf5.readDataSet(datasetName, groups);
+    Tensor permuteDimensions = dataSet.permuteDimensions(permutationOrder);
+    dataSet.freeRef();
+    return permuteDimensions;
   }
 
 }

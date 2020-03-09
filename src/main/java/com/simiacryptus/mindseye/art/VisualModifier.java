@@ -21,6 +21,7 @@ package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
+import com.simiacryptus.mindseye.layers.LoggingLayer;
 import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
@@ -42,6 +43,7 @@ public interface VisualModifier {
   default PipelineNetwork build(@Nonnull VisionPipelineLayer layer, int[] contentDims, UnaryOperator<Tensor> viewLayer,
                                 Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
+    layer.freeRef();
     network.assertAlive();
     return build(new VisualModifierParameters(network, contentDims, viewLayer, null, image));
   }
@@ -74,16 +76,15 @@ public interface VisualModifier {
 
   @Nonnull
   default VisualModifier scale(double scale) {
-    VisualModifier left = this;
     return new VisualModifier() {
       public boolean isLocalized() {
-        return left.isLocalized();
+        return VisualModifier.this.isLocalized();
       }
 
       @Nonnull
       @Override
       public String toString() {
-        return RefString.format("(%s*%s)", left.toString(), scale);
+        return RefString.format("(%s*%s)", VisualModifier.this.toString(), scale);
       }
 
       @Nonnull
@@ -94,6 +95,38 @@ public interface VisualModifier {
         linearActivationLayer.setScale(scale);
         linearActivationLayer.freeze();
         build.add(linearActivationLayer).freeRef();
+        build.freeze();
+        return build;
+      }
+    };
+  }
+
+  @Nonnull
+  default VisualModifier withLogging() {
+    return withLogging(getClass().getSimpleName());
+  }
+
+  @Nonnull
+  default VisualModifier withLogging(String name) {
+    return new VisualModifier() {
+      public boolean isLocalized() {
+        return VisualModifier.this.isLocalized();
+      }
+
+      @Nonnull
+      @Override
+      public String toString() {
+        return RefString.format("Logging(%s)", VisualModifier.this.toString());
+      }
+
+      @Nonnull
+      @Override
+      public PipelineNetwork build(VisualModifierParameters visualModifierParameters) {
+        PipelineNetwork build = VisualModifier.this.build(visualModifierParameters);
+        LoggingLayer loggingLayer = new LoggingLayer(LoggingLayer.DetailLevel.Data);
+        loggingLayer.setName(name);
+        loggingLayer.setLogFeedback(false);
+        build.add(loggingLayer).freeRef();
         build.freeze();
         return build;
       }

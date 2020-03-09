@@ -19,10 +19,7 @@
 
 package com.simiacryptus.mindseye.art.photo.topology;
 
-import com.simiacryptus.ref.wrappers.RefArrays;
-import com.simiacryptus.ref.wrappers.RefCollectors;
-import com.simiacryptus.ref.wrappers.RefIntStream;
-import com.simiacryptus.ref.wrappers.RefList;
+import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -30,7 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class IteratedRasterTopology implements RasterTopology {
+public class IteratedRasterTopology extends ReferenceCountingBase implements RasterTopology {
   private final RasterTopology inner;
   private int iterations = 2;
 
@@ -49,9 +46,8 @@ public class IteratedRasterTopology implements RasterTopology {
   }
 
   @Nonnull
-  public IteratedRasterTopology setIterations(int iterations) {
+  public void setIterations(int iterations) {
     this.iterations = iterations;
-    return this;
   }
 
   public static List<int[]> iterate(List<int[]> edges, int pow) {
@@ -80,5 +76,16 @@ public class IteratedRasterTopology implements RasterTopology {
   @Override
   public int[] getCoordsFromIndex(int i) {
     return inner.getCoordsFromIndex(i);
+  }
+
+  @Override
+  public IteratedRasterTopology addRef() {
+    return (IteratedRasterTopology) super.addRef();
+  }
+
+  @Override
+  protected void _free() {
+    super._free();
+    inner.freeRef();
   }
 }

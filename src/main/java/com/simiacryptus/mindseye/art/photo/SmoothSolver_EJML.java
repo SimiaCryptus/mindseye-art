@@ -20,13 +20,12 @@
 package com.simiacryptus.mindseye.art.photo;
 
 import com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity;
-import com.simiacryptus.mindseye.art.photo.cuda.RefOperator;
+import com.simiacryptus.mindseye.art.photo.cuda.RefUnaryOperator;
 import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
-import com.simiacryptus.ref.wrappers.RefList;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.DMatrixSparseCSC;
 import org.ejml.interfaces.linsol.LinearSolverSparse;
@@ -59,13 +58,15 @@ public class SmoothSolver_EJML implements SmoothSolver {
   public static DMatrixSparseCSC laplacian(@Nonnull @RefAware RasterAffinity affinity, @Nonnull RasterTopology topology) {
     List<double[]> affinityList = affinity.affinityList(topology.connectivity());
     RefUtil.freeRef(affinity);
-    return laplacian(topology.connectivity(), affinityList);
+    DMatrixSparseCSC laplacian = laplacian(topology.connectivity(), affinityList);
+    topology.freeRef();
+    return laplacian;
   }
 
   @Nonnull
   public static UnaryOperator<Tensor> wrap(@Nonnull UnaryOperator<SimpleMatrix> solver, @Nonnull RasterTopology topology) {
     final int[] dimensions = topology.getDimensions();
-    return tensor -> {
+    return RefUtil.wrapInterface(tensor -> {
       int[] tensorDimensions = tensor.getDimensions();
       if (!RefArrays.equals(dimensions, tensorDimensions)) {
         tensor.freeRef();
@@ -87,7 +88,7 @@ public class SmoothSolver_EJML implements SmoothSolver {
       });
       tensor.freeRef();
       return mapCoords;
-    };
+    }, topology);
   }
 
   public static @Nonnull
@@ -130,8 +131,9 @@ public class SmoothSolver_EJML implements SmoothSolver {
   }
 
   @Nonnull
-  public RefOperator<Tensor> solve(@Nonnull RasterTopology topology, @Nonnull @RefAware RasterAffinity affinity, double lambda) {
-    return RefOperator.wrap(wrap(solve(laplacian(affinity, topology), lambda), topology));
+  public RefUnaryOperator<Tensor> solve(@Nonnull RasterTopology topology, @Nonnull @RefAware RasterAffinity affinity, double lambda) {
+    DMatrixSparseCSC laplacian = laplacian(affinity, topology.addRef());
+    return RefUnaryOperator.wrap(wrap(solve(laplacian, lambda), topology));
   }
 
 }

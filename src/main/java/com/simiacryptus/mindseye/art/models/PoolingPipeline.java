@@ -43,7 +43,7 @@ public enum PoolingPipeline implements VisionPipelineLayer {
   Pooling128(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3);
 
   @Nullable
-  private static volatile VisionPipeline<VisionPipelineLayer> visionPipeline = null;
+  private static volatile VisionPipeline visionPipeline = null;
   private final RefConsumer<PipelineNetwork> fn;
   private final int[] inputBorders;
   private final int[] outputBorders;
@@ -86,25 +86,25 @@ public enum PoolingPipeline implements VisionPipelineLayer {
 
   @Nonnull
   @Override
-  public VisionPipeline<?> getPipeline() {
+  public VisionPipeline getPipeline() {
     return getVisionPipeline();
   }
 
   @Nonnull
   @Override
   public String getPipelineName() {
-    VisionPipeline<VisionPipelineLayer> visionPipeline = getVisionPipeline();
+    VisionPipeline visionPipeline = getVisionPipeline();
     String name = visionPipeline.name;
     visionPipeline.freeRef();
     return name;
   }
 
   @Nullable
-  public static VisionPipeline<VisionPipelineLayer> getVisionPipeline() {
+  public static VisionPipeline getVisionPipeline() {
     if (null == visionPipeline) {
       synchronized (PoolingPipeline.class) {
         if (null == visionPipeline) {
-          visionPipeline = new VisionPipeline<>(PoolingPipeline.class.getSimpleName(), PoolingPipeline.values());
+          visionPipeline = new VisionPipeline(PoolingPipeline.class.getSimpleName(), PoolingPipeline.values());
         }
       }
     }
