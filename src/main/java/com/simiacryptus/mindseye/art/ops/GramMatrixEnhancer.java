@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.ops;
 
+import com.simiacryptus.mindseye.art.ArtSettings;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
@@ -48,7 +49,7 @@ public class GramMatrixEnhancer implements VisualModifier {
   private double max = 1;
   private boolean averaging = true;
   private boolean balanced = true;
-  private int tileSize = 600;
+  private int tileSize = ArtSettings.INSTANCE().defaultTileSize;
   private int padding = 8;
 
   public double getMax() {
@@ -157,6 +158,7 @@ public class GramMatrixEnhancer implements VisualModifier {
 
     assert result != null;
     double mag = balanced ? result.rms() : 1;
+    log.info(RefString.format("Adjust for %s by %s: %s", network.getName(), this.getClass().getSimpleName(), mag));
     network.add(loss(result, mag, isAveraging())).freeRef();
     network.freeze();
     return network;

@@ -22,11 +22,15 @@ package com.simiacryptus.mindseye.art.util;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
+import com.simiacryptus.util.data.DoubleStatistics;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+import java.awt.image.BufferedImage;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
+import java.util.stream.IntStream;
 
 public class Plasma {
   private int bands;
@@ -34,7 +38,7 @@ public class Plasma {
   private double noisePower;
 
   public Plasma() {
-    setNoisePower(2);
+    setNoisePower(0.5);
     setNoiseAmplitude(100);
     setBands(3);
   }
@@ -81,20 +85,52 @@ public class Plasma {
 
   @Nonnull
   public Tensor paint(final int width, final int height) {
-    return expandPlasma(initSquare(bands), width, height);
-  }
-
-  @Nonnull
-  private Tensor expandPlasma(@Nonnull Tensor image, final int width, final int height) {
+    Tensor image = initSquare(bands);
     while (image.getDimensions()[0] < Math.max(width, height)) {
       final double factor = Math.pow(image.getDimensions()[0], noisePower);
       Tensor newImage = expandPlasma(image.addRef(), RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
-      image.freeRef();
-      image = newImage;
+      if(image != newImage) {
+        image.freeRef();
+        image = newImage;
+      }
     }
-    Tensor tensor = Tensor.fromRGB(ImageUtil.resize(image.toRgbImage(), width, height));
+    return resize(toImage(renormBands(image)), width, height);
+  }
+
+  @NotNull
+  public Tensor renormBands(Tensor image) {
+    double[][] bandStats = bandStats(image.addRef());
+    Tensor mapCoords = image.mapCoords(c -> {
+      int band = c.getCoords()[2];
+      return (image.get(c) - bandStats[band][0]) * bandStats[band][1];
+    });
     image.freeRef();
-    return tensor;
+    return mapCoords;
+  }
+
+  public static double[][] bandStats(Tensor image) {
+    double[][] doubles = IntStream.range(0, image.getDimensions()[2]).mapToObj(band -> {
+      Tensor selectBand = image.selectBand(band);
+      DoubleStatistics doubleStatistics = selectBand.getDoubleStatistics();
+      selectBand.freeRef();
+      double min = doubleStatistics.getMin();
+      double scale = 255 / (doubleStatistics.getMax() - min);
+      return new double[]{min, scale};
+    }).toArray(double[][]::new);
+    image.freeRef();
+    return doubles;
+  }
+
+  @NotNull
+  public static BufferedImage toImage(@Nonnull Tensor image) {
+    BufferedImage rgbImage = image.toRgbImage();
+    image.freeRef();
+    return rgbImage;
+  }
+
+  @NotNull
+  public static Tensor resize(BufferedImage rgbImage, int width, int height) {
+    return Tensor.fromRGB(ImageUtil.resize(rgbImage, width, height));
   }
 
   @Nonnull
@@ -103,10 +139,8 @@ public class Plasma {
     int width = seed.getDimensions()[0] * 2;
     int height = seed.getDimensions()[1] * 2;
     Tensor returnValue = new Tensor(width, height, bands);
-    IntFunction<DoubleUnaryOperator> fn1 = b -> x -> Math
-        .max(Math.min(x + noise[b % noise.length] * (Math.random() - 0.5), 255), 0);
-    IntFunction<DoubleUnaryOperator> fn2 = b -> x -> Math
-        .max(Math.min(x + Math.sqrt(2) * noise[b % noise.length] * (Math.random() - 0.5), 255), 0);
+    IntFunction<DoubleUnaryOperator> fn1 = b -> x -> clamp(x + noise[b % noise.length] * (Math.random() - 0.5));
+    IntFunction<DoubleUnaryOperator> fn2 = b -> x -> clamp(x + Math.sqrt(2) * noise[b % noise.length] * (Math.random() - 0.5));
     IntUnaryOperator addrX = x -> {
       while (x >= width)
         x -= width;
@@ -163,5 +197,9 @@ public class Plasma {
     }
     seed.freeRef();
     return returnValue;
+  }
+
+  private double clamp(double a) {
+    return Math.max(Math.min(a, 255), 0);
   }
 }

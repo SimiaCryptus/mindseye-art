@@ -110,7 +110,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
 
   public void setPrecision(@Nonnull Precision precision) {
     this.precision = precision;
-    MultiPrecision.setPrecision((DAGNetwork) filter.addRef(), precision);
+    MultiPrecision.setPrecision(filter.addRef(), precision);
   }
 
   public boolean isMutableCanvas() {

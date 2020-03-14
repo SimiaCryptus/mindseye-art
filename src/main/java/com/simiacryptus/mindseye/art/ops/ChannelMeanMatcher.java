@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.ops;
 
+import com.simiacryptus.mindseye.art.ArtSettings;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
@@ -38,7 +39,7 @@ public class ChannelMeanMatcher implements VisualModifier {
 
   private boolean balanced = true;
   private boolean averaging = true;
-  private int tileSize = 600;
+  private int tileSize = ArtSettings.INSTANCE().defaultTileSize;
 
   public boolean isAveraging() {
     return averaging;

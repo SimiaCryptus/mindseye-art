@@ -44,6 +44,7 @@ public class AppendVisionPipelineLayer<T extends VisionPipelineLayer> extends Re
   @Nonnull
   @Override
   public PipelineNetwork getNetwork() {
+    assertAlive();
     final PipelineNetwork network = inner.getNetwork();
     network.add(layer.addRef()).freeRef();
     return network;

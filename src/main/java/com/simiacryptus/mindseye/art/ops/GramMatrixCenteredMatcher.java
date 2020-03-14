@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.ops;
 
+import com.simiacryptus.mindseye.art.ArtSettings;
 import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
@@ -47,7 +48,7 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
   private final Precision precision = Precision.Float;
   private boolean averaging = true;
   private boolean balanced = true;
-  private int tileSize = 600;
+  private int tileSize = ArtSettings.INSTANCE().defaultTileSize;
 
   public int getTileSize() {
     return tileSize;

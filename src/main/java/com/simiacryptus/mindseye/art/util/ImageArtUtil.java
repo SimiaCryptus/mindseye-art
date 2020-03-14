@@ -291,7 +291,7 @@ public class ImageArtUtil {
         return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
             .map(x -> getImageTensor(x, log, sampleImageDimensions[0], sampleImageDimensions[1]))
             .reduce((a, b) -> {
-              Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
+              Tensor r = a.mapCoords(c -> Math.min(255, Math.max(0, a.get(c) + b.get(c))));
               a.freeRef();
               b.freeRef();
               return r;
@@ -305,7 +305,7 @@ public class ImageArtUtil {
             .map(x -> getImageTensor(x, log, sampleImageDimensions[0], sampleImageDimensions[1]))
             .reduce((a, b) -> {
               try {
-                return a.mapCoords(c -> a.get(c) * b.get(c));
+                return a.mapCoords(c -> Math.min(255, Math.max(0, a.get(c) * b.get(c))));
               } finally {
                 b.freeRef();
                 a.freeRef();

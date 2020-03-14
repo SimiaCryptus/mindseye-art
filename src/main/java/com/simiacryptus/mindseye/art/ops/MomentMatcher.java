@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.ops;
 
+import com.simiacryptus.mindseye.art.ArtSettings;
 import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
@@ -52,7 +53,7 @@ public class MomentMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(MomentMatcher.class);
   private static int padding = 8;
   private Precision precision = Precision.Float;
-  private int tileSize = 800;
+  private int tileSize = ArtSettings.INSTANCE().defaultTileSize;
   private double posCoeff = 1.0;
   private double scaleCoeff = 1.0;
   private double covCoeff = 1.0;
@@ -275,8 +276,11 @@ public class MomentMatcher implements VisualModifier {
     assert evalRoot != null;
     double sumSq = evalRoot.sumSq();
     evalRoot.freeRef();
-    log.info(RefString.format("Adjust for %s : %s", network.getName(), sumSq));
-    final Layer nextHead = new ScaleLayer(0 == sumSq ? 1 : 1.0 / sumSq);
+    log.info(RefString.format("Adjust for %s by %s: %s", network.getName(), this.getClass().getSimpleName(), sumSq));
+    double factor;
+    if (Double.isFinite(sumSq) && 0 < sumSq) factor = 1;
+    else factor = 1.0 / sumSq;
+    final Layer nextHead = new ScaleLayer(factor);
     network.add(nextHead).freeRef();
 
     Tensor mask = visualModifierParameters.getMask();

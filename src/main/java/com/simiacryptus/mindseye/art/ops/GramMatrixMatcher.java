@@ -19,6 +19,7 @@
 
 package com.simiacryptus.mindseye.art.ops;
 
+import com.simiacryptus.mindseye.art.ArtSettings;
 import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
@@ -47,7 +48,7 @@ public class GramMatrixMatcher implements VisualModifier {
   private final Precision precision = Precision.Float;
   private boolean averaging = true;
   private boolean balanced = true;
-  private int tileSize = 1000;
+  private int tileSize = ArtSettings.INSTANCE().defaultTileSize;
 
   public int getTileSize() {
     return tileSize;
@@ -199,6 +200,7 @@ public class GramMatrixMatcher implements VisualModifier {
     RefUtil.freeRef(images);
     assert model != null;
     double mag = balanced ? model.rms() : 1;
+    log.info(RefString.format("Adjust for %s by %s: %s", network.getName(), this.getClass().getSimpleName(), mag));
     network.add(loss(model, mag, isAveraging())).freeRef();
     network.freeze();
     return network;
