@@ -41,6 +41,7 @@ import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefString;
 import com.simiacryptus.ref.wrappers.RefSystem;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
@@ -73,13 +74,13 @@ public class SegmentTest extends NotebookReportBase {
 
 
   @Test
-  public void segment_volumeEntropy() {
-    run(log -> segment_volumeEntropy(log));
+  public void segment_volumeEntropy(TestInfo testInfo) {
+    run(testInfo, log -> segment_volumeEntropy(log));
   }
 
   @Test
-  public void segment_minCut() {
-    run(log -> segment_minCut(log));
+  public void segment_minCut(TestInfo testInfo) {
+    run(testInfo, log -> segment_minCut(log));
   }
 
   @Nonnull

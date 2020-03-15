@@ -138,7 +138,7 @@ public class ImageArtUtil {
           }
         });
         return null;
-      }, log.getName() + "_" + "cuda_log");
+      }, "Cuda Logs");
 
     return new Closeable() {
       @Override

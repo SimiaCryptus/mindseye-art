@@ -46,6 +46,7 @@ import com.simiacryptus.ref.wrappers.RefString;
 import com.simiacryptus.ref.wrappers.RefSystem;
 import com.simiacryptus.util.Util;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
@@ -90,53 +91,53 @@ public class WCTTest extends NotebookReportBase {
 
 
   @Test
-  public void test0() {
-    run(log -> test0(log));
+  public void test0(TestInfo testInfo) {
+    run(testInfo, log -> test0(log));
   }
 
   @Test
-  public void test1() {
-    run(log -> test1(log));
+  public void test1(TestInfo testInfo) {
+    run(testInfo, log -> test1(log));
   }
 
   @Test
-  public void test2() {
-    run(log -> test2(log));
+  public void test2(TestInfo testInfo) {
+    run(testInfo, log -> test2(log));
   }
 
   @Test
-  public void test3() {
-    run(log -> test3(log));
+  public void test3(TestInfo testInfo) {
+    run(testInfo, log -> test3(log));
   }
 
   @Test
-  public void test4() {
-    run(log -> test4(log));
+  public void test4(TestInfo testInfo) {
+    run(testInfo, log -> test4(log));
   }
 
   @Test
-  public void test5() {
-    run(log -> test5(log));
+  public void test5(TestInfo testInfo) {
+    run(testInfo, log -> test5(log));
   }
 
   @Test
-  public void wct_full() {
-    run(log -> wct_full(log));
+  public void wct_full(TestInfo testInfo) {
+    run(testInfo, log -> wct_full(log));
   }
 
   @Test
-  public void wct_api() {
-    run(log -> wct_api(log));
+  public void wct_api(TestInfo testInfo) {
+    run(testInfo, log -> wct_api(log));
   }
 
   @Test
-  public void photoBlur() {
-    run(log -> photoBlur(log));
+  public void photoBlur(TestInfo testInfo) {
+    run(testInfo, log -> photoBlur(log));
   }
 
   @Test
-  public void photoBlur_Survey() {
-    run(log -> photoBlur_Survey(log));
+  public void photoBlur_Survey(TestInfo testInfo) {
+    run(testInfo, log -> photoBlur_Survey(log));
   }
 
   private void test0(@Nonnull NotebookOutput log) {

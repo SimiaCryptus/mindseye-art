@@ -35,6 +35,7 @@ import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefAssert;
 import com.simiacryptus.ref.wrappers.RefList;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,8 +92,8 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   }
 
   @Test
-  public void inoutDims() {
-    run(log1 -> inoutDims(log1));
+  public void inoutDims(TestInfo testInfo) {
+    run(testInfo, log1 -> inoutDims(log1));
   }
 
   //  @Test
@@ -101,18 +102,18 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   //  }
 
   @Test
-  public void pipelineTest() {
-    run(log1 -> pipelineTest(log1));
+  public void pipelineTest(TestInfo testInfo) {
+    run(testInfo, log1 -> pipelineTest(log1));
   }
 
   @Test
-  public void graphs() {
-    run(log1 -> graphs(log1));
+  public void graphs(TestInfo testInfo) {
+    run(testInfo, log1 -> graphs(log1));
   }
 
   @Test
-  public void layers() {
-    run(log1 -> layers(log1));
+  public void layers(TestInfo testInfo) {
+    run(testInfo, log1 -> layers(log1));
   }
 
   public abstract void inoutDims(NotebookOutput log);
@@ -186,7 +187,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
           }
         }.run(sublog);
         return null;
-      }, log.getName() + "_" + name);
+      }, String.format("%s (Pipeline %s)", log.getDisplayName(), name));
       dims[0] = dimensions;
       layer.freeRef();
     });
@@ -213,13 +214,13 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     }
 
     @Override
-    public void layers() {
-      super.layers();
+    public void layers(TestInfo testInfo) {
+      super.layers(testInfo);
     }
 
     @Override
-    public void inoutDims() {
-      super.inoutDims();
+    public void inoutDims(TestInfo testInfo) {
+      super.inoutDims(testInfo);
     }
 
     public void inoutDims(@Nonnull NotebookOutput log) {
