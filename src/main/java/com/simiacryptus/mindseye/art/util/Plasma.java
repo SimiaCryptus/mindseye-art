@@ -73,41 +73,6 @@ public class Plasma {
     return this;
   }
 
-  @Nonnull
-  private static Tensor initSquare(final int bands) {
-    Tensor tensor = new Tensor(1, 1, bands);
-    tensor.setByCoord(c1 -> 100 + 200 * (Math.random() - 0.5));
-    Tensor tensor1 = new Tensor(2, 2, bands);
-    tensor1.setByCoord(c -> tensor.get(0, 0, c.getCoords()[2]));
-    tensor.freeRef();
-    return tensor1;
-  }
-
-  @Nonnull
-  public Tensor paint(final int width, final int height) {
-    Tensor image = initSquare(bands);
-    while (image.getDimensions()[0] < Math.max(width, height)) {
-      final double factor = Math.pow(image.getDimensions()[0], noisePower);
-      Tensor newImage = expandPlasma(image.addRef(), RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
-      if(image != newImage) {
-        image.freeRef();
-        image = newImage;
-      }
-    }
-    return resize(toImage(renormBands(image)), width, height);
-  }
-
-  @NotNull
-  public Tensor renormBands(Tensor image) {
-    double[][] bandStats = bandStats(image.addRef());
-    Tensor mapCoords = image.mapCoords(c -> {
-      int band = c.getCoords()[2];
-      return (image.get(c) - bandStats[band][0]) * bandStats[band][1];
-    });
-    image.freeRef();
-    return mapCoords;
-  }
-
   public static double[][] bandStats(Tensor image) {
     double[][] doubles = IntStream.range(0, image.getDimensions()[2]).mapToObj(band -> {
       Tensor selectBand = image.selectBand(band);
@@ -131,6 +96,41 @@ public class Plasma {
   @NotNull
   public static Tensor resize(BufferedImage rgbImage, int width, int height) {
     return Tensor.fromRGB(ImageUtil.resize(rgbImage, width, height));
+  }
+
+  @Nonnull
+  private static Tensor initSquare(final int bands) {
+    Tensor tensor = new Tensor(1, 1, bands);
+    tensor.setByCoord(c1 -> 100 + 200 * (Math.random() - 0.5));
+    Tensor tensor1 = new Tensor(2, 2, bands);
+    tensor1.setByCoord(c -> tensor.get(0, 0, c.getCoords()[2]));
+    tensor.freeRef();
+    return tensor1;
+  }
+
+  @Nonnull
+  public Tensor paint(final int width, final int height) {
+    Tensor image = initSquare(bands);
+    while (image.getDimensions()[0] < Math.max(width, height)) {
+      final double factor = Math.pow(image.getDimensions()[0], noisePower);
+      Tensor newImage = expandPlasma(image.addRef(), RefArrays.stream(noiseAmplitude).map(v -> v / factor).toArray());
+      if (image != newImage) {
+        image.freeRef();
+        image = newImage;
+      }
+    }
+    return resize(toImage(renormBands(image)), width, height);
+  }
+
+  @NotNull
+  public Tensor renormBands(Tensor image) {
+    double[][] bandStats = bandStats(image.addRef());
+    Tensor mapCoords = image.mapCoords(c -> {
+      int band = c.getCoords()[2];
+      return (image.get(c) - bandStats[band][0]) * bandStats[band][1];
+    });
+    image.freeRef();
+    return mapCoords;
   }
 
   @Nonnull

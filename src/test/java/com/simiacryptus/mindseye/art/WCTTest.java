@@ -45,7 +45,7 @@ import com.simiacryptus.ref.wrappers.RefAtomicReference;
 import com.simiacryptus.ref.wrappers.RefString;
 import com.simiacryptus.ref.wrappers.RefSystem;
 import com.simiacryptus.util.Util;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;

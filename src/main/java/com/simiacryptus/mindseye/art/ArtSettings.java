@@ -20,17 +20,11 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.lang.Settings;
-import com.simiacryptus.ref.lang.PersistanceMode;
 import com.simiacryptus.ref.lang.RefIgnore;
-import com.simiacryptus.ref.lang.ReferenceCounting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RefIgnore
 public class ArtSettings implements Settings {
