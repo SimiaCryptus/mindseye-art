@@ -80,8 +80,7 @@ public class RelativeAffinity extends ContextAffinity {
   }
 
   @Override
-  protected double dist(@Nonnull SimpleMatrix vector_i, SimpleMatrix vector_j, @Nonnull SimpleMatrix cov, int neighborhoodSize,
-                        int globalSize) {
+  protected double dist(@Nonnull SimpleMatrix vector_i, SimpleMatrix vector_j, @Nonnull SimpleMatrix cov, int neighborhoodSize) {
     assert neighborhoodSize > 0;
     final SimpleMatrix invert = MultivariateFrameOfReference.safeInvert(cov, getEpsilon() / neighborhoodSize);
     final SimpleMatrix vect = vector_i.minus(vector_j);

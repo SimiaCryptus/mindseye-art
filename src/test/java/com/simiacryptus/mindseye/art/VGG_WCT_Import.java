@@ -422,7 +422,7 @@ public class VGG_WCT_Import {
     {
       final String prefix1 = "inv_conv2_1_1_";
       final InnerNode wrap = pipeline2.add(convolutionLayer(getBias(prefix1), getWeight(prefix1), 128, 64), pipeline2.getInput(0));
-      pipeline2.add(new PhotoUnpoolingLayer(2, 2), wrap, prepool_1).freeRef();
+      pipeline2.add(new PhotoUnpoolingLayer(), wrap, prepool_1).freeRef();
       final String prefix2 = "inv_conv2_1_5_";
       pipeline2.add(convolutionLayer(getBias(prefix2), getWeight(prefix2), 64, 64)).freeRef();
     }
@@ -485,7 +485,7 @@ public class VGG_WCT_Import {
       final String prefix1 = "inv_conv3_1_1_";
       final String prefix2 = "inv_conv3_1_5_";
       pipeline2.add(convolutionLayer(getBias(prefix1), getWeight(prefix1), 256, 128), pipeline2.getInput(0)).freeRef();
-      pipeline2.add(new PhotoUnpoolingLayer(2, 2), pipeline2.getHead(), prepool_2).freeRef();
+      pipeline2.add(new PhotoUnpoolingLayer(), pipeline2.getHead(), prepool_2).freeRef();
       pipeline2.add(convolutionLayer(getBias(prefix2), getWeight(prefix2), 128, 128)).freeRef();
     }
 
@@ -497,7 +497,7 @@ public class VGG_WCT_Import {
       final Tensor bias2 = getBias(prefix2);
       final Tensor weight2 = getWeight(prefix2);
       pipeline2.add(convolutionLayer(bias1, weight1, 128, 64)).freeRef();
-      pipeline2.add(new PhotoUnpoolingLayer(2, 2), pipeline2.getHead(), prepool_1).freeRef();
+      pipeline2.add(new PhotoUnpoolingLayer(), pipeline2.getHead(), prepool_1).freeRef();
       pipeline2.add(convolutionLayer(bias2, weight2, 64, 64)).freeRef();
     }
 
@@ -549,15 +549,15 @@ public class VGG_WCT_Import {
     pipeline2.add(convolutionLayer("vgg_conv4_1_22_", 256, 256)).freeRef();
     final InnerNode prepool_3 = pipeline2.add(convolutionLayer("vgg_conv4_1_25_", 256, 256));
     pipeline2.add(convolutionLayer("inv_conv4_1_1_", 512, 256), pipeline2.getInput(0)).freeRef();
-    pipeline2.add(new PhotoUnpoolingLayer(2, 2), pipeline2.getHead(), prepool_3).freeRef();
+    pipeline2.add(new PhotoUnpoolingLayer(), pipeline2.getHead(), prepool_3).freeRef();
     pipeline2.add(convolutionLayer("inv_conv4_1_5_", 256, 256)).freeRef();
     pipeline2.add(convolutionLayer("inv_conv4_1_8_", 256, 256)).freeRef();
     pipeline2.add(convolutionLayer("inv_conv4_1_11_", 256, 256)).freeRef();
     pipeline2.add(convolutionLayer("inv_conv4_1_14_", 256, 128)).freeRef();
-    pipeline2.add(new PhotoUnpoolingLayer(2, 2), pipeline2.getHead(), prepool_2).freeRef();
+    pipeline2.add(new PhotoUnpoolingLayer(), pipeline2.getHead(), prepool_2).freeRef();
     pipeline2.add(convolutionLayer("inv_conv4_1_18_", 128, 128)).freeRef();
     pipeline2.add(convolutionLayer("inv_conv4_1_21_", 128, 64)).freeRef();
-    pipeline2.add(new PhotoUnpoolingLayer(2, 2), pipeline2.getHead(), prepool_1).freeRef();
+    pipeline2.add(new PhotoUnpoolingLayer(), pipeline2.getHead(), prepool_1).freeRef();
     pipeline2.add(convolutionLayer("inv_conv4_1_25_", 64, 64)).freeRef();
 
     final String prefix1 = "inv_conv4_1_28_";

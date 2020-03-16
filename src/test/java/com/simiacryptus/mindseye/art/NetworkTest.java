@@ -33,15 +33,12 @@ import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.LayerTestBase;
 import com.simiacryptus.notebook.NullNotebookOutput;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
-import java.util.Random;
 
 public class NetworkTest extends LayerTestBase {
   private static final Logger log = LoggerFactory.getLogger(NetworkTest.class);
@@ -54,6 +51,18 @@ public class NetworkTest extends LayerTestBase {
 
   public NetworkTest() {
     testingBatchSize = 1;
+  }
+
+  @Nonnull
+  @Override
+  public Layer getLayer() {
+    return layer.copy();
+  }
+
+  @Nonnull
+  @Override
+  public int[][] getSmallDims() {
+    return new int[][]{{contentImage.getWidth(), contentImage.getHeight(), 3}};
   }
 
   private static DAGNetwork build() {
@@ -74,38 +83,26 @@ public class NetworkTest extends LayerTestBase {
 
   @Override
   @Disabled
-  public void derivativeTest(TestInfo testInfo) {
-    super.derivativeTest(testInfo);
+  public void derivativeTest() {
+    super.derivativeTest();
   }
 
   @Override
   @Disabled
-  public void equivalencyTest(TestInfo testInfo) {
-    super.equivalencyTest(testInfo);
+  public void equivalencyTest() {
+    super.equivalencyTest();
   }
 
   @Override
   @Disabled
-  public void trainingTest(TestInfo testInfo) {
-    super.trainingTest(testInfo);
+  public void trainingTest() {
+    super.trainingTest();
   }
 
   @Override
   @Disabled
-  public void batchingTest(TestInfo testInfo) {
-    super.batchingTest(testInfo);
-  }
-
-  @Nonnull
-  @Override
-  public int[][] getSmallDims(Random random) {
-    return new int[][]{{contentImage.getWidth(), contentImage.getHeight(), 3}};
-  }
-
-  @Nonnull
-  @Override
-  public Layer getLayer(int[][] inputSize, Random random) {
-    return layer.copy();
+  public void batchingTest() {
+    super.batchingTest();
   }
 
 }

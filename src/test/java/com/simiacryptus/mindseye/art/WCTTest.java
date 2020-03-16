@@ -46,7 +46,6 @@ import com.simiacryptus.ref.wrappers.RefString;
 import com.simiacryptus.ref.wrappers.RefSystem;
 import com.simiacryptus.util.Util;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
@@ -91,136 +90,81 @@ public class WCTTest extends NotebookReportBase {
 
 
   @Test
-  public void test0(TestInfo testInfo) {
-    report(testInfo, log -> test0(log));
+  public void test0() {
+    wct_test(getLog(), new PipelineNetwork(1), new PipelineNetwork(1), contentImage(), styleImage());
   }
 
   @Test
-  public void test1(TestInfo testInfo) {
-    report(testInfo, log -> test1(log));
+  public void test1() {
+    wct_test(getLog(), VGG_WCT_Import.encode_1(), VGG_WCT_Import.decode_1(), contentImage(), styleImage());
   }
 
   @Test
-  public void test2(TestInfo testInfo) {
-    report(testInfo, log -> test2(log));
-  }
-
-  @Test
-  public void test3(TestInfo testInfo) {
-    report(testInfo, log -> test3(log));
-  }
-
-  @Test
-  public void test4(TestInfo testInfo) {
-    report(testInfo, log -> test4(log));
-  }
-
-  @Test
-  public void test5(TestInfo testInfo) {
-    report(testInfo, log -> test5(log));
-  }
-
-  @Test
-  public void wct_full(TestInfo testInfo) {
-    report(testInfo, log -> wct_full(log));
-  }
-
-  @Test
-  public void wct_api(TestInfo testInfo) {
-    report(testInfo, log -> wct_api(log));
-  }
-
-  @Test
-  public void photoBlur(TestInfo testInfo) {
-    report(testInfo, log -> photoBlur(log));
-  }
-
-  @Test
-  public void photoBlur_Survey(TestInfo testInfo) {
-    report(testInfo, log -> photoBlur_Survey(log));
-  }
-
-  private void test0(@Nonnull NotebookOutput log) {
-    wct_test(log, new PipelineNetwork(1), new PipelineNetwork(1), contentImage(), styleImage());
-  }
-
-  @Nonnull
-  private Tensor styleImage() {
-    return resize(ImageUtil.getTensor(styleImage));
-  }
-
-  @Nonnull
-  private Tensor resize(@Nonnull Tensor tensor) {
-    final Tensor resized = Tensor.fromRGB(ImageUtil.resize(tensor.toImage(), imageSize, true));
-    tensor.freeRef();
-    return resized;
-  }
-
-  @Nonnull
-  private Tensor contentImage() {
-    return resize(ImageUtil.getTensor(contentImage));
-  }
-
-  private void test1(@Nonnull NotebookOutput log) {
-    wct_test(log, VGG_WCT_Import.encode_1(), VGG_WCT_Import.decode_1(), contentImage(), styleImage());
-  }
-
-  private void test2(@Nonnull NotebookOutput log) {
+  public void test2() {
+    NotebookOutput log = getLog();
     log.h1("Photo");
     wct_test(log, VGG_WCT_Import.encode_2(), VGG_WCT_Import.photo_decode_2(), contentImage(), styleImage());
     log.h1("Centered");
     wct_test(log, VGG_WCT_Import.encode_2(), VGG_WCT_Import.decode_2(), contentImage(), styleImage());
   }
 
-  private void test3(@Nonnull NotebookOutput log) {
+  @Test
+  public void test3() {
+    NotebookOutput log = getLog();
     log.h1("Photo");
     wct_test(log, VGG_WCT_Import.encode_3(), VGG_WCT_Import.photo_decode_3(), contentImage(), styleImage());
     log.h1("Centered");
     wct_test(log, VGG_WCT_Import.encode_3(), VGG_WCT_Import.decode_3(), contentImage(), styleImage());
   }
 
-  private void test4(@Nonnull NotebookOutput log) {
+  @Test
+  public void test4() {
+    NotebookOutput log = getLog();
     log.h1("Photo");
     wct_test(log, VGG_WCT_Import.encode_4(), VGG_WCT_Import.photo_decode_4(), contentImage(), styleImage());
     log.h1("Centered");
     wct_test(log, VGG_WCT_Import.encode_4(), VGG_WCT_Import.decode_4(), contentImage(), styleImage());
   }
 
-  private void test5(@Nonnull NotebookOutput log) {
+  @Test
+  public void test5() {
+    NotebookOutput log = getLog();
     log.h1("Photo");
     wct_test(log, VGG_WCT_Import.encode_5(), VGG_WCT_Import.photo_decode_5(), contentImage(), styleImage());
     log.h1("Centered");
     wct_test(log, VGG_WCT_Import.encode_5(), VGG_WCT_Import.decode_5(), contentImage(), styleImage());
   }
 
-  private void wct_full(@Nonnull NotebookOutput log) {
-    Tensor contentImage = contentImage();
-    Tensor styleImage = styleImage();
+  @Test
+  public void wct_full() {
+    NotebookOutput log = getLog();
+    Tensor contentImage1 = contentImage();
+    Tensor styleImage1 = styleImage();
 
     log.eval(() -> {
-      return contentImage.toImage();
+      return contentImage1.toImage();
     });
     log.eval(() -> {
-      return styleImage.toImage();
+      return styleImage1.toImage();
     });
 
     final Layer encode_4 = VGG_WCT_Import.encode_4();
     final Layer decode_4 = VGG_WCT_Import.photo_decode_4();
-    final Tensor content_4 = transfer(contentImage.addRef(), styleImage.addRef(), encode_4, decode_4, 1.0, 1.0);
+    final Tensor content_4 = transfer(contentImage1.addRef(), styleImage1.addRef(), encode_4, decode_4, 1.0, 1.0);
     log.eval(() -> {
       return content_4.toImage();
     });
 
     final Layer encode_3 = VGG_WCT_Import.encode_3();
     final Layer decode_3 = VGG_WCT_Import.photo_decode_3();
-    final Tensor content_3 = transfer(content_4, styleImage.addRef(), encode_3, decode_3, 1.0, 1.0);
+    final Tensor content_3 = transfer(content_4, styleImage1.addRef(), encode_3, decode_3, 1.0, 1.0);
     log.eval(() -> {
       return content_3.toImage();
     });
 
     final Layer encode_2 = VGG_WCT_Import.encode_2();
     final Layer decode_2 = VGG_WCT_Import.photo_decode_2();
-    final Tensor content_2 = transfer(content_3, styleImage.addRef(), encode_2, decode_2, 1.0, 1.0);
+    final Tensor content_2 = transfer(content_3, styleImage1.addRef(), encode_2, decode_2, 1.0, 1.0);
     log.eval(() -> {
       return content_2.toImage();
     });
@@ -228,7 +172,7 @@ public class WCTTest extends NotebookReportBase {
     final Layer encode_1 = VGG_WCT_Import.encode_1();
     final Layer decode_1 = VGG_WCT_Import.decode_1();
     final Tensor encodedContent = Result.getData0(encode_1.eval(content_2));
-    final Tensor encodedStyle = Result.getData0(encode_1.eval(styleImage.addRef()));
+    final Tensor encodedStyle = Result.getData0(encode_1.eval(styleImage1.addRef()));
     PipelineNetwork applicator = WCTUtil.applicator(encodedStyle, 1.0, 1.0);
     final Tensor encodedTransformed = Result.getData0(applicator.eval(encodedContent));
     applicator.freeRef();
@@ -238,83 +182,65 @@ public class WCTTest extends NotebookReportBase {
     });
 
     log.eval(() -> {
-      final MattingAffinity affinity = new MattingAffinity(contentImage.addRef());
+      final MattingAffinity affinity = new MattingAffinity(contentImage1.addRef());
       RefUnaryOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
       BufferedImage image = toImage(solve.apply(content_1.addRef()));
       solve.freeRef();
       return image;
     });
-    styleImage.freeRef();
+    styleImage1.freeRef();
     decode_1.freeRef();
     encode_1.freeRef();
     content_1.freeRef();
-    contentImage.freeRef();
+    contentImage1.freeRef();
   }
 
-  private void wct_api(@Nonnull NotebookOutput log) {
-    Tensor contentImage = contentImage();
-    Tensor styleImage = styleImage();
+  @Test
+  public void wct_api() {
+    NotebookOutput log = getLog();
+    Tensor contentImage1 = contentImage();
+    Tensor styleImage1 = styleImage();
     log.eval(() -> {
-      return contentImage.toImage();
+      return contentImage1.toImage();
     });
     log.eval(() -> {
-      return styleImage.toImage();
+      return styleImage1.toImage();
     });
 
     final FastPhotoStyleTransfer fastPhotoStyleTransfer = getFastPhotoStyleTransfer(log);
     if (verbose) {
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_1(styleImage.addRef(), contentImage.addRef()));
+        return toImage(fastPhotoStyleTransfer.photoWCT_1(styleImage1.addRef(), contentImage1.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_2(styleImage.addRef(), contentImage.addRef()));
+        return toImage(fastPhotoStyleTransfer.photoWCT_2(styleImage1.addRef(), contentImage1.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_3(styleImage.addRef(), contentImage.addRef()));
+        return toImage(fastPhotoStyleTransfer.photoWCT_3(styleImage1.addRef(), contentImage1.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_4(styleImage.addRef(), contentImage.addRef()));
+        return toImage(fastPhotoStyleTransfer.photoWCT_4(styleImage1.addRef(), contentImage1.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT(styleImage.addRef(), contentImage.addRef()));
+        return toImage(fastPhotoStyleTransfer.photoWCT(styleImage1.addRef(), contentImage1.addRef()));
       });
     }
     log.eval(() -> {
       fastPhotoStyleTransfer.setLambda(1e-4);
       fastPhotoStyleTransfer.setEpsilon(1e-4);
-      final RefUnaryOperator<Tensor> operator = fastPhotoStyleTransfer.apply(contentImage.addRef());
-      final BufferedImage image = toImage(operator.apply(styleImage.addRef()));
+      final RefUnaryOperator<Tensor> operator = fastPhotoStyleTransfer.apply(contentImage1.addRef());
+      final BufferedImage image = toImage(operator.apply(styleImage1.addRef()));
       operator.freeRef();
       return image;
     });
-    styleImage.freeRef();
-    contentImage.freeRef();
+    styleImage1.freeRef();
+    contentImage1.freeRef();
     fastPhotoStyleTransfer.freeRef();
   }
 
-  private FastPhotoStyleTransfer getFastPhotoStyleTransfer(@Nonnull NotebookOutput log) {
-    File localFile = log.eval(() -> {
-      return Util.cacheFile(new URI("https://simiacryptus.s3-us-west-2.amazonaws.com/photo_wct.zip"));
-    });
-    FastPhotoStyleTransfer fastPhotoStyleTransfer = null;
-    if (localFile == null || !localFile.exists()) {
-      RefUtil.freeRef(fastPhotoStyleTransfer);
-      fastPhotoStyleTransfer = log.eval(() -> {
-        return VGG_WCT_Import.newFastPhotoStyleTransfer();
-      });
-      final File out = new File(log.getResourceDir(), "photo_wct.zip");
-      fastPhotoStyleTransfer.writeZip(out, SerialPrecision.Float);
-      log.p(log.link(out, "Model Package"));
-    } else {
-      RefUtil.freeRef(fastPhotoStyleTransfer);
-      fastPhotoStyleTransfer = log.eval(() -> {
-        return FastPhotoStyleTransfer.fromZip(new ZipFile(localFile));
-      });
-    }
-    return fastPhotoStyleTransfer;
-  }
-
-  private void photoBlur(@Nonnull NotebookOutput log) {
+  @Test
+  public void photoBlur() {
+    NotebookOutput log = getLog();
     Tensor content = contentImage();
     log.eval(() -> {
       return content.toImage();
@@ -402,7 +328,9 @@ public class WCTTest extends NotebookReportBase {
     content.freeRef();
   }
 
-  private void photoBlur_Survey(@Nonnull NotebookOutput log) {
+  @Test
+  public void photoBlur_Survey() {
+    NotebookOutput log = getLog();
     Tensor content = contentImage();
     log.eval(() -> {
       return content.toImage();
@@ -469,6 +397,45 @@ public class WCTTest extends NotebookReportBase {
     }
     RefUtil.freeRef(tensors);
     content.freeRef();
+  }
+
+  @Nonnull
+  private Tensor styleImage() {
+    return resize(ImageUtil.getTensor(styleImage));
+  }
+
+  @Nonnull
+  private Tensor resize(@Nonnull Tensor tensor) {
+    final Tensor resized = Tensor.fromRGB(ImageUtil.resize(tensor.toImage(), imageSize, true));
+    tensor.freeRef();
+    return resized;
+  }
+
+  @Nonnull
+  private Tensor contentImage() {
+    return resize(ImageUtil.getTensor(contentImage));
+  }
+
+  private FastPhotoStyleTransfer getFastPhotoStyleTransfer(@Nonnull NotebookOutput log) {
+    File localFile = log.eval(() -> {
+      return Util.cacheFile(new URI("https://simiacryptus.s3-us-west-2.amazonaws.com/photo_wct.zip"));
+    });
+    FastPhotoStyleTransfer fastPhotoStyleTransfer = null;
+    if (localFile == null || !localFile.exists()) {
+      RefUtil.freeRef(fastPhotoStyleTransfer);
+      fastPhotoStyleTransfer = log.eval(() -> {
+        return VGG_WCT_Import.newFastPhotoStyleTransfer();
+      });
+      final File out = new File(log.getResourceDir(), "photo_wct.zip");
+      fastPhotoStyleTransfer.writeZip(out, SerialPrecision.Float);
+      log.p(log.link(out, "Model Package"));
+    } else {
+      RefUtil.freeRef(fastPhotoStyleTransfer);
+      fastPhotoStyleTransfer = log.eval(() -> {
+        return FastPhotoStyleTransfer.fromZip(new ZipFile(localFile));
+      });
+    }
+    return fastPhotoStyleTransfer;
   }
 
   private Tensor rawStyledContent(Tensor content, @Nonnull NotebookOutput log) {

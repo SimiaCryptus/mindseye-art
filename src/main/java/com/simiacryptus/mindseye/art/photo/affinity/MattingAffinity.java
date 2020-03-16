@@ -66,8 +66,7 @@ public class MattingAffinity extends ContextAffinity {
   }
 
   @Override
-  protected double dist(@Nonnull SimpleMatrix vector_i, @Nonnull SimpleMatrix vector_j, @Nonnull SimpleMatrix cov, int neighborhoodSize,
-                        int globalSize) {
+  protected double dist(@Nonnull SimpleMatrix vector_i, @Nonnull SimpleMatrix vector_j, @Nonnull SimpleMatrix cov, int neighborhoodSize) {
     int bands = dimensions[2];
     assert neighborhoodSize > 0;
     final SimpleMatrix invert = cov.plus(SimpleMatrix.identity(bands).scale(getEpsilon() / neighborhoodSize)).invert();

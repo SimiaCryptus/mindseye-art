@@ -164,8 +164,8 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
           return 1;
         MultivariateFrameOfReference mix = new MultivariateFrameOfReference(region_global,
             new MultivariateFrameOfReference(() -> neighborhood.stream(), channels), getMixing());
-        return dist(toMatrix(mix.adjust(pixel(i))), toMatrix(mix.adjust(pixel(j))), mix.cov, neighborhood.size(),
-            pixels);
+        return dist(toMatrix(mix.adjust(pixel(i))), toMatrix(mix.adjust(pixel(j))), mix.cov, neighborhood.size()
+        );
       }
     }).toArray()).collect(Collectors.toList());
   }
@@ -188,8 +188,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
     return IntStream.range(0, dimensions[2]).mapToDouble(c -> (pixel_i[c] - means.get(c)) / rms.get(c)).toArray();
   }
 
-  protected abstract double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize,
-                                 int globalSize);
+  protected abstract double dist(SimpleMatrix vector_i, SimpleMatrix vector_j, SimpleMatrix cov, int neighborhoodSize);
 
   protected double[] pixel(int i) {
     RasterTopology topology = getTopology();

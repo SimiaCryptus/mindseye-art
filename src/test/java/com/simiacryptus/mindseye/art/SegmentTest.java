@@ -41,7 +41,6 @@ import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefString;
 import com.simiacryptus.ref.wrappers.RefSystem;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
@@ -74,21 +73,8 @@ public class SegmentTest extends NotebookReportBase {
 
 
   @Test
-  public void segment_volumeEntropy(TestInfo testInfo) {
-    report(testInfo, log -> segment_volumeEntropy(log));
-  }
-
-  @Test
-  public void segment_minCut(TestInfo testInfo) {
-    report(testInfo, log -> segment_minCut(log));
-  }
-
-  @Nonnull
-  private Tensor contentImage() {
-    return SegmentUtil.resize(ImageUtil.getTensor(contentImage), imageSize);
-  }
-
-  private void segment_volumeEntropy(@Nonnull NotebookOutput log) {
+  public void segment_volumeEntropy() {
+    NotebookOutput log = getLog();
     Tensor content = contentImage();
     log.eval(() -> content.toImage());
     final int[] pixelMap = getSmoothedRegions(log, content.addRef());
@@ -106,7 +92,9 @@ public class SegmentTest extends NotebookReportBase {
     eval.freeRef();
   }
 
-  private void segment_minCut(@Nonnull NotebookOutput log) {
+  @Test
+  public void segment_minCut() {
+    NotebookOutput log = getLog();
     Tensor content = contentImage();
     log.eval(() -> content.toImage());
     final int[] pixelMap = getSmoothedRegions(log, content.addRef());
@@ -123,6 +111,11 @@ public class SegmentTest extends NotebookReportBase {
     content.freeRef();
     minCut.run(log);
     minCut.freeRef();
+  }
+
+  @Nonnull
+  private Tensor contentImage() {
+    return SegmentUtil.resize(ImageUtil.getTensor(contentImage), imageSize);
   }
 
   private int[] getSmoothedRegions(@Nonnull NotebookOutput log, @Nonnull Tensor content) {

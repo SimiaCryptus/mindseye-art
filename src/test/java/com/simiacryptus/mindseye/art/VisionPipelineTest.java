@@ -38,14 +38,12 @@ import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefAssert;
 import com.simiacryptus.ref.wrappers.RefList;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.simiacryptus.mindseye.art.models.Inception5H.*;
@@ -95,8 +93,8 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   }
 
   @Test
-  public void inoutDims(TestInfo testInfo) {
-    report(testInfo, log1 -> inoutDims(log1));
+  public void inoutDims() {
+    this.inoutDims(getLog());
   }
 
   //  @Test
@@ -105,25 +103,13 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   //  }
 
   @Test
-  public void pipelineTest(TestInfo testInfo) {
-    report(testInfo, log1 -> pipelineTest(log1));
+  public void pipelineTest() {
+    this.pipelineTest(getLog());
   }
 
   @Test
-  public void graphs(TestInfo testInfo) {
-    report(testInfo, log1 -> graphs(log1));
-  }
-
-  @Test
-  public void layers(TestInfo testInfo) {
-    report(testInfo, log1 -> layers(log1));
-  }
-
-  public abstract void inoutDims(NotebookOutput log);
-
-  public abstract void pipelineTest(NotebookOutput log);
-
-  public void graphs(@Nonnull NotebookOutput log) {
+  public void graphs() {
+    NotebookOutput log = getLog();
     VisionPipeline visionPipeline = getVisionPipeline();
     RefList<? extends VisionPipelineLayer> keyList = visionPipeline.getLayerList();
     keyList.forEach(e -> {
@@ -135,7 +121,9 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     visionPipeline.freeRef();
   }
 
-  public void layers(@Nonnull NotebookOutput log) {
+  @Test
+  public void layers() {
+    NotebookOutput log = getLog();
     final int[][] dims = {{226, 226, 3}};
     VisionPipeline visionPipeline = getVisionPipeline();
     RefList<? extends VisionPipelineLayer> keyList = visionPipeline.getLayerList();
@@ -172,27 +160,27 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
             return RefArrays.asList();
           }
 
+          @Nonnull
+          @Override
+          public Layer getLayer() {
+            return layer.copy();
+          }
+
           @Override
           protected @Nonnull
           RefList<ComponentTest<?>> getLittleTests() {
             return RefArrays.asList(new SerializationTest());
           }
 
-          @Override
-          public Class<?> getTestClass() {
-            return visionPipelineLayerClass;
-          }
-
           @Nonnull
           @Override
-          public int[][] getSmallDims(Random random) {
+          public int[][] getSmallDims() {
             return dims;
           }
 
-          @Nonnull
           @Override
-          public Layer getLayer(int[][] inputSize, Random random) {
-            return layer.copy();
+          public Class<?> getTestClass() {
+            return visionPipelineLayerClass;
           }
 
           public @SuppressWarnings("unused")
@@ -212,6 +200,10 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     });
     keyList.freeRef();
   }
+
+  public abstract void inoutDims(NotebookOutput log);
+
+  public abstract void pipelineTest(NotebookOutput log);
 
   public static class VGG16Test extends VisionPipelineTest {
     @Nonnull
@@ -233,13 +225,13 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     }
 
     @Override
-    public void layers(TestInfo testInfo) {
-      super.layers(testInfo);
+    public void layers() {
+      super.layers();
     }
 
     @Override
-    public void inoutDims(TestInfo testInfo) {
-      super.inoutDims(testInfo);
+    public void inoutDims() {
+      super.inoutDims();
     }
 
     public void inoutDims(@Nonnull NotebookOutput log) {
