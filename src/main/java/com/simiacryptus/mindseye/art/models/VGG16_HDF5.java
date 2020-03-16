@@ -61,7 +61,7 @@ class VGG16_HDF5 {
     try {
       return fromHDF5(Util.cacheFile(TestUtil.S3_ROOT.resolve("vgg16_weights.h5")));
     } catch (@Nonnull IOException | KeyManagementException | NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
+      throw Util.throwException(e);
     }
   }
 
@@ -69,10 +69,8 @@ class VGG16_HDF5 {
   public static VGG16_HDF5 fromHDF5(@Nonnull final File hdf) {
     try {
       return new VGG16_HDF5(new Hdf5Archive(hdf));
-    } catch (@Nonnull final RuntimeException e) {
-      throw e;
     } catch (Throwable e) {
-      throw new RuntimeException(e);
+      throw Util.throwException(e);
     }
   }
 

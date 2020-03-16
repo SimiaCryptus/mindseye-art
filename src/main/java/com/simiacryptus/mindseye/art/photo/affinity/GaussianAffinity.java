@@ -61,7 +61,7 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
   @Override
   public List<double[]> affinityList(@Nonnull List<int[]> graphEdges) {
     IntStream stream = IntStream.range(0, dimensions[0] * dimensions[1]);
-    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    if (!CoreSettings.INSTANCE().singleThreaded) stream = stream.parallel();
     return stream
         .mapToObj(i -> Arrays.stream(graphEdges.get(i)).mapToDouble(j -> affinity(i, j)).toArray())
         .collect(Collectors.toList());

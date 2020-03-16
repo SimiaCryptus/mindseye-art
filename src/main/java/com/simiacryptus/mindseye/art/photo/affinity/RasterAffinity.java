@@ -53,7 +53,7 @@ public interface RasterAffinity {
 
   static double[] degree(@Nonnull List<double[]> affinityList) {
     Stream<double[]> stream = affinityList.stream();
-    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    if (!CoreSettings.INSTANCE().singleThreaded) stream = stream.parallel();
     return stream.mapToDouble(x -> Arrays.stream(x).sum()).toArray();
   }
 

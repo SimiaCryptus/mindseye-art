@@ -28,6 +28,7 @@ import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.lang.*;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
+import com.simiacryptus.util.Util;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -164,7 +165,7 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
       decode_4.writeZip(zipOutputStream, precision, resources, "decode_4.json");
       encode_4.writeZip(zipOutputStream, precision, resources, "encode_4.json");
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw Util.throwException(e);
     }
   }
 

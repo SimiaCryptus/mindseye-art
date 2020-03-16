@@ -27,6 +27,9 @@ import com.simiacryptus.mindseye.layers.cudnn.MeanSqLossLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.test.NotebookReportBase;
 import com.simiacryptus.mindseye.test.TestUtil;
+import com.simiacryptus.mindseye.test.unit.ComponentTest;
+import com.simiacryptus.mindseye.test.unit.ReferenceIO;
+import com.simiacryptus.mindseye.test.unit.SerializationTest;
 import com.simiacryptus.mindseye.test.unit.StandardLayerTests;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.ref.lang.RefAware;
@@ -93,7 +96,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
   @Test
   public void inoutDims(TestInfo testInfo) {
-    run(testInfo, log1 -> inoutDims(log1));
+    report(testInfo, log1 -> inoutDims(log1));
   }
 
   //  @Test
@@ -103,17 +106,17 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
   @Test
   public void pipelineTest(TestInfo testInfo) {
-    run(testInfo, log1 -> pipelineTest(log1));
+    report(testInfo, log1 -> pipelineTest(log1));
   }
 
   @Test
   public void graphs(TestInfo testInfo) {
-    run(testInfo, log1 -> graphs(log1));
+    report(testInfo, log1 -> graphs(log1));
   }
 
   @Test
   public void layers(TestInfo testInfo) {
-    run(testInfo, log1 -> layers(log1));
+    report(testInfo, log1 -> layers(log1));
   }
 
   public abstract void inoutDims(NotebookOutput log);
@@ -154,9 +157,25 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
         new StandardLayerTests() {
           {
             testingBatchSize = 1;
-            validateBatchExecution = false;
-            validateDifferentials = false;
-            testTraining = false;
+          }
+
+          @Override
+          protected @Nonnull
+          RefList<ComponentTest<?>> getBigTests() {
+            return RefArrays.asList(getPerformanceTester(), new ReferenceIO(getReferenceIO()),
+                getEquivalencyTester());
+          }
+
+          @Override
+          protected @Nonnull
+          RefList<ComponentTest<?>> getFinalTests() {
+            return RefArrays.asList();
+          }
+
+          @Override
+          protected @Nonnull
+          RefList<ComponentTest<?>> getLittleTests() {
+            return RefArrays.asList(new SerializationTest());
           }
 
           @Override
@@ -185,7 +204,7 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
           protected Layer lossLayer() {
             return new MeanSqLossLayer();
           }
-        }.run(sublog);
+        }.allTests(sublog);
         return null;
       }, String.format("%s (Pipeline %s)", log.getDisplayName(), name));
       dims[0] = dimensions;

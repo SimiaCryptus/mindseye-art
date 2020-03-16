@@ -41,6 +41,7 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefStream;
 import com.simiacryptus.ref.wrappers.RefString;
+import com.simiacryptus.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -209,7 +210,7 @@ public class MomentMatcher implements VisualModifier {
       RefUtil.freeRef(images);
       return true;
     } catch (Throwable e) {
-      throw new RuntimeException(e);
+      throw Util.throwException(e);
       //return false;
     }
   }

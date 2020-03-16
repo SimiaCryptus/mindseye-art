@@ -38,6 +38,7 @@ import com.simiacryptus.ref.wrappers.RefArrayList;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefDoubleStream;
 import com.simiacryptus.ref.wrappers.RefString;
+import com.simiacryptus.util.Util;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -657,7 +658,7 @@ public class VGG_WCT_Import {
       Object parse = parse(FileUtils.readFileToString(new File(file), "UTF-8"));
       return new Tensor(toStream(parse).toArray(), Tensor.reverse(dims(parse)));
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw Util.throwException(e);
     }
   }
 

@@ -99,7 +99,7 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
                                         int size) {
     final SimpleMatrix cov = new SimpleMatrix(size, size);
     IntStream stream = IntStream.range(0, size);
-    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    if (!CoreSettings.INSTANCE().singleThreaded) stream = stream.parallel();
     stream.forEach(c1 -> {
       final double mean1 = means.get(c1);
       final double rms1 = rms.get(c1);

@@ -52,7 +52,7 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
     this.dimensions = this.content.getDimensions();
     this.contentRegion = new MultivariateFrameOfReference(() -> {
       Stream<double[]> stream = ContentTopology.this.content.getPixelStream();
-      if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+      if (!CoreSettings.INSTANCE().singleThreaded) stream = stream.parallel();
       return stream;
     }, dimensions[2]);
     pixels = IntStream.range(0, dimensions[0] * dimensions[1]).mapToObj(i -> {

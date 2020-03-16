@@ -122,7 +122,7 @@ public class ImageArtUtil {
                 sublog.p("[%s](etc/%s)", caption, filename);
                 sublog.write();
               } catch (Throwable e) {
-                throw new RuntimeException(e);
+                throw Util.throwException(e);
               }
               killAt = RefSystem.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
               remainingOut = 10L * 1024 * 1024;
@@ -356,7 +356,7 @@ public class ImageArtUtil {
             tensors.freeRef();
             return array;
           } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw Util.throwException(e);
           }
         });
       } else if (fileStr.startsWith("http")) {
@@ -399,7 +399,7 @@ public class ImageArtUtil {
           UploadImageQuery uploadImageQuery = new UploadImageQuery(k, log);
           return Tensor.fromRGB(ImageIO.read(uploadImageQuery.print().get()));
         } catch (IOException e) {
-          throw new RuntimeException(e);
+          throw Util.throwException(e);
         }
       });
     } else if (fileStr.startsWith("http")) {
@@ -434,7 +434,7 @@ public class ImageArtUtil {
     try {
       fileSystem = FileSystem.get(new Path(file.toString()).toUri(), conf);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw Util.throwException(e);
     }
     return fileSystem;
   }

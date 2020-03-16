@@ -75,12 +75,12 @@ public class SegmentTest extends NotebookReportBase {
 
   @Test
   public void segment_volumeEntropy(TestInfo testInfo) {
-    run(testInfo, log -> segment_volumeEntropy(log));
+    report(testInfo, log -> segment_volumeEntropy(log));
   }
 
   @Test
   public void segment_minCut(TestInfo testInfo) {
-    run(testInfo, log -> segment_minCut(log));
+    report(testInfo, log -> segment_minCut(log));
   }
 
   @Nonnull

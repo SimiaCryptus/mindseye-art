@@ -92,52 +92,52 @@ public class WCTTest extends NotebookReportBase {
 
   @Test
   public void test0(TestInfo testInfo) {
-    run(testInfo, log -> test0(log));
+    report(testInfo, log -> test0(log));
   }
 
   @Test
   public void test1(TestInfo testInfo) {
-    run(testInfo, log -> test1(log));
+    report(testInfo, log -> test1(log));
   }
 
   @Test
   public void test2(TestInfo testInfo) {
-    run(testInfo, log -> test2(log));
+    report(testInfo, log -> test2(log));
   }
 
   @Test
   public void test3(TestInfo testInfo) {
-    run(testInfo, log -> test3(log));
+    report(testInfo, log -> test3(log));
   }
 
   @Test
   public void test4(TestInfo testInfo) {
-    run(testInfo, log -> test4(log));
+    report(testInfo, log -> test4(log));
   }
 
   @Test
   public void test5(TestInfo testInfo) {
-    run(testInfo, log -> test5(log));
+    report(testInfo, log -> test5(log));
   }
 
   @Test
   public void wct_full(TestInfo testInfo) {
-    run(testInfo, log -> wct_full(log));
+    report(testInfo, log -> wct_full(log));
   }
 
   @Test
   public void wct_api(TestInfo testInfo) {
-    run(testInfo, log -> wct_api(log));
+    report(testInfo, log -> wct_api(log));
   }
 
   @Test
   public void photoBlur(TestInfo testInfo) {
-    run(testInfo, log -> photoBlur(log));
+    report(testInfo, log -> photoBlur(log));
   }
 
   @Test
   public void photoBlur_Survey(TestInfo testInfo) {
-    run(testInfo, log -> photoBlur_Survey(log));
+    report(testInfo, log -> photoBlur_Survey(log));
   }
 
   private void test0(@Nonnull NotebookOutput log) {

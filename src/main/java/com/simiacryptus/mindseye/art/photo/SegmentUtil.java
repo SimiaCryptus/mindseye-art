@@ -92,7 +92,7 @@ public class SegmentUtil {
     AtomicInteger islandNumber = new AtomicInteger(0);
     int[] dimensions = topology.getDimensions();
     IntStream stream = range(0, dimensions[0]);
-    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    if (!CoreSettings.INSTANCE().singleThreaded) stream = stream.parallel();
     stream.mapToObj(x -> x).sorted(Comparator.comparingInt(x -> x.hashCode()))
         .mapToInt(x -> x).forEach(x -> range(0, dimensions[1]).mapToObj(y -> y)
         .sorted(Comparator.comparing(y -> y.hashCode())).mapToInt(y -> y).forEach(y -> {
@@ -213,7 +213,7 @@ public class SegmentUtil {
   private static Map<Integer, double[]> iterateColors(@Nonnull SparseMatrixFloat graph, @Nonnull Function<Integer, double[]> seedColor,
                                                       @Nonnull Map<Integer, double[]> colors) {
     IntStream stream = Arrays.stream(graph.activeRows());
-    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    if (!CoreSettings.INSTANCE().singleThreaded) stream = stream.parallel();
     return stream.mapToObj(x -> x)
         .collect(Collectors.toMap(key -> key, key -> {
           final int[] cols = graph.getCols(key);

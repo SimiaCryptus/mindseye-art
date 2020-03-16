@@ -33,6 +33,9 @@ import com.simiacryptus.mindseye.network.DAGNetwork;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.LayerTestBase;
 import com.simiacryptus.notebook.NullNotebookOutput;
+import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,13 +53,8 @@ public class NetworkTest extends LayerTestBase {
   private static final DAGNetwork layer = build();
 
   public NetworkTest() {
-    validateDifferentials = false;
-    validateBatchExecution = false;
-    testTraining = false;
-    testEquivalency = false;
     testingBatchSize = 1;
   }
-
 
   private static DAGNetwork build() {
     Tensor styleTensor = Tensor.fromRGB(styleImage);
@@ -72,6 +70,30 @@ public class NetworkTest extends LayerTestBase {
     build.freeRef();
     MultiPrecision.setPrecision(dagNetwork.addRef(), Precision.Float);
     return dagNetwork;
+  }
+
+  @Override
+  @Disabled
+  public void derivativeTest(TestInfo testInfo) {
+    super.derivativeTest(testInfo);
+  }
+
+  @Override
+  @Disabled
+  public void equivalencyTest(TestInfo testInfo) {
+    super.equivalencyTest(testInfo);
+  }
+
+  @Override
+  @Disabled
+  public void trainingTest(TestInfo testInfo) {
+    super.trainingTest(testInfo);
+  }
+
+  @Override
+  @Disabled
+  public void batchingTest(TestInfo testInfo) {
+    super.batchingTest(testInfo);
   }
 
   @Nonnull

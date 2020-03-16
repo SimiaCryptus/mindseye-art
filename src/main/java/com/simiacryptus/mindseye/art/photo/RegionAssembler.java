@@ -58,7 +58,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     final Map<Integer, List<Integer>> pixelAssignmentMap = IntStream.range(0, pixelMap.length).mapToObj(x -> x)
         .collect(Collectors.groupingBy(x -> pixelMap[x], Collectors.toList()));
     IntStream stream = Arrays.stream(graph.activeRows());
-    if (!CoreSettings.INSTANCE().isSingleThreaded()) stream = stream.parallel();
+    if (!CoreSettings.INSTANCE().singleThreaded) stream = stream.parallel();
     final List<Region> collect = stream.mapToObj(row -> {
       assert this.regionCount > row;
       final int[] cols = graph.getCols(row);

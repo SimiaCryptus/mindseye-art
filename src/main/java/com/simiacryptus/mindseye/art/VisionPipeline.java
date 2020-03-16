@@ -24,6 +24,7 @@ import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.*;
+import com.simiacryptus.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,7 @@ public final class VisionPipeline extends ReferenceCountingBase {
       });
     } catch (Throwable e) {
       logger.warn("Error", e);
-      throw new RuntimeException(e);
+      throw Util.throwException(e);
     } finally {
       pipelineNetwork.freeRef();
       values.freeRef();
