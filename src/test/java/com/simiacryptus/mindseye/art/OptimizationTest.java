@@ -63,7 +63,7 @@ public class OptimizationTest {
 
       @Override
       public void log(String msg) {
-        RefSystem.out.println(msg);
+        System.out.println(msg);
         super.log(msg);
       }
 

@@ -93,7 +93,7 @@ public class CudaMatrixSolver extends ReferenceCountingBase implements RefUnaryO
           gpuCopy.csrRows(spHandle), gpuCopy.columnIndices, input, (float) TOLERANCE, REORDER, gpuResult,
           singularityRowArray);
       if (singularityRowArray[0] != -1)
-        RefSystem.err.println("Singular pixel: " + singularityRowArray[0]);
+        System.err.println("Singular pixel: " + singularityRowArray[0]);
       floats = new float[channels * pixels];
       cudaMemcpy(Pointer.to(floats), gpuResult, (long) channels * Sizeof.FLOAT * pixels, cudaMemcpyDeviceToHost);
     } finally {

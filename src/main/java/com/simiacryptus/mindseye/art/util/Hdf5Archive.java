@@ -217,7 +217,7 @@ public class Hdf5Archive {
       if (typeId == 0) {
         RefUtil.freeRef(attributes.put(name, getI64(attribute)));
       } else {
-        RefSystem.out.println(name + " type = " + typeId);
+        System.out.println(name + " type = " + typeId);
         RefUtil.freeRef(attributes.put(name, getString(attribute)));
       }
       attribute.deallocate();

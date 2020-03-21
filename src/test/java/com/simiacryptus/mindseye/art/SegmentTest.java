@@ -181,7 +181,7 @@ public class SegmentTest extends NotebookReportBase {
       // Arrays.stream(SparseMatrixFloat.toDouble(this.graph.values)).sorted().toArray()
       final Map<float[], Float> eigensystem = log.eval(() -> this.graph.dense_graph_eigensys());
       log.run(() -> {
-        RefSystem.out.println("Sorted Eigenvalues: "
+        System.out.println("Sorted Eigenvalues: "
             + RefArrays.toString(eigensystem.values().stream().mapToDouble(aFloat -> aFloat.doubleValue()).toArray()));
       });
       final int sampleEigenvectors = 20;
@@ -237,7 +237,7 @@ public class SegmentTest extends NotebookReportBase {
             .limit(sampleEigenvectors)
             .collect(Collectors.toList())
             .get(1);
-        RefSystem.out.println("Second Smallest Eigenvector " + RefArrays.toString(secondLowest.getKey()));
+        System.out.println("Second Smallest Eigenvector " + RefArrays.toString(secondLowest.getKey()));
         int[] ints = Arrays.stream(SparseMatrixFloat.toDouble(secondLowest.getKey()))
             .mapToInt(x -> x < 0 ? 0 : 1).toArray();
         RefUtil.freeRef(secondLowest);
@@ -261,7 +261,7 @@ public class SegmentTest extends NotebookReportBase {
 
     public void display(@Nonnull NotebookOutput log, @Nonnull int[] pixelMap, @Nonnull SparseMatrixFloat graph) {
       log.eval(() -> {
-        RefSystem.out
+        System.out
             .println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
         return paintWithRandomColors(topology.addRef(), pixelMap, graph);
@@ -322,7 +322,7 @@ public class SegmentTest extends NotebookReportBase {
 
     public void display(@Nonnull NotebookOutput log) {
       log.eval(() -> {
-        RefSystem.out
+        System.out
             .println(RefString.format("Rows=%d, NumNonZeros=%d", graph.rows, graph.getNumNonZeros()));
         printHistogram(pixelMap);
         return paintWithRandomColors(topology.addRef(), pixelMap, graph);

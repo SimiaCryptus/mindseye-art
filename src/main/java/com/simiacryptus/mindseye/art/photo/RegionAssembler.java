@@ -291,7 +291,7 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       List<Connection> first = regions.parallelStream().flatMap(region -> region.connections_stream_parallel())
           .filter(connectionFilter).sorted(this).limit(limit).collect(Collectors.toList());
       if (first.isEmpty()) {
-        RefSystem.out.println("No connections left");
+        System.out.println("No connections left");
         break;
       } else {
         final HashSet<Region> touched = new HashSet<>();
@@ -347,14 +347,14 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
         consolidated = this.from;
       }
       if (!regions.remove(toRemove)) {
-        RefSystem.out.println("Remove dead connection to Region " + toRemove.minId());
+        System.out.println("Remove dead connection to Region " + toRemove.minId());
         if (!this.from.connections_remove(this)) {
           throw new IllegalStateException();
         } else {
           return;
         }
       } else {
-        //com.simiacryptus.ref.wrappers.RefSystem.out.println("Remove Region " + minId(toRemove));
+        //com.simiacryptus.ref.wrappers.System.out.println("Remove Region " + minId(toRemove));
       }
       consolidated.union(toRemove);
       toRemove.clear();
