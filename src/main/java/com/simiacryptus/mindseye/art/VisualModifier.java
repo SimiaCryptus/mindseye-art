@@ -30,6 +30,7 @@ import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefString;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.function.UnaryOperator;
 
 public interface VisualModifier {
@@ -40,8 +41,10 @@ public interface VisualModifier {
 
   PipelineNetwork build(VisualModifierParameters visualModifierParameters);
 
-  default PipelineNetwork build(@Nonnull VisionPipelineLayer layer, int[] contentDims, UnaryOperator<Tensor> viewLayer,
-                                Tensor... image) {
+  default PipelineNetwork build(@Nonnull VisionPipelineLayer layer,
+                                @Nonnull int[] contentDims,
+                                @Nullable UnaryOperator<Tensor> viewLayer,
+                                @Nonnull Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
     layer.freeRef();
     network.assertAlive();
@@ -164,6 +167,7 @@ public interface VisualModifier {
   @Nonnull
   default VisualModifier withMask(Tensor maskedInput) {
     final VisualModifier inner = this;
+    if(maskedInput == null) return inner;
     return RefUtil.wrapInterface(new VisualModifier() {
       public boolean isLocalized() {
         return true;

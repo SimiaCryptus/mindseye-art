@@ -35,7 +35,6 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefMap;
-import com.simiacryptus.ref.wrappers.RefSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -218,12 +217,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       if (deltaMap.containsKey(canvas.getId())) {
         weights.get(canvas.getId(), canvas.addRef()).freeRef();
       }
-      RefSet<UUID> keySet = deltaMap.keySet();
-      RefMap<UUID, State<UUID>> weightsMap = weights.getMap();
-      assert keySet.stream().allMatch(x -> weightsMap.containsKey(x));
-      weightsMap.freeRef();
-      keySet.freeRef();
-      deltaMap.freeRef();
+      if (!weights.containsAll(deltaMap)) throw new IllegalStateException();
       return new PointSample(delta, weights, resultSum.get(), 0, 1);
     }
   }

@@ -27,6 +27,7 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.awt.image.BufferedImage;
 import java.util.function.UnaryOperator;
 
 public class VisualModifierParameters extends ReferenceCountingBase {
@@ -38,12 +39,18 @@ public class VisualModifierParameters extends ReferenceCountingBase {
   private final Tensor[] style;
   private final int[] contentDims;
 
-  public VisualModifierParameters(@Nullable PipelineNetwork network, int[] contentDims, UnaryOperator<Tensor> viewLayer,
-                                  @Nullable Tensor mask, Tensor... styleImages) {
+  public VisualModifierParameters(@Nonnull PipelineNetwork network,
+                                  @Nonnull int[] contentDims,
+                                  @Nullable UnaryOperator<Tensor> viewLayer,
+                                  @Nullable Tensor mask,
+                                  @Nonnull Tensor... styleImages) {
     assert network != null;
     this.network = network;
     //assert mask != null;
     this.mask = mask;
+    if(null == contentDims) {
+      throw new IllegalArgumentException();
+    }
     this.contentDims = contentDims;
     this.viewLayer = viewLayer;
     this.style = styleImages;
@@ -81,17 +88,14 @@ public class VisualModifierParameters extends ReferenceCountingBase {
   @Nonnull
   public VisualModifierParameters withMask(@Nullable Tensor mask) {
     if (null != mask) {
-      Tensor fromRGB = Tensor.fromRGB(ImageUtil.resize(mask.toRgbImage(), contentDims[0], contentDims[1]));
+      BufferedImage maskImage = mask.toRgbImage();
       RefUtil.freeRef(mask);
-      mask = fromRGB;
+      mask = Tensor.fromRGB(ImageUtil.resize(maskImage, contentDims[0], contentDims[1]));
       if (null != viewLayer) {
-        Tensor apply = viewLayer.apply(mask);
-        mask = apply;
+        mask = viewLayer.apply(mask);
       }
     }
-    final VisualModifierParameters visualModifierParameters = new VisualModifierParameters(getNetwork(), contentDims,
-        viewLayer, mask, getStyle());
-    return visualModifierParameters;
+    return new VisualModifierParameters(getNetwork(), contentDims, viewLayer, mask, getStyle());
   }
 
   @Nonnull

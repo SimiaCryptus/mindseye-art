@@ -52,10 +52,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -187,6 +184,16 @@ public class ImageArtUtil {
   }
 
   @Nonnull
+  public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final List<? extends CharSequence> image, final int imageSize) {
+    return image.stream().flatMap(img -> Arrays.stream(getImageTensors(img, log, imageSize)))
+        .map(tensor -> {
+          BufferedImage bufferedImage = tensor.toImage();
+          tensor.freeRef();
+          return bufferedImage;
+        }).toArray(BufferedImage[]::new);
+  }
+
+  @Nonnull
   public static BufferedImage loadImage(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int width, final int height) {
     Tensor imageTensor = getImageTensor(image, log, width, height);
     BufferedImage bufferedImage = imageTensor.toImage();
@@ -197,6 +204,15 @@ public class ImageArtUtil {
   @Nonnull
   public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int width, final int height) {
     return RefArrays.stream(getImageTensors(image, log, width, height))
+        .map(tensor -> {
+          BufferedImage img = tensor.toImage();
+          tensor.freeRef();
+          return img;
+        }).toArray(BufferedImage[]::new);
+  }
+  @Nonnull
+  public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final List<? extends CharSequence> image, final int width, final int height) {
+    return image.stream().flatMap(img -> Arrays.stream(getImageTensors(img, log, width, height)))
         .map(tensor -> {
           BufferedImage img = tensor.toImage();
           tensor.freeRef();
