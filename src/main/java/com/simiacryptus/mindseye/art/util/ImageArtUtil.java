@@ -100,42 +100,43 @@ public class ImageArtUtil {
       }
     });
     if (interceptLog)
-      log.subreport(sublog -> {
-        CudaSystem.addLog(new RefConsumer<String>() {
-          @Nullable
-          PrintWriter out;
-          long remainingOut = 0;
-          long killAt = 0;
+      log.subreport("Cuda Logs",
+          sublog -> {
+            CudaSystem.addLog(new RefConsumer<String>() {
+              @Nullable
+              PrintWriter out;
+              long remainingOut = 0;
+              long killAt = 0;
 
-          @Override
-          public void accept(@Nonnull String formattedMessage) {
-            if (null == out) {
-              SimpleDateFormat dateFormat = new SimpleDateFormat("dd_HH_mm_ss");
-              String date = dateFormat.format(new Date());
-              try {
-                String caption = RefString.format("Log at %s", date);
-                String filename = RefString.format("%s_cuda.log", date);
-                out = new PrintWriter(sublog.file(filename));
-                sublog.p("[%s](etc/%s)", caption, filename);
-                sublog.write();
-              } catch (Throwable e) {
-                throw Util.throwException(e);
+              @Override
+              public void accept(@Nonnull String formattedMessage) {
+                if (null == out) {
+                  SimpleDateFormat dateFormat = new SimpleDateFormat("dd_HH_mm_ss");
+                  String date = dateFormat.format(new Date());
+                  try {
+                    String caption = RefString.format("Log at %s", date);
+                    String filename = RefString.format("%s_cuda.log", date);
+                    out = new PrintWriter(sublog.file(filename));
+                    sublog.p("[%s](etc/%s)", caption, filename);
+                    sublog.write();
+                  } catch (Throwable e) {
+                    throw Util.throwException(e);
+                  }
+                  killAt = RefSystem.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
+                  remainingOut = 10L * 1024 * 1024;
+                }
+                out.println(formattedMessage);
+                out.flush();
+                int length = formattedMessage.length();
+                remainingOut -= length;
+                if (remainingOut < 0 || killAt < RefSystem.currentTimeMillis()) {
+                  out.close();
+                  out = null;
+                }
               }
-              killAt = RefSystem.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
-              remainingOut = 10L * 1024 * 1024;
-            }
-            out.println(formattedMessage);
-            out.flush();
-            int length = formattedMessage.length();
-            remainingOut -= length;
-            if (remainingOut < 0 || killAt < RefSystem.currentTimeMillis()) {
-              out.close();
-              out = null;
-            }
-          }
-        });
-        return null;
-      }, "Cuda Logs");
+            });
+            return null;
+          });
 
     return new Closeable() {
       @Override
@@ -210,6 +211,7 @@ public class ImageArtUtil {
           return img;
         }).toArray(BufferedImage[]::new);
   }
+
   @Nonnull
   public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final List<? extends CharSequence> image, final int width, final int height) {
     return image.stream().flatMap(img -> Arrays.stream(getImageTensors(img, log, width, height)))

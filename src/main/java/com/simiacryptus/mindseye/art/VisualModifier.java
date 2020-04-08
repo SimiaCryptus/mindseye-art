@@ -167,7 +167,7 @@ public interface VisualModifier {
   @Nonnull
   default VisualModifier withMask(Tensor maskedInput) {
     final VisualModifier inner = this;
-    if(maskedInput == null) return inner;
+    if (maskedInput == null) return inner;
     return RefUtil.wrapInterface(new VisualModifier() {
       public boolean isLocalized() {
         return true;

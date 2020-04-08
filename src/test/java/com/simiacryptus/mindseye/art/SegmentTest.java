@@ -31,7 +31,6 @@ import com.simiacryptus.mindseye.art.photo.topology.RasterTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SearchRadiusTopology;
 import com.simiacryptus.mindseye.art.photo.topology.SimpleRasterTopology;
 import com.simiacryptus.mindseye.lang.Tensor;
-import com.simiacryptus.util.test.NotebookReportBase;
 import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.ref.lang.RefUtil;
@@ -39,7 +38,7 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefString;
-import com.simiacryptus.ref.wrappers.RefSystem;
+import com.simiacryptus.util.test.NotebookReportBase;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;

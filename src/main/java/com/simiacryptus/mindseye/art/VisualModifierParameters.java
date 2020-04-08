@@ -48,7 +48,7 @@ public class VisualModifierParameters extends ReferenceCountingBase {
     this.network = network;
     //assert mask != null;
     this.mask = mask;
-    if(null == contentDims) {
+    if (null == contentDims) {
       throw new IllegalArgumentException();
     }
     this.contentDims = contentDims;

@@ -25,7 +25,6 @@ import com.simiacryptus.mindseye.art.models.VGG19;
 import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.layers.cudnn.MeanSqLossLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
-import com.simiacryptus.util.test.NotebookReportBase;
 import com.simiacryptus.mindseye.test.TestUtil;
 import com.simiacryptus.mindseye.test.unit.ComponentTest;
 import com.simiacryptus.mindseye.test.unit.ReferenceIO;
@@ -37,6 +36,7 @@ import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefAssert;
 import com.simiacryptus.ref.wrappers.RefList;
+import com.simiacryptus.util.test.NotebookReportBase;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,60 +141,61 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       int[] dimensions = log.eval(() -> {
         return layer.evalDims(inputDims);
       });
-      log.subreport(sublog -> {
-        new StandardLayerTests() {
-          {
-            testingBatchSize = 1;
-          }
+      log.subreport(String.format("%s (Pipeline %s)", log.getDisplayName(), name),
+          sublog -> {
+            new StandardLayerTests() {
+              {
+                testingBatchSize = 1;
+              }
 
-          @Override
-          protected @Nonnull
-          RefList<ComponentTest<?>> getBigTests() {
-            return RefArrays.asList(getPerformanceTester(), new ReferenceIO(getReferenceIO()),
-                getEquivalencyTester());
-          }
+              @Override
+              protected @Nonnull
+              RefList<ComponentTest<?>> getBigTests() {
+                return RefArrays.asList(getPerformanceTester(), new ReferenceIO(getReferenceIO()),
+                    getEquivalencyTester());
+              }
 
-          @Override
-          protected @Nonnull
-          RefList<ComponentTest<?>> getFinalTests() {
-            return RefArrays.asList();
-          }
+              @Override
+              protected @Nonnull
+              RefList<ComponentTest<?>> getFinalTests() {
+                return RefArrays.asList();
+              }
 
-          @Nonnull
-          @Override
-          public Layer getLayer() {
-            return layer.copy();
-          }
+              @Nonnull
+              @Override
+              public Layer getLayer() {
+                return layer.copy();
+              }
 
-          @Override
-          protected @Nonnull
-          RefList<ComponentTest<?>> getLittleTests() {
-            return RefArrays.asList(new SerializationTest());
-          }
+              @Override
+              protected @Nonnull
+              RefList<ComponentTest<?>> getLittleTests() {
+                return RefArrays.asList(new SerializationTest());
+              }
 
-          @Nonnull
-          @Override
-          public int[][] getSmallDims() {
-            return dims;
-          }
+              @Nonnull
+              @Override
+              public int[][] getSmallDims() {
+                return dims;
+              }
 
-          @Override
-          public Class<?> getTestClass() {
-            return visionPipelineLayerClass;
-          }
+              @Override
+              public Class<?> getTestClass() {
+                return visionPipelineLayerClass;
+              }
 
-          public @SuppressWarnings("unused")
-          void _free() {
-          }
+              public @SuppressWarnings("unused")
+              void _free() {
+              }
 
-          @Nonnull
-          @Override
-          protected Layer lossLayer() {
-            return new MeanSqLossLayer();
-          }
-        }.allTests(sublog);
-        return null;
-      }, String.format("%s (Pipeline %s)", log.getDisplayName(), name));
+              @Nonnull
+              @Override
+              protected Layer lossLayer() {
+                return new MeanSqLossLayer();
+              }
+            }.allTests(sublog);
+            return null;
+          });
       dims[0] = dimensions;
       layer.freeRef();
     });

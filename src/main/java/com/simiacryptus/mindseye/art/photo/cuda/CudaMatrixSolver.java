@@ -20,7 +20,6 @@
 package com.simiacryptus.mindseye.art.photo.cuda;
 
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
-import com.simiacryptus.ref.wrappers.RefSystem;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcusolver.JCusolver;

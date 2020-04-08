@@ -43,7 +43,6 @@ import com.simiacryptus.mindseye.opt.region.RangeConstraint;
 import com.simiacryptus.mindseye.opt.region.TrustRegion;
 import com.simiacryptus.mindseye.util.ImageUtil;
 import com.simiacryptus.notebook.NullNotebookOutput;
-import com.simiacryptus.ref.wrappers.RefSystem;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
