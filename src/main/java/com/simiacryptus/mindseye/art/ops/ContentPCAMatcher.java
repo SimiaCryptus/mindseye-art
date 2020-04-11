@@ -49,7 +49,6 @@ public class ContentPCAMatcher implements VisualModifier {
     return bands;
   }
 
-  @Nonnull
   public void setBands(int bands) {
     this.bands = bands;
   }
@@ -58,7 +57,6 @@ public class ContentPCAMatcher implements VisualModifier {
     return maxValue;
   }
 
-  @Nonnull
   public void setMaxValue(int maxValue) {
     this.maxValue = maxValue;
   }
@@ -67,7 +65,6 @@ public class ContentPCAMatcher implements VisualModifier {
     return minValue;
   }
 
-  @Nonnull
   public void setMinValue(int minValue) {
     this.minValue = minValue;
   }
@@ -76,7 +73,6 @@ public class ContentPCAMatcher implements VisualModifier {
     return averaging;
   }
 
-  @Nonnull
   public void setAveraging(boolean averaging) {
     this.averaging = averaging;
   }

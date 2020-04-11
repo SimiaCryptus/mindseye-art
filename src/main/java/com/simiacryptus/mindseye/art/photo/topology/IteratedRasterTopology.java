@@ -45,7 +45,6 @@ public class IteratedRasterTopology extends ReferenceCountingBase implements Ras
     return iterations;
   }
 
-  @Nonnull
   public void setIterations(int iterations) {
     this.iterations = iterations;
   }

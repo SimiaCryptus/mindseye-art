@@ -72,7 +72,6 @@ class VGG19_HDF5 {
     }
   }
 
-  @Nonnull
   protected static void add(@Nonnull Layer layer, @Nonnull PipelineNetwork model) {
     if (layer instanceof Explodable) {
       Layer explode = ((Explodable) layer).explode();

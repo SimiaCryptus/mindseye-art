@@ -113,7 +113,6 @@ class VGG16_HDF5 {
     l.freeRef();
   }
 
-  @Nonnull
   protected static void add(@Nonnull Layer layer, @Nonnull PipelineNetwork model) {
     check(layer.addRef());
     model.add(explode(layer)).freeRef();

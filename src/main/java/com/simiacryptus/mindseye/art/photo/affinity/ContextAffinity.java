@@ -62,7 +62,6 @@ public abstract class ContextAffinity extends ReferenceCountingBase implements R
     return graphPower2;
   }
 
-  @Nonnull
   public void setGraphPower2(int graphPower2) {
     this.graphPower2 = graphPower2;
   }

@@ -87,7 +87,6 @@ public class MomentMatcher implements VisualModifier {
     return scaleCoeff;
   }
 
-  @Nonnull
   public void setScaleCoeff(double scaleCoeff) {
     this.scaleCoeff = scaleCoeff;
   }

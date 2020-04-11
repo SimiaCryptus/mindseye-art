@@ -53,7 +53,6 @@ public class SearchRadiusTopology extends ContentTopology {
     return maxChromaDist;
   }
 
-  @Nonnull
   public void setMaxChromaDist(double maxChromaDist) {
     this.maxChromaDist = maxChromaDist;
   }
@@ -62,7 +61,6 @@ public class SearchRadiusTopology extends ContentTopology {
     return maxSpatialDist;
   }
 
-  @Nonnull
   public void setMaxSpatialDist(double maxSpatialDist) {
     this.maxSpatialDist = maxSpatialDist;
   }
@@ -87,7 +85,6 @@ public class SearchRadiusTopology extends ContentTopology {
     return spatialPriority;
   }
 
-  @Nonnull
   public void setSpatialPriority(boolean spatialPriority) {
     this.spatialPriority = spatialPriority;
   }
