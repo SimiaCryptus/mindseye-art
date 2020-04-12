@@ -30,7 +30,7 @@
 
     <artifactId>mindseye-art</artifactId>
     <description>Visual Neural Network Applications</description>
-    <url>https://simiacryptus.github.io/${github.project}/</url>
+
 
     <properties>
 
