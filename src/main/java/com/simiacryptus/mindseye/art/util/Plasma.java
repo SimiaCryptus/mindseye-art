@@ -117,6 +117,8 @@ public class Plasma {
       if (image != newImage) {
         image.freeRef();
         image = newImage;
+      } else {
+        newImage.freeRef();
       }
     }
     return resize(toImage(renormBands(image)), width, height);

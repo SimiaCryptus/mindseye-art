@@ -49,6 +49,7 @@ public class VisualModifierParameters extends ReferenceCountingBase {
     //assert mask != null;
     this.mask = mask;
     if (null == contentDims) {
+      RefUtil.freeRef(styleImages);
       throw new IllegalArgumentException();
     }
     this.contentDims = contentDims;

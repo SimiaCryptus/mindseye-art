@@ -383,20 +383,26 @@ public class ImageArtUtil {
           throw new IllegalArgumentException("Error reading " + file);
         return new Tensor[]{Tensor.fromRGB(read)};
       } else {
-        FileSystem fileSystem = getFileSystem(fileStr);
-        Path path = new Path(fileStr);
-        if (!fileSystem.exists(path))
-          throw new IllegalArgumentException("Not Found: " + path);
         RefArrayList<Tensor> tensors = new RefArrayList<>();
-        RemoteIterator<LocatedFileStatus> iterator = fileSystem.listFiles(path, true);
-        while (iterator.hasNext()) {
-          LocatedFileStatus locatedFileStatus = iterator.next();
-          try (FSDataInputStream open = fileSystem.open(locatedFileStatus.getPath())) {
-            byte[] bytes = IOUtils.toByteArray(open);
-            try (ByteArrayInputStream in = new ByteArrayInputStream(bytes)) {
-              tensors.add(Tensor.fromRGB(ImageIO.read(in)));
+        if(!fileStr.isEmpty()) {
+          FileSystem fileSystem = getFileSystem(fileStr);
+          Path path = new Path(fileStr);
+          if (!fileSystem.exists(path)) {
+            tensors.freeRef();
+            throw new IllegalArgumentException("Not Found: " + path);
+          }
+          RemoteIterator<LocatedFileStatus> iterator = fileSystem.listFiles(path, true);
+          while (iterator.hasNext()) {
+            LocatedFileStatus locatedFileStatus = iterator.next();
+            try (FSDataInputStream open = fileSystem.open(locatedFileStatus.getPath())) {
+              byte[] bytes = IOUtils.toByteArray(open);
+              try (ByteArrayInputStream in = new ByteArrayInputStream(bytes)) {
+                tensors.add(Tensor.fromRGB(ImageIO.read(in)));
+              }
             }
           }
+        } else {
+          tensors.add(new Tensor(256,256,3));
         }
         Tensor[] array = tensors.toArray(new Tensor[]{});
         tensors.freeRef();

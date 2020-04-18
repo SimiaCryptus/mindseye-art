@@ -184,7 +184,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     if (null != basicTrainable) {
       return basicTrainable.measure(monitor);
     } else {
-      Result canvasBuffer;
+      final Result canvasBuffer;
       if (isMutableCanvas()) {
         canvasBuffer = this.filter.eval(new MutableResult(canvas.addRef()));
       } else {
@@ -217,7 +217,11 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
       if (deltaMap.containsKey(canvas.getId())) {
         weights.get(canvas.getId(), canvas.addRef()).freeRef();
       }
-      if (!weights.containsAll(deltaMap)) throw new IllegalStateException();
+      if (!weights.containsAll(deltaMap)) {
+        delta.freeRef();
+        weights.freeRef();
+        throw new IllegalStateException();
+      }
       return new PointSample(delta, weights, resultSum.get(), 0, 1);
     }
   }

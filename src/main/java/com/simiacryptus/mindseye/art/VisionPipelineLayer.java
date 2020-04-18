@@ -40,7 +40,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
   @Nonnull
   default PipelineNetwork getNetwork() {
     final VisionPipeline pipeline = getPipeline();
-    PipelineNetwork network;
+    final PipelineNetwork network;
     try {
       network = pipeline.get(name());
     } finally {

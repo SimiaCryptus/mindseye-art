@@ -96,8 +96,8 @@ public class PatternPCAMatcher implements VisualModifier {
     Tensor baseContent = Result.getData0(network.eval(visualModifierParameters.getStyle()));
     visualModifierParameters.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
-    RefList<Tensor> components;
-    PipelineNetwork signalProjection;
+    final RefList<Tensor> components;
+    final PipelineNetwork signalProjection;
     try {
       PCA pca = new PCA().setRecenter(true).setRescale(false).setEigenvaluePower(0.0);
       Tensor channelMeans = pca.getChannelMeans(baseContent.addRef());

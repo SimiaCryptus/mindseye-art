@@ -411,7 +411,7 @@ public class VGG_WCT_Import {
       pipeline2.add(convolutionLayer(getBias(prefix2), getWeight(prefix2), 3, 64)).freeRef();
     }
 
-    InnerNode prepool_1;
+    final InnerNode prepool_1;
     {
       final String prefix1 = "vgg_conv2_1_5_";
       final Tensor weight1 = getWeight(prefix1);
