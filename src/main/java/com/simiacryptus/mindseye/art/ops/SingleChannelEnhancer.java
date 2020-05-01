@@ -51,6 +51,11 @@ public class SingleChannelEnhancer implements VisualModifier {
     return power;
   }
 
+  public SingleChannelEnhancer setPower(double power) {
+    this.power = power;
+    return this;
+  }
+
   public boolean isAveraging() {
     return averaging;
   }
@@ -71,11 +76,6 @@ public class SingleChannelEnhancer implements VisualModifier {
     return this;
   }
 
-  public SingleChannelEnhancer setPower(double power) {
-    this.power = power;
-    return this;
-  }
-
   @Nonnull
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
@@ -93,7 +93,7 @@ public class SingleChannelEnhancer implements VisualModifier {
         new NthPowerActivationLayer(getPower()),
         isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
         new LinearActivationLayer(Math.pow(mag, -getPower())),
-        new NthPowerActivationLayer(1.0/ getPower()),
+        new NthPowerActivationLayer(1.0 / getPower()),
         new LinearActivationLayer(-1)
     );
     layer.setName(RefString.format("-RMS / %.0E", mag));

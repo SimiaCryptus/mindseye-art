@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
   ~ Copyright (c) 2019 by Andrew Charneski.
   ~
@@ -16,7 +17,6 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
-
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -36,12 +36,15 @@
 
     </properties>
 
+
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>com.simiacryptus</groupId>
-                <artifactId>java-parent</artifactId>
-                <version>${project.parent.version}</version>
+                <artifactId>bom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -50,13 +53,13 @@
         <dependency>
             <groupId>com.github.fommil.netlib</groupId>
             <artifactId>all</artifactId>
-            <version>1.1.2</version>
+
             <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.ejml</groupId>
             <artifactId>ejml-all</artifactId>
-            <version>0.37.1</version>
+
         </dependency>
         <dependency>
             <groupId>com.twitter</groupId>
@@ -110,7 +113,7 @@
         <dependency>
             <groupId>com.simiacryptus</groupId>
             <artifactId>mindseye-tensorflow</artifactId>
-            <version>${project.version}</version>
+
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -127,40 +130,40 @@
         <dependency>
             <groupId>org.jcuda</groupId>
             <artifactId>jcusparse</artifactId>
-            <version>${jcudnn.version}</version>
+
         </dependency>
         <dependency>
             <groupId>org.jcuda</groupId>
             <artifactId>jcusolver</artifactId>
-            <version>${jcudnn.version}</version>
+
         </dependency>
         <dependency>
             <groupId>org.jcuda</groupId>
             <artifactId>jcusparse-natives</artifactId>
             <classifier>linux-x86_64</classifier>
             <scope>test</scope>
-            <version>${jcudnn.version}</version>
+
         </dependency>
         <dependency>
             <groupId>org.jcuda</groupId>
             <artifactId>jcusparse-natives</artifactId>
             <classifier>windows-x86_64</classifier>
             <scope>test</scope>
-            <version>${jcudnn.version}</version>
+
         </dependency>
         <dependency>
             <groupId>org.jcuda</groupId>
             <artifactId>jcusolver-natives</artifactId>
             <classifier>linux-x86_64</classifier>
             <scope>test</scope>
-            <version>${jcudnn.version}</version>
+
         </dependency>
         <dependency>
             <groupId>org.jcuda</groupId>
             <artifactId>jcusolver-natives</artifactId>
             <classifier>windows-x86_64</classifier>
             <scope>test</scope>
-            <version>${jcudnn.version}</version>
+
         </dependency>
 
         <dependency>
@@ -190,8 +193,14 @@
         <dependency>
             <groupId>com.simiacryptus</groupId>
             <artifactId>refcount-core</artifactId>
-            <version>${project.version}</version>
+
         </dependency>
     </dependencies>
 
+    <url>http://code.simiacrypt.us/release/${project.version}/mindseye-art</url>
+    <distributionManagement>
+        <site>
+            <url>s3://code.simiacrypt.us/release/${project.version}/mindseye-art</url>
+        </site>
+    </distributionManagement>
 </project>

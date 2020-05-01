@@ -384,7 +384,7 @@ public class ImageArtUtil {
         return new Tensor[]{Tensor.fromRGB(read)};
       } else {
         RefArrayList<Tensor> tensors = new RefArrayList<>();
-        if(!fileStr.isEmpty()) {
+        if (!fileStr.isEmpty()) {
           FileSystem fileSystem = getFileSystem(fileStr);
           Path path = new Path(fileStr);
           if (!fileSystem.exists(path)) {
@@ -402,7 +402,7 @@ public class ImageArtUtil {
             }
           }
         } else {
-          tensors.add(new Tensor(256,256,3));
+          tensors.add(new Tensor(256, 256, 3));
         }
         Tensor[] array = tensors.toArray(new Tensor[]{});
         tensors.freeRef();

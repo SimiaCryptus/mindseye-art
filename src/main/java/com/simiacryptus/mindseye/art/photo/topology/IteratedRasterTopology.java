@@ -21,7 +21,6 @@ package com.simiacryptus.mindseye.art.photo.topology;
 
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
