@@ -1,13 +1,13 @@
 {
+  "com.simiacryptus.mindseye.art.AnonymousVisionPipelineLayer" : { },
   "com.simiacryptus.mindseye.art.AppendVisionPipelineLayer" : { },
-  "com.simiacryptus.mindseye.art.LoggingVisionPipelineLayer" : { },
+  "com.simiacryptus.mindseye.art.ArtSettings" : { },
   "com.simiacryptus.mindseye.art.NetworkTest" : { },
   "com.simiacryptus.mindseye.art.OptimizationTest" : { },
   "com.simiacryptus.mindseye.art.PrependVisionPipelineLayer" : { },
   "com.simiacryptus.mindseye.art.SegmentTest" : { },
   "com.simiacryptus.mindseye.art.SegmentTest.Assemble_minCut" : { },
   "com.simiacryptus.mindseye.art.SegmentTest.Assemble_volumeEntropy" : { },
-  "com.simiacryptus.mindseye.art.StaticVisionPipelineLayer" : { },
   "com.simiacryptus.mindseye.art.SumTrainable" : { },
   "com.simiacryptus.mindseye.art.TiledTrainable" : { },
   "com.simiacryptus.mindseye.art.VGG_WCT_Import" : { },
@@ -36,6 +36,7 @@
   "com.simiacryptus.mindseye.art.ops.MomentMatcher" : { },
   "com.simiacryptus.mindseye.art.ops.MomentMatcher.MomentParams" : { },
   "com.simiacryptus.mindseye.art.ops.PatternPCAMatcher" : { },
+  "com.simiacryptus.mindseye.art.ops.SingleChannelEnhancer" : { },
   "com.simiacryptus.mindseye.art.photo.DoubleVectorStatistics" : { },
   "com.simiacryptus.mindseye.art.photo.FastPhotoStyleTransfer" : {
     ":class" : "Implemented process detailed in: A Closed-form Solution to Photorealistic Image Stylization https://arxiv.org/pdf/1802.06474.pdf"
@@ -87,5 +88,6 @@
   "com.simiacryptus.mindseye.art.util.ImageArtUtil" : { },
   "com.simiacryptus.mindseye.art.util.PCA" : { },
   "com.simiacryptus.mindseye.art.util.Plasma" : { },
-  "com.simiacryptus.mindseye.art.util.TextUtil" : { }
+  "com.simiacryptus.mindseye.art.util.TextUtil" : { },
+  "com.simiacryptus.mindseye.test.RemoteTests_Art" : { }
 }

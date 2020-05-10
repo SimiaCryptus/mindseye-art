@@ -67,16 +67,10 @@ public class NetworkTest extends LayerTestBase {
 
   private static DAGNetwork build() {
     Tensor styleTensor = Tensor.fromRGB(styleImage);
-    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
-    linearActivationLayer.setScale(1e-1);
-    linearActivationLayer.freeze();
-    PipelineNetwork build = new ContentMatcher().build(VisionPipelineLayer.NOOP, null, null, Tensor.fromRGB(contentImage));
     DAGNetwork dagNetwork = SumInputsLayer.combine(
         new GramMatrixMatcher().build(Inception5H.Inc5H_2a, null, null, styleTensor.addRef()),
-        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleTensor.addRef()),
-        build.andThen(linearActivationLayer));
-    styleTensor.freeRef();
-    build.freeRef();
+        new GramMatrixMatcher().build(Inception5H.Inc5H_3a, null, null, styleTensor),
+        new ContentMatcher().scale(1e-1).build(VisionPipelineLayer.NOOP, null, null, Tensor.fromRGB(contentImage)));
     MultiPrecision.setPrecision(dagNetwork.addRef(), Precision.Float);
     return dagNetwork;
   }
