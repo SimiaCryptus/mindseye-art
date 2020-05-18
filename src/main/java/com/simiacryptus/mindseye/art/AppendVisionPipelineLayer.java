@@ -25,11 +25,22 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Append vision pipeline layer.
+ *
+ * @param <T> the type parameter
+ */
 public class AppendVisionPipelineLayer<T extends VisionPipelineLayer> extends ReferenceCountingBase implements VisionPipelineLayer {
 
   private final T inner;
   private final Layer layer;
 
+  /**
+   * Instantiates a new Append vision pipeline layer.
+   *
+   * @param inner the inner
+   * @param layer the layer
+   */
   public AppendVisionPipelineLayer(T inner, Layer layer) {
     this.inner = inner;
     this.layer = layer;

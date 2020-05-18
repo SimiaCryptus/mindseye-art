@@ -27,7 +27,18 @@ import com.simiacryptus.ref.lang.RefAware;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The interface Smooth solver.
+ */
 public interface SmoothSolver {
+  /**
+   * Solve ref unary operator.
+   *
+   * @param topology the topology
+   * @param affinity the affinity
+   * @param lambda   the lambda
+   * @return the ref unary operator
+   */
   @Nonnull
   RefUnaryOperator<Tensor> solve(RasterTopology topology, @RefAware RasterAffinity affinity, double lambda);
 }

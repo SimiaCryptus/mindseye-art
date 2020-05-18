@@ -34,6 +34,9 @@ import com.simiacryptus.ref.wrappers.RefString;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Single channel enhancer.
+ */
 public class SingleChannelEnhancer implements VisualModifier {
 
   private boolean averaging = true;
@@ -42,34 +45,73 @@ public class SingleChannelEnhancer implements VisualModifier {
   private int maxBand;
   private double power = 2.0;
 
+  /**
+   * Instantiates a new Single channel enhancer.
+   *
+   * @param minBand the min band
+   * @param maxBand the max band
+   */
   public SingleChannelEnhancer(int minBand, int maxBand) {
     this.minBand = minBand;
     this.maxBand = maxBand;
   }
 
+  /**
+   * Gets power.
+   *
+   * @return the power
+   */
   public double getPower() {
     return power;
   }
 
+  /**
+   * Sets power.
+   *
+   * @param power the power
+   * @return the power
+   */
   public SingleChannelEnhancer setPower(double power) {
     this.power = power;
     return this;
   }
 
+  /**
+   * Is averaging boolean.
+   *
+   * @return the boolean
+   */
   public boolean isAveraging() {
     return averaging;
   }
 
+  /**
+   * Sets averaging.
+   *
+   * @param averaging the averaging
+   * @return the averaging
+   */
   @Nonnull
   public SingleChannelEnhancer setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
 
+  /**
+   * Is balanced boolean.
+   *
+   * @return the boolean
+   */
   public boolean isBalanced() {
     return balanced;
   }
 
+  /**
+   * Sets balanced.
+   *
+   * @param balanced the balanced
+   * @return the balanced
+   */
   @Nonnull
   public SingleChannelEnhancer setBalanced(boolean balanced) {
     this.balanced = balanced;

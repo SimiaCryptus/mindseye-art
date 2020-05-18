@@ -30,13 +30,31 @@ import com.simiacryptus.mindseye.network.PipelineNetwork;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Wct util.
+ */
 public class WCTUtil {
 
+  /**
+   * Applicator pipeline network.
+   *
+   * @param encodedStyle   the encoded style
+   * @param contentDensity the content density
+   * @param styleDensity   the style density
+   * @return the pipeline network
+   */
   @Nonnull
   public static PipelineNetwork applicator(Tensor encodedStyle, double contentDensity, double styleDensity) {
     return PipelineNetwork.build(1, normalizer(contentDensity), renormalizer(encodedStyle, styleDensity));
   }
 
+  /**
+   * Renormalizer pipeline network.
+   *
+   * @param encodedStyle the encoded style
+   * @param styleDensity the style density
+   * @return the pipeline network
+   */
   @Nonnull
   public static PipelineNetwork renormalizer(Tensor encodedStyle, double styleDensity) {
     Tensor tensor1 = means(encodedStyle.addRef());
@@ -51,6 +69,12 @@ public class WCTUtil {
     return renormalizer;
   }
 
+  /**
+   * Normalizer layer.
+   *
+   * @param maskFactor the mask factor
+   * @return the layer
+   */
   @Nonnull
   public static Layer normalizer(double maskFactor) {
     final PipelineNetwork normalizer = new PipelineNetwork(1);
@@ -68,6 +92,12 @@ public class WCTUtil {
     return normalizer;
   }
 
+  /**
+   * Means tensor.
+   *
+   * @param encodedStyle the encoded style
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor means(Tensor encodedStyle) {
     final BandAvgReducerLayer avgReducerLayer = new BandAvgReducerLayer();
@@ -77,6 +107,13 @@ public class WCTUtil {
     return tensor;
   }
 
+  /**
+   * Rms tensor.
+   *
+   * @param normalFeatures   the normal features
+   * @param normalMeanSignal the normal mean signal
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor rms(Tensor normalFeatures, @Nonnull Tensor normalMeanSignal) {
     final Tensor scale = normalMeanSignal.scale(-1);
@@ -94,11 +131,22 @@ public class WCTUtil {
     return tensor;
   }
 
+  /**
+   * Normalizer layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer normalizer() {
     return normalizer(1.0);
   }
 
+  /**
+   * Applicator pipeline network.
+   *
+   * @param encodedStyle the encoded style
+   * @return the pipeline network
+   */
   @Nonnull
   public static PipelineNetwork applicator(Tensor encodedStyle) {
     return applicator(encodedStyle, 1.0, 1.0);

@@ -38,13 +38,29 @@ import java.util.stream.Stream;
 
 import static java.lang.Math.log;
 
+/**
+ * The type Region assembler.
+ */
 public abstract class RegionAssembler implements Comparator<RegionAssembler.Connection> {
 
+  /**
+   * The Regions.
+   */
   public final HashSet<Region> regions = new HashSet<>();
   private final int pixels;
   private final int regionCount;
   private final Predicate<Connection> connectionFilter;
 
+  /**
+   * Instantiates a new Region assembler.
+   *
+   * @param graph            the graph
+   * @param pixelMap         the pixel map
+   * @param assignments      the assignments
+   * @param pixelFunction    the pixel function
+   * @param coordFunction    the coord function
+   * @param connectionFilter the connection filter
+   */
   public RegionAssembler(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Map<Integer, Integer> assignments,
                          @Nonnull @RefAware IntFunction<double[]> pixelFunction, @Nonnull @RefAware IntFunction<double[]> coordFunction,
                          Predicate<Connection> connectionFilter) {
@@ -92,6 +108,11 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     });
   }
 
+  /**
+   * Get pixel map int [ ].
+   *
+   * @return the int [ ]
+   */
   @Nonnull
   public int[] getPixelMap() {
     final int[] ints = new int[pixels];
@@ -102,6 +123,11 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     return ints;
   }
 
+  /**
+   * Get projection int [ ].
+   *
+   * @return the int [ ]
+   */
   @Nonnull
   public int[] getProjection() {
     final int[] ints = new int[regionCount];
@@ -112,11 +138,27 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     return ints;
   }
 
+  /**
+   * Gets tree.
+   *
+   * @return the tree
+   */
   @Nonnull
   public RegionTree getTree() {
     return new RegionTree(regions.stream().map(x -> x.tree).toArray(i -> new RegionTree[i]));
   }
 
+  /**
+   * Wrap region assembler.
+   *
+   * @param graph       the graph
+   * @param pixelMap    the pixel map
+   * @param extractor   the extractor
+   * @param content     the content
+   * @param topology    the topology
+   * @param assignments the assignments
+   * @return the region assembler
+   */
   @Nonnull
   public static RegionAssembler wrap(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Function<Connection, Double> extractor,
                                      @Nonnull final Tensor content, @Nonnull @RefAware final RasterTopology topology, @Nonnull final Map<Integer, Integer> assignments) {
@@ -135,6 +177,15 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     };
   }
 
+  /**
+   * Volume entropy region assembler.
+   *
+   * @param graph    the graph
+   * @param pixelMap the pixel map
+   * @param content  the content
+   * @param topology the topology
+   * @return the region assembler
+   */
   public @Nonnull
   static RegionAssembler volumeEntropy(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Tensor content,
                                        @Nonnull RasterTopology topology) {
@@ -159,6 +210,15 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }, content, topology, new HashMap<Integer, Integer>());
   }
 
+  /**
+   * Simple entropy region assembler.
+   *
+   * @param graph    the graph
+   * @param pixelMap the pixel map
+   * @param content  the content
+   * @param topology the topology
+   * @return the region assembler
+   */
   public @Nonnull
   static RegionAssembler simpleEntropy(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Tensor content,
                                        @Nonnull RasterTopology topology) {
@@ -181,6 +241,16 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }, content, topology, new HashMap<Integer, Integer>());
   }
 
+  /**
+   * Epidemic region assembler.
+   *
+   * @param graph       the graph
+   * @param pixelMap    the pixel map
+   * @param content     the content
+   * @param topology    the topology
+   * @param assignments the assignments
+   * @return the region assembler
+   */
   public @Nonnull
   static RegionAssembler epidemic(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Tensor content,
                                   @Nonnull RasterTopology topology, @Nonnull Map<Integer, Integer> assignments) {
@@ -217,6 +287,15 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }, content, topology, assignments);
   }
 
+  /**
+   * Volume 5 d region assembler.
+   *
+   * @param graph    the graph
+   * @param pixelMap the pixel map
+   * @param content  the content
+   * @param topology the topology
+   * @return the region assembler
+   */
   public @Nonnull
   static RegionAssembler volume5D(@Nonnull SparseMatrixFloat graph, @Nonnull int[] pixelMap, @Nonnull Tensor content,
                                   @Nonnull RasterTopology topology) {
@@ -268,6 +347,16 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }, content, topology, new HashMap<Integer, Integer>());
   }
 
+  /**
+   * Reduce int [ ].
+   *
+   * @param graph       the graph
+   * @param targetCount the target count
+   * @param sizes       the sizes
+   * @param content     the content
+   * @param topology    the topology
+   * @return the int [ ]
+   */
   @Nonnull
   public static int[] reduce(@Nonnull SparseMatrixFloat graph, int targetCount, @Nonnull final int[] sizes, @Nonnull Tensor content,
                              @Nonnull RasterTopology topology) {
@@ -282,6 +371,12 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }
   }
 
+  /**
+   * Reduce to region assembler.
+   *
+   * @param count the count
+   * @return the region assembler
+   */
   @Nonnull
   public RegionAssembler reduceTo(int count) {
     while (regions.parallelStream().map(region1 -> region1.connections_stream())
@@ -301,27 +396,65 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     return this;
   }
 
+  /**
+   * The type Region tree.
+   */
   public static class RegionTree {
+    /**
+     * The Regions.
+     */
     public final int[] regions;
+    /**
+     * The Children.
+     */
     @Nonnull
     public final RegionTree[] children;
 
+    /**
+     * Instantiates a new Region tree.
+     *
+     * @param regions the regions
+     */
     public RegionTree(int... regions) {
       this.regions = regions;
       children = new RegionTree[]{};
     }
 
+    /**
+     * Instantiates a new Region tree.
+     *
+     * @param children the children
+     */
     public RegionTree(@Nonnull RegionTree... children) {
       this.regions = Arrays.stream(children).flatMapToInt(x -> Arrays.stream(x.regions)).toArray();
       this.children = children;
     }
   }
 
+  /**
+   * The type Connection.
+   */
   public class Connection {
+    /**
+     * The From.
+     */
     public final Region from;
+    /**
+     * The To.
+     */
     public final Region to;
+    /**
+     * The Value.
+     */
     public final float value;
 
+    /**
+     * Instantiates a new Connection.
+     *
+     * @param from  the from
+     * @param to    the to
+     * @param value the value
+     */
     public Connection(Region from, Region to, float value) {
       this.from = from;
       this.to = to;
@@ -329,10 +462,18 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       assert value > 0.0;
     }
 
+    /**
+     * Reciprical connection.
+     *
+     * @return the connection
+     */
     public Connection reciprical() {
       return to.connections.get(from);
     }
 
+    /**
+     * Join.
+     */
     protected void join() {
       final Region toRemove;
       final Region consolidated;
@@ -360,40 +501,94 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
     }
   }
 
+  /**
+   * The type Region.
+   */
   public class Region {
+    /**
+     * The Connections.
+     */
     public final HashMap<Region, Connection> connections = new HashMap<>();
+    /**
+     * The Pixels.
+     */
     public final HashSet<Integer> pixels = new HashSet<>();
+    /**
+     * The Marks.
+     */
     public final HashSet<Integer> marks = new HashSet<>();
+    /**
+     * The Original regions.
+     */
     public final HashSet<Integer> original_regions = new HashSet<>();
+    /**
+     * The Color stats.
+     */
     public final DoubleVectorStatistics colorStats = new DoubleVectorStatistics(3);
+    /**
+     * The Spacial stats.
+     */
     public final DoubleVectorStatistics spacialStats = new DoubleVectorStatistics(2);
+    /**
+     * The Tree.
+     */
     @Nullable
     public RegionTree tree;
     private double connectionWeight = 0;
 
+    /**
+     * Instantiates a new Region.
+     *
+     * @param id          the id
+     * @param connections the connections
+     */
     public Region(int id, @Nonnull Connection... connections) {
       this.original_regions.add(id);
       tree = new RegionTree(id);
       Arrays.stream(connections).forEach(connection -> connections_add(connection));
     }
 
+    /**
+     * Gets connection weight.
+     *
+     * @return the connection weight
+     */
     public double getConnectionWeight() {
       return connectionWeight;
     }
 
+    /**
+     * Connections stream stream.
+     *
+     * @return the stream
+     */
     public Stream<Connection> connections_stream() {
       return connections.values().stream();
     }
 
+    /**
+     * Connections stream parallel stream.
+     *
+     * @return the stream
+     */
     public Stream<Connection> connections_stream_parallel() {
       return connections.values().parallelStream();
     }
 
+    /**
+     * Connections clear.
+     */
     public void connections_clear() {
       connectionWeight = 0;
       connections.clear();
     }
 
+    /**
+     * Connections add boolean.
+     *
+     * @param connection the connection
+     * @return the boolean
+     */
     public boolean connections_add(@Nonnull Connection connection) {
       assert connection.from == this;
       final boolean add = null == connections.put(connection.to, connection);
@@ -402,6 +597,12 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       return add;
     }
 
+    /**
+     * Connections remove boolean.
+     *
+     * @param connection the connection
+     * @return the boolean
+     */
     public boolean connections_remove(@Nonnull Connection connection) {
       final boolean remove = null != connections.remove(connection.to);
       if (remove)
@@ -409,10 +610,21 @@ public abstract class RegionAssembler implements Comparator<RegionAssembler.Conn
       return remove;
     }
 
+    /**
+     * Connections add all boolean.
+     *
+     * @param connections the connections
+     * @return the boolean
+     */
     public boolean connections_addAll(@Nonnull Collection<? extends Connection> connections) {
       return connections.stream().filter(x -> !this.connections_add(x)).allMatch(connection -> connections_add(connection));
     }
 
+    /**
+     * Min id int.
+     *
+     * @return the int
+     */
     public int minId() {
       return original_regions.stream().mapToInt(x -> x).min().getAsInt();
     }

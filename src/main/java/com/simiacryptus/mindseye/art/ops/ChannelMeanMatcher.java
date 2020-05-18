@@ -35,26 +35,51 @@ import com.simiacryptus.ref.wrappers.RefString;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * The type Channel mean matcher.
+ */
 public class ChannelMeanMatcher implements VisualModifier {
 
   private boolean balanced = true;
   private boolean averaging = true;
   private int tileSize = ArtSettings.INSTANCE().defaultTileSize;
 
+  /**
+   * Is averaging boolean.
+   *
+   * @return the boolean
+   */
   public boolean isAveraging() {
     return averaging;
   }
 
+  /**
+   * Sets averaging.
+   *
+   * @param averaging the averaging
+   * @return the averaging
+   */
   @Nonnull
   public ChannelMeanMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
 
+  /**
+   * Is balanced boolean.
+   *
+   * @return the boolean
+   */
   public boolean isBalanced() {
     return balanced;
   }
 
+  /**
+   * Sets balanced.
+   *
+   * @param balanced the balanced
+   * @return the balanced
+   */
   @Nonnull
   public ChannelMeanMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
@@ -70,6 +95,14 @@ public class ChannelMeanMatcher implements VisualModifier {
     return pipelineNetwork;
   }
 
+  /**
+   * Build with model pipeline network.
+   *
+   * @param network    the network
+   * @param meanSignal the mean signal
+   * @param image      the image
+   * @return the pipeline network
+   */
   @Nonnull
   public PipelineNetwork buildWithModel(PipelineNetwork network, @Nullable Tensor meanSignal, @Nonnull Tensor... image) {
     PipelineNetwork copyPipeline = network.copyPipeline();

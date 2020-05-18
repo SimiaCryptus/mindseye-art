@@ -35,14 +35,30 @@ import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
+/**
+ * The type Cuda dense matrix.
+ */
 public class CudaDenseMatrix extends RefLazyVal<CudaDenseMatrix.GpuCopy> {
 
+  /**
+   * The Matrix.
+   */
   public final SparseMatrixFloat matrix;
 
+  /**
+   * Instantiates a new Cuda dense matrix.
+   *
+   * @param matrix the matrix
+   */
   public CudaDenseMatrix(SparseMatrixFloat matrix) {
     this.matrix = matrix;
   }
 
+  /**
+   * New sparse handle cusparse handle.
+   *
+   * @return the cusparse handle
+   */
   @Nonnull
   public static cusparseHandle newSparseHandle() {
     cusparseHandle handle = new cusparseHandle();
@@ -50,6 +66,11 @@ public class CudaDenseMatrix extends RefLazyVal<CudaDenseMatrix.GpuCopy> {
     return handle;
   }
 
+  /**
+   * New solver handle cusolver sp handle.
+   *
+   * @return the cusolver sp handle
+   */
   @Nonnull
   public static cusolverSpHandle newSolverHandle() {
     cusolverSpHandle handle = new cusolverSpHandle();
@@ -57,6 +78,13 @@ public class CudaDenseMatrix extends RefLazyVal<CudaDenseMatrix.GpuCopy> {
     return handle;
   }
 
+  /**
+   * Descriptor cusparse mat descr.
+   *
+   * @param matType   the mat type
+   * @param indexBase the index base
+   * @return the cusparse mat descr
+   */
   @Nonnull
   public static cusparseMatDescr descriptor(int matType, int indexBase) {
     cusparseMatDescr descra = new cusparseMatDescr();
@@ -66,6 +94,12 @@ public class CudaDenseMatrix extends RefLazyVal<CudaDenseMatrix.GpuCopy> {
     return descra;
   }
 
+  /**
+   * To device pointer.
+   *
+   * @param values the values
+   * @return the pointer
+   */
   @Nonnull
   public static Pointer toDevice(@Nonnull float[] values) {
     Pointer cooVal = new Pointer();
@@ -74,6 +108,12 @@ public class CudaDenseMatrix extends RefLazyVal<CudaDenseMatrix.GpuCopy> {
     return cooVal;
   }
 
+  /**
+   * To device pointer.
+   *
+   * @param values the values
+   * @return the pointer
+   */
   @Nonnull
   public static Pointer toDevice(@Nonnull int[] values) {
     Pointer cooRowIndex = new Pointer();
@@ -100,16 +140,39 @@ public class CudaDenseMatrix extends RefLazyVal<CudaDenseMatrix.GpuCopy> {
     return (CudaDenseMatrix) super.addRef();
   }
 
+  /**
+   * The type Gpu copy.
+   */
   public static final class GpuCopy extends ReferenceCountingBase {
+    /**
+     * The Row indices.
+     */
     @Nonnull
     public final Pointer rowIndices;
+    /**
+     * The Column indices.
+     */
     @Nonnull
     public final Pointer columnIndices;
+    /**
+     * The Values.
+     */
     @Nonnull
     public final Pointer values;
+    /**
+     * The Matrix.
+     */
     public final SparseMatrixFloat matrix;
+    /**
+     * The Rows.
+     */
     public final int rows;
 
+    /**
+     * Instantiates a new Gpu copy.
+     *
+     * @param cudaCoo the cuda coo
+     */
     public GpuCopy(@Nonnull CudaDenseMatrix cudaCoo) {
       this.matrix = cudaCoo.matrix;
       rows = matrix.rows;
@@ -119,6 +182,12 @@ public class CudaDenseMatrix extends RefLazyVal<CudaDenseMatrix.GpuCopy> {
       cudaCoo.freeRef();
     }
 
+    /**
+     * Csr rows pointer.
+     *
+     * @param handle the handle
+     * @return the pointer
+     */
     @Nonnull
     public Pointer csrRows(cusparseHandle handle) {
       Pointer csrRowPtr = new Pointer();

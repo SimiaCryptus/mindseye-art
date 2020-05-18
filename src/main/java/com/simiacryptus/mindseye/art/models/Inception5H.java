@@ -30,17 +30,53 @@ import com.simiacryptus.tensorflow.ImageNetworkPipeline;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * The enum Inception 5 h.
+ */
 public enum Inception5H implements VisionPipelineLayer {
+  /**
+   * Inc 5 h 1 a inception 5 h.
+   */
   Inc5H_1a("conv2d0"),
+  /**
+   * Inc 5 h 2 a inception 5 h.
+   */
   Inc5H_2a("localresponsenorm1"),
+  /**
+   * Inc 5 h 3 a inception 5 h.
+   */
   Inc5H_3a("mixed3a"),
+  /**
+   * Inc 5 h 3 b inception 5 h.
+   */
   Inc5H_3b("mixed3b"),
+  /**
+   * Inc 5 h 4 a inception 5 h.
+   */
   Inc5H_4a("mixed4a"),
+  /**
+   * Inc 5 h 4 b inception 5 h.
+   */
   Inc5H_4b("mixed4b"),
+  /**
+   * Inc 5 h 4 c inception 5 h.
+   */
   Inc5H_4c("mixed4c"),
+  /**
+   * Inc 5 h 4 d inception 5 h.
+   */
   Inc5H_4d("mixed4d"),
+  /**
+   * Inc 5 h 4 e inception 5 h.
+   */
   Inc5H_4e("mixed4e"),
+  /**
+   * Inc 5 h 5 a inception 5 h.
+   */
   Inc5H_5a("mixed5a"),
+  /**
+   * Inc 5 h 5 b inception 5 h.
+   */
   Inc5H_5b("mixed5b");
 
   @Nullable
@@ -80,6 +116,11 @@ public enum Inception5H implements VisionPipelineLayer {
     return name;
   }
 
+  /**
+   * Gets vision pipeline.
+   *
+   * @return the vision pipeline
+   */
   @Nullable
   public static VisionPipeline getVisionPipeline() {
     if (null == visionPipeline) {
@@ -92,6 +133,11 @@ public enum Inception5H implements VisionPipelineLayer {
     return visionPipeline.addRef();
   }
 
+  /**
+   * Layer map ref map.
+   *
+   * @return the ref map
+   */
   @Nonnull
   public static RefMap<String, PipelineNetwork> layerMap() {
     if (null == inception5h) {

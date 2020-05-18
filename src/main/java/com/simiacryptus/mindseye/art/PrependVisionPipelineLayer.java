@@ -25,11 +25,20 @@ import com.simiacryptus.ref.wrappers.RefList;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Prepend vision pipeline layer.
+ */
 public class PrependVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
 
   private final VisionPipelineLayer inner;
   private final Layer layer;
 
+  /**
+   * Instantiates a new Prepend vision pipeline layer.
+   *
+   * @param inner the inner
+   * @param layer the layer
+   */
   public PrependVisionPipelineLayer(VisionPipelineLayer inner, Layer layer) {
     this.inner = inner;
     this.layer = layer;

@@ -33,14 +33,37 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.UnaryOperator;
 
+/**
+ * The interface Visual modifier.
+ */
 public interface VisualModifier {
 
+  /**
+   * Is localized boolean.
+   *
+   * @return the boolean
+   */
   default boolean isLocalized() {
     return false;
   }
 
+  /**
+   * Build pipeline network.
+   *
+   * @param visualModifierParameters the visual modifier parameters
+   * @return the pipeline network
+   */
   PipelineNetwork build(VisualModifierParameters visualModifierParameters);
 
+  /**
+   * Build pipeline network.
+   *
+   * @param layer       the layer
+   * @param contentDims the content dims
+   * @param viewLayer   the view layer
+   * @param image       the image
+   * @return the pipeline network
+   */
   default PipelineNetwork build(@Nonnull VisionPipelineLayer layer,
                                 @Nonnull int[] contentDims,
                                 @Nullable UnaryOperator<Tensor> viewLayer,
@@ -51,6 +74,12 @@ public interface VisualModifier {
     return build(new VisualModifierParameters(network, contentDims, viewLayer, null, image));
   }
 
+  /**
+   * Combine visual modifier.
+   *
+   * @param right the right
+   * @return the visual modifier
+   */
   @Nonnull
   default VisualModifier combine(@Nonnull VisualModifier right) {
     VisualModifier left = this;
@@ -77,6 +106,12 @@ public interface VisualModifier {
     };
   }
 
+  /**
+   * Scale visual modifier.
+   *
+   * @param scale the scale
+   * @return the visual modifier
+   */
   @Nonnull
   default VisualModifier scale(double scale) {
     return new VisualModifier() {
@@ -104,11 +139,22 @@ public interface VisualModifier {
     };
   }
 
+  /**
+   * With logging visual modifier.
+   *
+   * @return the visual modifier
+   */
   @Nonnull
   default VisualModifier withLogging() {
     return withLogging(getClass().getSimpleName());
   }
 
+  /**
+   * With logging visual modifier.
+   *
+   * @param name the name
+   * @return the visual modifier
+   */
   @Nonnull
   default VisualModifier withLogging(String name) {
     return new VisualModifier() {
@@ -136,6 +182,12 @@ public interface VisualModifier {
     };
   }
 
+  /**
+   * Pow visual modifier.
+   *
+   * @param power the power
+   * @return the visual modifier
+   */
   @Nonnull
   default VisualModifier pow(double power) {
     VisualModifier left = this;
@@ -164,6 +216,12 @@ public interface VisualModifier {
     };
   }
 
+  /**
+   * With mask visual modifier.
+   *
+   * @param maskedInput the masked input
+   * @return the visual modifier
+   */
   @Nonnull
   default VisualModifier withMask(Tensor maskedInput) {
     final VisualModifier inner = this;

@@ -38,7 +38,7 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefString;
-import com.simiacryptus.util.test.NotebookReportBase;
+import com.simiacryptus.util.test.NotebookTestBase;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
@@ -52,7 +52,10 @@ import java.util.stream.Collectors;
 import static com.simiacryptus.mindseye.art.photo.RegionAssembler.volumeEntropy;
 import static com.simiacryptus.mindseye.art.photo.SegmentUtil.*;
 
-public class SegmentTest extends NotebookReportBase {
+/**
+ * The type Segment test.
+ */
+public class SegmentTest extends NotebookTestBase {
 
   @Nonnull
   private String contentImage = "file:///C:/Users/andre/Downloads/pictures/E17-E.jpg";
@@ -71,6 +74,9 @@ public class SegmentTest extends NotebookReportBase {
   }
 
 
+  /**
+   * Segment volume entropy.
+   */
   @Test
   public void segment_volumeEntropy() {
     NotebookOutput log = getLog();
@@ -91,6 +97,9 @@ public class SegmentTest extends NotebookReportBase {
     eval.freeRef();
   }
 
+  /**
+   * Segment min cut.
+   */
   @Test
   public void segment_minCut() {
     NotebookOutput log = getLog();
@@ -154,6 +163,14 @@ public class SegmentTest extends NotebookReportBase {
     private SparseMatrixFloat graph;
     private int[] pixelMap;
 
+    /**
+     * Instantiates a new Assemble min cut.
+     *
+     * @param content  the content
+     * @param topology the topology
+     * @param affinity the affinity
+     * @param pixelMap the pixel map
+     */
     public Assemble_minCut(Tensor content, @Nonnull RasterTopology topology, @Nonnull ContextAffinity affinity, int[] pixelMap) {
       this.pixelMap = pixelMap;
       CudaSparseMatrix laplacian = SmoothSolver_Cuda.laplacian(affinity, topology.addRef());
@@ -163,6 +180,11 @@ public class SegmentTest extends NotebookReportBase {
       this.topology = topology;
     }
 
+    /**
+     * Run.
+     *
+     * @param log the log
+     */
     public void run(@Nonnull NotebookOutput log) {
       display(log);
       update(volumeEntropy(graph, pixelMap, content.addRef(), topology.addRef()).reduceTo(10000).getProjection());
@@ -245,19 +267,42 @@ public class SegmentTest extends NotebookReportBase {
       display(log);
     }
 
+    /**
+     * Display.
+     *
+     * @param log the log
+     */
     public void display(@Nonnull NotebookOutput log) {
       display(log, pixelMap, graph);
     }
 
+    /**
+     * Update and display.
+     *
+     * @param log        the log
+     * @param projection the projection
+     */
     public void updateAndDisplay(@Nonnull NotebookOutput log, int[] projection) {
       display(log, SparseMatrixFloat.project(pixelMap, projection), graph.project(projection));
     }
 
+    /**
+     * Update.
+     *
+     * @param projection the projection
+     */
     public void update(int[] projection) {
       graph = graph.project(projection);
       pixelMap = SparseMatrixFloat.project(pixelMap, projection);
     }
 
+    /**
+     * Display.
+     *
+     * @param log      the log
+     * @param pixelMap the pixel map
+     * @param graph    the graph
+     */
     public void display(@Nonnull NotebookOutput log, @Nonnull int[] pixelMap, @Nonnull SparseMatrixFloat graph) {
       log.eval(() -> {
         System.out
@@ -289,6 +334,14 @@ public class SegmentTest extends NotebookReportBase {
     private SparseMatrixFloat graph;
     private int[] pixelMap;
 
+    /**
+     * Instantiates a new Assemble volume entropy.
+     *
+     * @param content  the content
+     * @param topology the topology
+     * @param affinity the affinity
+     * @param pixelMap the pixel map
+     */
     public Assemble_volumeEntropy(Tensor content, @Nonnull RasterTopology topology, @Nonnull ContextAffinity affinity, int[] pixelMap) {
       this.pixelMap = pixelMap;
       CudaSparseMatrix laplacian = SmoothSolver_Cuda.laplacian(affinity, topology.addRef());
@@ -298,6 +351,11 @@ public class SegmentTest extends NotebookReportBase {
       this.topology = topology;
     }
 
+    /**
+     * Run.
+     *
+     * @param log the log
+     */
     public void run(@Nonnull NotebookOutput log) {
       display(log);
       update(log.eval(() -> {
@@ -314,11 +372,21 @@ public class SegmentTest extends NotebookReportBase {
       display(log);
     }
 
+    /**
+     * Update.
+     *
+     * @param projection the projection
+     */
     public void update(int[] projection) {
       graph = graph.project(projection);
       pixelMap = SparseMatrixFloat.project(pixelMap, projection);
     }
 
+    /**
+     * Display.
+     *
+     * @param log the log
+     */
     public void display(@Nonnull NotebookOutput log) {
       log.eval(() -> {
         System.out

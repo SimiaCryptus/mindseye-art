@@ -25,10 +25,21 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+/**
+ * The type Raster topology wrapper.
+ */
 public class RasterTopologyWrapper extends ReferenceCountingBase implements RasterTopology {
 
+  /**
+   * The Inner.
+   */
   public final RasterTopology inner;
 
+  /**
+   * Instantiates a new Raster topology wrapper.
+   *
+   * @param inner the inner
+   */
   public RasterTopologyWrapper(RasterTopology inner) {
     this.inner = inner;
   }
@@ -65,10 +76,18 @@ public class RasterTopologyWrapper extends ReferenceCountingBase implements Rast
     inner.freeRef();
   }
 
+  /**
+   * The type Cached raster topology.
+   */
   public static class CachedRasterTopology extends RasterTopologyWrapper {
 
     private final Singleton<List<int[]>> cache = new Singleton<>();
 
+    /**
+     * Instantiates a new Cached raster topology.
+     *
+     * @param inner the inner
+     */
     public CachedRasterTopology(RasterTopology inner) {
       super(inner);
     }

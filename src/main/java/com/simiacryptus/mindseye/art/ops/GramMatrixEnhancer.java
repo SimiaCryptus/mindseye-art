@@ -42,6 +42,9 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.util.UUID;
 
+/**
+ * The type Gram matrix enhancer.
+ */
 public class GramMatrixEnhancer implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixEnhancer.class);
   private final Precision precision = Precision.Float;
@@ -52,56 +55,119 @@ public class GramMatrixEnhancer implements VisualModifier {
   private int tileSize = ArtSettings.INSTANCE().defaultTileSize;
   private int padding = 8;
 
+  /**
+   * Gets max.
+   *
+   * @return the max
+   */
   public double getMax() {
     return max;
   }
 
+  /**
+   * Sets max.
+   *
+   * @param max the max
+   * @return the max
+   */
   @Nonnull
   public GramMatrixEnhancer setMax(double max) {
     this.max = max;
     return this;
   }
 
+  /**
+   * Gets min.
+   *
+   * @return the min
+   */
   public double getMin() {
     return min;
   }
 
+  /**
+   * Sets min.
+   *
+   * @param min the min
+   * @return the min
+   */
   @Nonnull
   public GramMatrixEnhancer setMin(double min) {
     this.min = min;
     return this;
   }
 
+  /**
+   * Gets tile size.
+   *
+   * @return the tile size
+   */
   public int getTileSize() {
     return tileSize;
   }
 
+  /**
+   * Sets tile size.
+   *
+   * @param tileSize the tile size
+   * @return the tile size
+   */
   @Nonnull
   public GramMatrixEnhancer setTileSize(int tileSize) {
     this.tileSize = tileSize;
     return this;
   }
 
+  /**
+   * Is averaging boolean.
+   *
+   * @return the boolean
+   */
   public boolean isAveraging() {
     return averaging;
   }
 
+  /**
+   * Sets averaging.
+   *
+   * @param averaging the averaging
+   * @return the averaging
+   */
   @Nonnull
   public GramMatrixEnhancer setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
 
+  /**
+   * Is balanced boolean.
+   *
+   * @return the boolean
+   */
   public boolean isBalanced() {
     return balanced;
   }
 
+  /**
+   * Sets balanced.
+   *
+   * @param balanced the balanced
+   * @return the balanced
+   */
   @Nonnull
   public GramMatrixEnhancer setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
+  /**
+   * Loss pipeline network.
+   *
+   * @param result    the result
+   * @param mag       the mag
+   * @param averaging the averaging
+   * @return the pipeline network
+   */
   @Nonnull
   public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {
     PipelineNetwork rmsNetwork = new PipelineNetwork(1);
@@ -164,6 +230,13 @@ public class GramMatrixEnhancer implements VisualModifier {
     return network;
   }
 
+  /**
+   * Sets min max.
+   *
+   * @param minValue the min value
+   * @param maxValue the max value
+   * @return the min max
+   */
   @Nonnull
   public GramMatrixEnhancer setMinMax(double minValue, double maxValue) {
     this.min = minValue;
@@ -171,6 +244,9 @@ public class GramMatrixEnhancer implements VisualModifier {
     return this;
   }
 
+  /**
+   * The type Static gram matrix enhancer.
+   */
   public static class StaticGramMatrixEnhancer extends GramMatrixEnhancer {
     @Nonnull
     public PipelineNetwork loss(Tensor result, double mag, boolean averaging) {

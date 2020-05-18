@@ -27,10 +27,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * The type Simple raster topology.
+ */
 public class SimpleRasterTopology extends ReferenceCountingBase implements RasterTopology {
+  /**
+   * The Dimensions.
+   */
   protected final int[] dimensions;
   private final int max_neighborhood_size = 9;
 
+  /**
+   * Instantiates a new Simple raster topology.
+   *
+   * @param dimensions the dimensions
+   */
   public SimpleRasterTopology(int[] dimensions) {
     this.dimensions = dimensions;
   }

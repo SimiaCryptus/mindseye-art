@@ -32,47 +32,92 @@ import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.IntStream;
 
+/**
+ * The type Plasma.
+ */
 public class Plasma {
   private int bands;
   private double[] noiseAmplitude;
   private double noisePower;
 
+  /**
+   * Instantiates a new Plasma.
+   */
   public Plasma() {
     setNoisePower(0.5);
     setNoiseAmplitude(100);
     setBands(3);
   }
 
+  /**
+   * Gets bands.
+   *
+   * @return the bands
+   */
   public int getBands() {
     return bands;
   }
 
+  /**
+   * Sets bands.
+   *
+   * @param bands the bands
+   * @return the bands
+   */
   @Nonnull
   public Plasma setBands(int bands) {
     this.bands = bands;
     return this;
   }
 
+  /**
+   * Get noise amplitude double [ ].
+   *
+   * @return the double [ ]
+   */
   public double[] getNoiseAmplitude() {
     return noiseAmplitude;
   }
 
+  /**
+   * Sets noise amplitude.
+   *
+   * @param noiseAmplitude the noise amplitude
+   * @return the noise amplitude
+   */
   @Nonnull
   public Plasma setNoiseAmplitude(double... noiseAmplitude) {
     this.noiseAmplitude = noiseAmplitude;
     return this;
   }
 
+  /**
+   * Gets noise power.
+   *
+   * @return the noise power
+   */
   public double getNoisePower() {
     return noisePower;
   }
 
+  /**
+   * Sets noise power.
+   *
+   * @param noisePower the noise power
+   * @return the noise power
+   */
   @Nonnull
   public Plasma setNoisePower(double noisePower) {
     this.noisePower = noisePower;
     return this;
   }
 
+  /**
+   * Band stats double [ ] [ ].
+   *
+   * @param image the image
+   * @return the double [ ] [ ]
+   */
   public static double[][] bandStats(Tensor image) {
     double[][] doubles = IntStream.range(0, image.getDimensions()[2]).mapToObj(band -> {
       Tensor selectBand = image.selectBand(band);
@@ -86,6 +131,12 @@ public class Plasma {
     return doubles;
   }
 
+  /**
+   * To image buffered image.
+   *
+   * @param image the image
+   * @return the buffered image
+   */
   @NotNull
   public static BufferedImage toImage(@Nonnull Tensor image) {
     BufferedImage rgbImage = image.toRgbImage();
@@ -93,6 +144,14 @@ public class Plasma {
     return rgbImage;
   }
 
+  /**
+   * Resize tensor.
+   *
+   * @param rgbImage the rgb image
+   * @param width    the width
+   * @param height   the height
+   * @return the tensor
+   */
   @NotNull
   public static Tensor resize(BufferedImage rgbImage, int width, int height) {
     return Tensor.fromRGB(ImageUtil.resize(rgbImage, width, height));
@@ -108,6 +167,13 @@ public class Plasma {
     return tensor1;
   }
 
+  /**
+   * Paint tensor.
+   *
+   * @param width  the width
+   * @param height the height
+   * @return the tensor
+   */
   @Nonnull
   public Tensor paint(final int width, final int height) {
     Tensor image = initSquare(bands);
@@ -124,6 +190,12 @@ public class Plasma {
     return resize(toImage(renormBands(image)), width, height);
   }
 
+  /**
+   * Renorm bands tensor.
+   *
+   * @param image the image
+   * @return the tensor
+   */
   @NotNull
   public Tensor renormBands(Tensor image) {
     double[][] bandStats = bandStats(image.addRef());

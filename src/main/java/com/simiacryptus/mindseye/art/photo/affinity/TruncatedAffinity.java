@@ -24,28 +24,58 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * The type Truncated affinity.
+ */
 public class TruncatedAffinity extends AffinityWrapper {
   private double min = 1e-2;
   private double power = 0.5;
 
+  /**
+   * Instantiates a new Truncated affinity.
+   *
+   * @param inner the inner
+   */
   public TruncatedAffinity(RasterAffinity inner) {
     super(inner);
   }
 
+  /**
+   * Gets min.
+   *
+   * @return the min
+   */
   public double getMin() {
     return min;
   }
 
+  /**
+   * Sets min.
+   *
+   * @param min the min
+   * @return the min
+   */
   @Nonnull
   public TruncatedAffinity setMin(double min) {
     this.min = min;
     return this;
   }
 
+  /**
+   * Gets power.
+   *
+   * @return the power
+   */
   public double getPower() {
     return power;
   }
 
+  /**
+   * Sets power.
+   *
+   * @param power the power
+   * @return the power
+   */
   @Nonnull
   public TruncatedAffinity setPower(double power) {
     this.power = power;

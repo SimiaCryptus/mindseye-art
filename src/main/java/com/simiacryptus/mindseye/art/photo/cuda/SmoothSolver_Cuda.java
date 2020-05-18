@@ -31,8 +31,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
+/**
+ * The type Smooth solver cuda.
+ */
 public class SmoothSolver_Cuda implements SmoothSolver {
 
+  /**
+   * Laplacian cuda sparse matrix.
+   *
+   * @param affinity the affinity
+   * @param topology the topology
+   * @return the cuda sparse matrix
+   */
   public static @Nonnull
   CudaSparseMatrix laplacian(@RefAware @Nonnull RasterAffinity affinity, @Nonnull @RefAware RasterTopology topology) {
     List<int[]> connectivity = topology.connectivity();
@@ -42,6 +52,13 @@ public class SmoothSolver_Cuda implements SmoothSolver {
     return laplacian;
   }
 
+  /**
+   * Laplacian cuda sparse matrix.
+   *
+   * @param graphEdges   the graph edges
+   * @param affinityList the affinity list
+   * @return the cuda sparse matrix
+   */
   public static @Nonnull
   CudaSparseMatrix laplacian(@Nonnull List<int[]> graphEdges, @Nonnull List<double[]> affinityList) {
     final int pixels = graphEdges.size();
@@ -63,6 +80,13 @@ public class SmoothSolver_Cuda implements SmoothSolver {
     return new TensorUnaryOperator(new SingleChannelWrapper(solver), topology.getDimensions(), topology);
   }
 
+  /**
+   * Forward matrix sparse matrix float.
+   *
+   * @param laplacian the laplacian
+   * @param alpha     the alpha
+   * @return the sparse matrix float
+   */
   @Nonnull
   public SparseMatrixFloat forwardMatrix(@Nonnull CudaSparseMatrix laplacian, double alpha) {
     SparseMatrixFloat sparseMatrixFloat = SparseMatrixFloat.identity(laplacian.matrix.rows).minus(laplacian.matrix.scale(alpha));

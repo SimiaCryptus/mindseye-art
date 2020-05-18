@@ -26,13 +26,35 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
+/**
+ * The type Text util.
+ */
 public class TextUtil {
+  /**
+   * Draw buffered image.
+   *
+   * @param text       the text
+   * @param resolution the resolution
+   * @param padding    the padding
+   * @param fontName   the font name
+   * @param style      the style
+   * @return the buffered image
+   */
   @Nonnull
   public static BufferedImage draw(@Nonnull final String text, final int resolution, final int padding, final String fontName,
                                    final int style) {
     return draw(text, resolution, padding, fitWidth(text, resolution, padding, fontName, style));
   }
 
+  /**
+   * Draw buffered image.
+   *
+   * @param text       the text
+   * @param resolution the resolution
+   * @param padding    the padding
+   * @param font       the font
+   * @return the buffered image
+   */
   @Nonnull
   public static BufferedImage draw(@Nonnull String text, int resolution, int padding, Font font) {
     Rectangle2D bounds = measure(font, text);
@@ -40,6 +62,15 @@ public class TextUtil {
     return draw(text, resolution, (int) (aspect_ratio * resolution), padding, font, bounds);
   }
 
+  /**
+   * Draw height buffered image.
+   *
+   * @param text       the text
+   * @param resolution the resolution
+   * @param padding    the padding
+   * @param font       the font
+   * @return the buffered image
+   */
   @Nonnull
   public static BufferedImage drawHeight(@Nonnull String text, int resolution, int padding, Font font) {
     Rectangle2D bounds = measure(font, text);
@@ -47,6 +78,17 @@ public class TextUtil {
     return draw(text, (int) (resolution / aspect_ratio), resolution, padding, font, bounds);
   }
 
+  /**
+   * Draw buffered image.
+   *
+   * @param text    the text
+   * @param width   the width
+   * @param height  the height
+   * @param padding the padding
+   * @param font    the font
+   * @param bounds  the bounds
+   * @return the buffered image
+   */
   public @Nonnull
   static BufferedImage draw(@Nonnull String text, int width, int height, int padding, Font font,
                             @Nonnull Rectangle2D bounds) {
@@ -70,6 +112,13 @@ public class TextUtil {
     return image;
   }
 
+  /**
+   * Measure rectangle 2 d.
+   *
+   * @param font the font
+   * @param text the text
+   * @return the rectangle 2 d
+   */
   @Nonnull
   public static Rectangle2D measure(final Font font, @Nonnull final String text) {
     Graphics2D graphics = (Graphics2D) new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB).getGraphics();
@@ -83,6 +132,16 @@ public class TextUtil {
     return new Rectangle2D.Double(0, line1height, width, height);
   }
 
+  /**
+   * Fit width font.
+   *
+   * @param text       the text
+   * @param resolution the resolution
+   * @param padding    the padding
+   * @param fontName   the font name
+   * @param style      the style
+   * @return the font
+   */
   @Nonnull
   public static Font fitWidth(@Nonnull final String text, final int resolution, final int padding, final String fontName,
                               final int style) {
@@ -99,6 +158,16 @@ public class TextUtil {
     return new Font(fontName, style, size);
   }
 
+  /**
+   * Fit height font.
+   *
+   * @param text       the text
+   * @param resolution the resolution
+   * @param padding    the padding
+   * @param fontName   the font name
+   * @param style      the style
+   * @return the font
+   */
   @Nonnull
   public static Font fitHeight(@Nonnull final String text, final int resolution, final int padding, final String fontName,
                                final int style) {
@@ -112,6 +181,17 @@ public class TextUtil {
     return new Font(fontName, style, size);
   }
 
+  /**
+   * Fit font.
+   *
+   * @param text       the text
+   * @param max_width  the max width
+   * @param max_height the max height
+   * @param padding    the padding
+   * @param fontName   the font name
+   * @param style      the style
+   * @return the font
+   */
   @Nonnull
   public static Font fit(@Nonnull final String text, final int max_width, final int max_height, final int padding,
                          final String fontName, final int style) {

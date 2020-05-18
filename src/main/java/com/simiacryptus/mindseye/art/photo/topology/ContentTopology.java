@@ -38,15 +38,32 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
+/**
+ * The type Content topology.
+ */
 public abstract class ContentTopology extends ReferenceCountingBase implements RasterTopology {
+  /**
+   * The Dimensions.
+   */
   @Nonnull
   protected final int[] dimensions;
+  /**
+   * The Content region.
+   */
   @Nonnull
   protected final MultivariateFrameOfReference contentRegion;
+  /**
+   * The Content.
+   */
   @Nonnull
   protected final Tensor content;
   private List<double[]> pixels;
 
+  /**
+   * Instantiates a new Content topology.
+   *
+   * @param content the content
+   */
   public ContentTopology(@Nonnull Tensor content) {
     this.content = content;
     this.dimensions = this.content.getDimensions();
@@ -68,6 +85,13 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
     return dimensions;
   }
 
+  /**
+   * Dual list.
+   *
+   * @param asymmetric the asymmetric
+   * @param dimensions the dimensions
+   * @return the list
+   */
   public static List<int[]> dual(@Nonnull List<int[]> asymmetric, int[] dimensions) {
     final int[] rows = IntStream.range(0, asymmetric.size()).flatMap(i -> {
       int[] data2 = asymmetric.get(i);
@@ -104,10 +128,21 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
   @Override
   public abstract List<int[]> connectivity();
 
+  /**
+   * Log.
+   *
+   * @param graph the graph
+   */
   public void log(@Nonnull List<int[]> graph) {
     log(graph, System.out);
   }
 
+  /**
+   * Log.
+   *
+   * @param graph the graph
+   * @param out   the out
+   */
   public void log(@Nonnull List<int[]> graph, @Nonnull PrintStream out) {
     out.println("Connectivity Statistics: " + graph.stream().mapToInt(x -> x.length).summaryStatistics());
     out.println("Connectivity Histogram: "
@@ -138,6 +173,12 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
     }).flatMapToDouble(data -> Arrays.stream(data)).summaryStatistics());
   }
 
+  /**
+   * Dual list.
+   *
+   * @param asymmetric the asymmetric
+   * @return the list
+   */
   public List<int[]> dual(@Nonnull List<int[]> asymmetric) {
     return dual(asymmetric, dimensions);
   }
@@ -168,10 +209,23 @@ public abstract class ContentTopology extends ReferenceCountingBase implements R
     return (ContentTopology) super.addRef();
   }
 
+  /**
+   * Pixel double [ ].
+   *
+   * @param i the
+   * @return the double [ ]
+   */
   protected double[] pixel(int i) {
     return pixels.get(i);
   }
 
+  /**
+   * Chroma distance double.
+   *
+   * @param a the a
+   * @param b the b
+   * @return the double
+   */
   protected double chromaDistance(@Nonnull double[] a, double[] b) {
     return contentRegion.dist(IntStream.range(0, a.length).mapToDouble(i -> a[i] - b[i]).toArray());
   }

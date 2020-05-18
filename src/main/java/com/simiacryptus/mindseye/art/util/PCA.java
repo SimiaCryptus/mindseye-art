@@ -36,51 +36,106 @@ import org.apache.commons.math3.linear.EigenDecomposition;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * The type Pca.
+ */
 public class PCA {
   private boolean recenter;
   private boolean rescale;
   private double eigenvaluePower;
 
+  /**
+   * Instantiates a new Pca.
+   *
+   * @param recenter        the recenter
+   * @param rescale         the rescale
+   * @param eigenvaluePower the eigenvalue power
+   */
   public PCA(boolean recenter, boolean rescale, double eigenvaluePower) {
     this.setRecenter(recenter);
     this.setRescale(rescale);
     this.setEigenvaluePower(eigenvaluePower);
   }
 
+  /**
+   * Instantiates a new Pca.
+   */
   public PCA() {
     this(true, false, 0.0);
   }
 
+  /**
+   * Gets eigenvalue power.
+   *
+   * @return the eigenvalue power
+   */
   public double getEigenvaluePower() {
     return eigenvaluePower;
   }
 
+  /**
+   * Sets eigenvalue power.
+   *
+   * @param eigenvaluePower the eigenvalue power
+   * @return the eigenvalue power
+   */
   @Nonnull
   public PCA setEigenvaluePower(double eigenvaluePower) {
     this.eigenvaluePower = eigenvaluePower;
     return this;
   }
 
+  /**
+   * Is recenter boolean.
+   *
+   * @return the boolean
+   */
   public boolean isRecenter() {
     return recenter;
   }
 
+  /**
+   * Sets recenter.
+   *
+   * @param recenter the recenter
+   * @return the recenter
+   */
   @Nonnull
   public PCA setRecenter(boolean recenter) {
     this.recenter = recenter;
     return this;
   }
 
+  /**
+   * Is rescale boolean.
+   *
+   * @return the boolean
+   */
   public boolean isRescale() {
     return rescale;
   }
 
+  /**
+   * Sets rescale.
+   *
+   * @param rescale the rescale
+   * @return the rescale
+   */
   @Nonnull
   public PCA setRescale(boolean rescale) {
     this.rescale = rescale;
     return this;
   }
 
+  /**
+   * Band covariance double [ ].
+   *
+   * @param pixelStream the pixel stream
+   * @param pixels      the pixels
+   * @param mean        the mean
+   * @param rms         the rms
+   * @return the double [ ]
+   */
   public static double[] bandCovariance(@Nonnull final RefStream<double[]> pixelStream, final int pixels, final double[] mean,
                                         final double[] rms) {
     return RefArrays.stream(RefUtil.get(pixelStream.map(pixel -> {
@@ -103,6 +158,12 @@ public class PCA {
     }))).map(x -> x / pixels).toArray();
   }
 
+  /**
+   * Count pixels int.
+   *
+   * @param featureImage the feature image
+   * @return the int
+   */
   public static int countPixels(@Nonnull final Tensor featureImage) {
     int[] dimensions = featureImage.getDimensions();
     featureImage.freeRef();
@@ -111,6 +172,13 @@ public class PCA {
     return width * height;
   }
 
+  /**
+   * Pca ref list.
+   *
+   * @param bandCovariance the band covariance
+   * @param eigenPower     the eigen power
+   * @return the ref list
+   */
   public static RefList<Tensor> pca(@Nonnull final double[] bandCovariance, final double eigenPower) {
     @Nonnull final EigenDecomposition decomposition = new EigenDecomposition(toMatrix(bandCovariance));
     return RefIntStream.range(0, (int) Math.sqrt(bandCovariance.length)).mapToObj(vectorIndex -> {
@@ -134,6 +202,12 @@ public class PCA {
     return matrix;
   }
 
+  /**
+   * Channel pca ref list.
+   *
+   * @param image the image
+   * @return the ref list
+   */
   public RefList<Tensor> channelPCA(@Nonnull Tensor image) {
     Tensor meanTensor = getChannelMeans(image.addRef());
     Tensor scaled = getChannelRms(image.addRef(), image.getDimensions()[2], meanTensor.addRef());
@@ -146,6 +220,14 @@ public class PCA {
     return pca(bandCovariance, getEigenvaluePower());
   }
 
+  /**
+   * Gets channel rms.
+   *
+   * @param image      the image
+   * @param bands      the bands
+   * @param meanTensor the mean tensor
+   * @return the channel rms
+   */
   @Nullable
   public Tensor getChannelRms(Tensor image, int bands, @Nonnull Tensor meanTensor) {
     if (!isRescale()) {
@@ -178,6 +260,12 @@ public class PCA {
     }
   }
 
+  /**
+   * Gets channel means.
+   *
+   * @param image the image
+   * @return the channel means
+   */
   @Nonnull
   public Tensor getChannelMeans(Tensor image) {
     BandReducerLayer bandReducerLayer = new BandReducerLayer();

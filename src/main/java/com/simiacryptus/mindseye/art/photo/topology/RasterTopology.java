@@ -25,20 +25,51 @@ import com.simiacryptus.ref.lang.ReferenceCounting;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+/**
+ * The interface Raster topology.
+ */
 public interface RasterTopology extends ReferenceCounting {
 
+  /**
+   * Get dimensions int [ ].
+   *
+   * @return the int [ ]
+   */
   int[] getDimensions();
 
+  /**
+   * Cached raster topology.
+   *
+   * @return the raster topology
+   */
   @Nonnull
   @RefAware
   default RasterTopology cached() {
     return new RasterTopologyWrapper.CachedRasterTopology(this);
   }
 
+  /**
+   * Connectivity list.
+   *
+   * @return the list
+   */
   List<int[]> connectivity();
 
+  /**
+   * Gets index from coords.
+   *
+   * @param x the x
+   * @param y the y
+   * @return the index from coords
+   */
   int getIndexFromCoords(int x, int y);
 
+  /**
+   * Get coords from index int [ ].
+   *
+   * @param i the
+   * @return the int [ ]
+   */
   int[] getCoordsFromIndex(int i);
 
   @Override

@@ -26,11 +26,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * The type Radius raster topology.
+ */
 public class RadiusRasterTopology extends ReferenceCountingBase implements RasterTopology {
+  /**
+   * The Dimensions.
+   */
   protected final int[] dimensions;
   private final double maxRadius;
   private final double minRadius;
 
+  /**
+   * Instantiates a new Radius raster topology.
+   *
+   * @param dimensions the dimensions
+   * @param maxRadius  the max radius
+   * @param minRadius  the min radius
+   */
   public RadiusRasterTopology(int[] dimensions, double maxRadius, double minRadius) {
     this.dimensions = dimensions;
     this.maxRadius = maxRadius;
@@ -42,6 +55,13 @@ public class RadiusRasterTopology extends ReferenceCountingBase implements Raste
     return dimensions;
   }
 
+  /**
+   * Gets radius.
+   *
+   * @param distA the dist a
+   * @param distB the dist b
+   * @return the radius
+   */
   public static double getRadius(int distA, int distB) {
     return Math.sqrt(distA * distA + distB * distB) + 1e-4;
   }

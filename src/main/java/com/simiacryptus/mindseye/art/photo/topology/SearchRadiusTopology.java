@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
+/**
+ * The type Search radius topology.
+ */
 public class SearchRadiusTopology extends ContentTopology {
   private int neighborhoodSize = 4;
   private double maxChromaDist = 0.2;
@@ -37,71 +40,159 @@ public class SearchRadiusTopology extends ContentTopology {
   private boolean spatialPriority = false;
   private boolean selfRef = false;
 
+  /**
+   * Instantiates a new Search radius topology.
+   *
+   * @param content the content
+   */
   public SearchRadiusTopology(@Nonnull Tensor content) {
     super(content);
   }
 
+  /**
+   * Gets initial radius.
+   *
+   * @return the initial radius
+   */
   public int getInitialRadius() {
     return initialRadius;
   }
 
+  /**
+   * Sets initial radius.
+   *
+   * @param initialRadius the initial radius
+   */
   public void setInitialRadius(int initialRadius) {
     this.initialRadius = initialRadius;
   }
 
+  /**
+   * Gets max chroma dist.
+   *
+   * @return the max chroma dist
+   */
   public double getMaxChromaDist() {
     return maxChromaDist;
   }
 
+  /**
+   * Sets max chroma dist.
+   *
+   * @param maxChromaDist the max chroma dist
+   */
   public void setMaxChromaDist(double maxChromaDist) {
     this.maxChromaDist = maxChromaDist;
   }
 
+  /**
+   * Gets max spatial dist.
+   *
+   * @return the max spatial dist
+   */
   public double getMaxSpatialDist() {
     return maxSpatialDist;
   }
 
+  /**
+   * Sets max spatial dist.
+   *
+   * @param maxSpatialDist the max spatial dist
+   */
   public void setMaxSpatialDist(double maxSpatialDist) {
     this.maxSpatialDist = maxSpatialDist;
   }
 
+  /**
+   * Gets neighborhood size.
+   *
+   * @return the neighborhood size
+   */
   public int getNeighborhoodSize() {
     return neighborhoodSize;
   }
 
+  /**
+   * Sets neighborhood size.
+   *
+   * @param neighborhoodSize the neighborhood size
+   */
   public void setNeighborhoodSize(int neighborhoodSize) {
     this.neighborhoodSize = neighborhoodSize;
   }
 
+  /**
+   * Is self ref boolean.
+   *
+   * @return the boolean
+   */
   public boolean isSelfRef() {
     return selfRef;
   }
 
+  /**
+   * Sets self ref.
+   *
+   * @param selfRef the self ref
+   */
   public void setSelfRef(boolean selfRef) {
     this.selfRef = selfRef;
   }
 
+  /**
+   * Is spatial priority boolean.
+   *
+   * @return the boolean
+   */
   public boolean isSpatialPriority() {
     return spatialPriority;
   }
 
+  /**
+   * Sets spatial priority.
+   *
+   * @param spatialPriority the spatial priority
+   */
   public void setSpatialPriority(boolean spatialPriority) {
     this.spatialPriority = spatialPriority;
   }
 
+  /**
+   * Is verbose boolean.
+   *
+   * @return the boolean
+   */
   public boolean isVerbose() {
     return verbose;
   }
 
+  /**
+   * Sets verbose.
+   *
+   * @param verbose the verbose
+   */
   public void setVerbose(boolean verbose) {
     this.verbose = verbose;
   }
 
+  /**
+   * Median filter tensor.
+   *
+   * @param content the content
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor medianFilter(@Nonnull Tensor content) {
     return medianFilter(content, 1);
   }
 
+  /**
+   * Median filter tensor.
+   *
+   * @param content the content
+   * @param window  the window
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor medianFilter(@Nonnull Tensor content, int window) {
     final int[] dimensions = content.getDimensions();

@@ -30,7 +30,13 @@ import javax.annotation.Nullable;
 import java.awt.image.BufferedImage;
 import java.util.function.UnaryOperator;
 
+/**
+ * The type Visual modifier parameters.
+ */
 public class VisualModifierParameters extends ReferenceCountingBase {
+  /**
+   * The View layer.
+   */
   public final UnaryOperator<Tensor> viewLayer;
   @Nullable
   private final PipelineNetwork network;
@@ -39,6 +45,15 @@ public class VisualModifierParameters extends ReferenceCountingBase {
   private final Tensor[] style;
   private final int[] contentDims;
 
+  /**
+   * Instantiates a new Visual modifier parameters.
+   *
+   * @param network     the network
+   * @param contentDims the content dims
+   * @param viewLayer   the view layer
+   * @param mask        the mask
+   * @param styleImages the style images
+   */
   public VisualModifierParameters(@Nonnull PipelineNetwork network,
                                   @Nonnull int[] contentDims,
                                   @Nullable UnaryOperator<Tensor> viewLayer,
@@ -57,23 +72,43 @@ public class VisualModifierParameters extends ReferenceCountingBase {
     this.style = styleImages;
   }
 
+  /**
+   * Gets mask.
+   *
+   * @return the mask
+   */
   @Nonnull
   public Tensor getMask() {
     assertAlive();
     return null == mask ? null : mask.addRef();
   }
 
+  /**
+   * Gets network.
+   *
+   * @return the network
+   */
   @Nullable
   public PipelineNetwork getNetwork() {
     assertAlive();
     return network.addRef();
   }
 
+  /**
+   * Get style tensor [ ].
+   *
+   * @return the tensor [ ]
+   */
   public Tensor[] getStyle() {
     assertAlive();
     return RefUtil.addRef(style);
   }
 
+  /**
+   * Copy network pipeline network.
+   *
+   * @return the pipeline network
+   */
   public PipelineNetwork copyNetwork() {
     assertAlive();
     return network.copyPipeline();
@@ -86,6 +121,12 @@ public class VisualModifierParameters extends ReferenceCountingBase {
     super._free();
   }
 
+  /**
+   * With mask visual modifier parameters.
+   *
+   * @param mask the mask
+   * @return the visual modifier parameters
+   */
   @Nonnull
   public VisualModifierParameters withMask(@Nullable Tensor mask) {
     if (null != mask) {

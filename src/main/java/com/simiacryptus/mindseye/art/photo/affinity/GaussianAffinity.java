@@ -31,7 +31,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * The type Gaussian affinity.
+ */
 public class GaussianAffinity extends ReferenceCountingBase implements RasterAffinity {
+  /**
+   * The Content.
+   */
   @Nonnull
   protected final Tensor content;
   private final double sigma;
@@ -39,10 +45,23 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
   private final int[] dimensions;
   private RasterTopology topology;
 
+  /**
+   * Instantiates a new Gaussian affinity.
+   *
+   * @param content the content
+   * @param sigma   the sigma
+   */
   public GaussianAffinity(@Nonnull Tensor content, double sigma) {
     this(content, sigma, new SimpleRasterTopology(content.getDimensions()));
   }
 
+  /**
+   * Instantiates a new Gaussian affinity.
+   *
+   * @param content  the content
+   * @param sigma    the sigma
+   * @param topology the topology
+   */
   public GaussianAffinity(@Nonnull Tensor content, double sigma, RasterTopology topology) {
     setTopology(topology);
     this.dimensions = content.getDimensions();
@@ -50,10 +69,20 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
     this.sigma = sigma;
   }
 
+  /**
+   * Gets topology.
+   *
+   * @return the topology
+   */
   public RasterTopology getTopology() {
     return topology.addRef();
   }
 
+  /**
+   * Sets topology.
+   *
+   * @param topology the topology
+   */
   public void setTopology(RasterTopology topology) {
     this.topology = topology;
   }
@@ -81,6 +110,13 @@ public class GaussianAffinity extends ReferenceCountingBase implements RasterAff
     return (GaussianAffinity) super.addRef();
   }
 
+  /**
+   * Affinity double.
+   *
+   * @param i the
+   * @param j the j
+   * @return the double
+   */
   protected double affinity(int i, int j) {
     final double[] pixel_i = pixel(i);
     final double[] pixel_j = pixel(j);

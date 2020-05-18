@@ -42,20 +42,48 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * The type Vgg 16 hdf 5.
+ */
 class VGG16_HDF5 {
 
+  /**
+   * The constant log.
+   */
   public static final Logger log = LoggerFactory.getLogger(VGG16_HDF5.class);
+  /**
+   * The constant logger.
+   */
   protected static final Logger logger = LoggerFactory.getLogger(VGG16_HDF5.class);
+  /**
+   * The Hdf 5.
+   */
   public final Hdf5Archive hdf5;
+  /**
+   * The Convolution order.
+   */
   @Nonnull
   int[] convolutionOrder = {3, 2, 0, 1};
+  /**
+   * The Fullyconnected order.
+   */
   @Nonnull
   int[] fullyconnectedOrder = {1, 0};
 
+  /**
+   * Instantiates a new Vgg 16 hdf 5.
+   *
+   * @param hdf5 the hdf 5
+   */
   public VGG16_HDF5(Hdf5Archive hdf5) {
     this.hdf5 = hdf5;
   }
 
+  /**
+   * From hdf 5 vgg 16 hdf 5.
+   *
+   * @return the vgg 16 hdf 5
+   */
   @Nonnull
   public static VGG16_HDF5 fromHDF5() {
     try {
@@ -65,6 +93,12 @@ class VGG16_HDF5 {
     }
   }
 
+  /**
+   * From hdf 5 vgg 16 hdf 5.
+   *
+   * @param hdf the hdf
+   * @return the vgg 16 hdf 5
+   */
   @Nonnull
   public static VGG16_HDF5 fromHDF5(@Nonnull final File hdf) {
     try {
@@ -74,6 +108,12 @@ class VGG16_HDF5 {
     }
   }
 
+  /**
+   * Explode layer.
+   *
+   * @param layer the layer
+   * @return the layer
+   */
   @NotNull
   public static Layer explode(@Nonnull Layer layer) {
     if (layer instanceof Explodable) {
@@ -99,6 +139,11 @@ class VGG16_HDF5 {
     }
   }
 
+  /**
+   * Check.
+   *
+   * @param l the l
+   */
   public static void check(Layer l) {
     if (l instanceof SimpleConvolutionLayer) {
       Tensor kernel = ((SimpleConvolutionLayer) l).getKernel();
@@ -113,70 +158,146 @@ class VGG16_HDF5 {
     l.freeRef();
   }
 
+  /**
+   * Add.
+   *
+   * @param layer the layer
+   * @param model the model
+   */
   protected static void add(@Nonnull Layer layer, @Nonnull PipelineNetwork model) {
     check(layer.addRef());
     model.add(explode(layer)).freeRef();
     model.freeRef();
   }
 
+  /**
+   * Phase 0 b.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase0b(@Nonnull PipelineNetwork pipeline) {
     //add(new ImgMinSizeLayer(226, 226), pipeline);
     add(new ImgBandBiasLayer(-103.939, -116.779, -123.68), pipeline.addRef());
     addConvolutionLayer(3, 3, 64, ActivationLayer.Mode.RELU, "layer_1", pipeline);
   }
 
+  /**
+   * Phase 1 a.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1a(@Nonnull PipelineNetwork pipeline) {
     addConvolutionLayer(3, 64, 64, ActivationLayer.Mode.RELU, "layer_3", pipeline);
   }
 
+  /**
+   * Phase 1 b 2.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1b2(@Nonnull PipelineNetwork pipeline) {
     addConvolutionLayer(3, 128, 128, ActivationLayer.Mode.RELU, "layer_8", pipeline);
   }
 
+  /**
+   * Phase 1 b 1.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1b1(@Nonnull PipelineNetwork pipeline) {
     addPoolingLayer(2, pipeline.addRef());
     addConvolutionLayer(3, 64, 128, ActivationLayer.Mode.RELU, "layer_6", pipeline);
   }
 
+  /**
+   * Phase 1 c 3.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1c3(@Nonnull PipelineNetwork pipeline) {
     addConvolutionLayer(3, 256, 256, ActivationLayer.Mode.RELU, "layer_15", pipeline);
   }
 
+  /**
+   * Phase 1 c 2.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1c2(@Nonnull PipelineNetwork pipeline) {
     addConvolutionLayer(3, 256, 256, ActivationLayer.Mode.RELU, "layer_13", pipeline);
   }
 
+  /**
+   * Phase 1 c 1.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1c1(@Nonnull PipelineNetwork pipeline) {
     addPoolingLayer(2, pipeline.addRef());
     addConvolutionLayer(3, 128, 256, ActivationLayer.Mode.RELU, "layer_11", pipeline);
   }
 
+  /**
+   * Phase 1 d 3.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1d3(@Nonnull PipelineNetwork pipeline) {
     addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_22", pipeline);
   }
 
+  /**
+   * Phase 1 d 2.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1d2(@Nonnull PipelineNetwork pipeline) {
     addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_20", pipeline);
   }
 
+  /**
+   * Phase 1 d 1.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1d1(@Nonnull PipelineNetwork pipeline) {
     addPoolingLayer(2, pipeline.addRef());
     addConvolutionLayer(3, 256, 512, ActivationLayer.Mode.RELU, "layer_18", pipeline);
   }
 
+  /**
+   * Phase 1 e 3.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1e3(@Nonnull PipelineNetwork pipeline) {
     addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_29", pipeline);
   }
 
+  /**
+   * Phase 1 e 2.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1e2(@Nonnull PipelineNetwork pipeline) {
     addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_27", pipeline);
   }
 
+  /**
+   * Phase 1 e 1.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase1e1(@Nonnull PipelineNetwork pipeline) {
     addPoolingLayer(2, pipeline.addRef());
     addConvolutionLayer(3, 512, 512, ActivationLayer.Mode.RELU, "layer_25", pipeline);
   }
 
+  /**
+   * Phase 2.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase2(@Nonnull PipelineNetwork pipeline) {
     //  model.add(MaxPooling2D((2,2), strides=(2,2)))
     addPoolingLayer(2, pipeline.addRef());
@@ -191,6 +312,15 @@ class VGG16_HDF5 {
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
 
+  /**
+   * Read reshape permuted tensor.
+   *
+   * @param datasetName the dataset name
+   * @param groups      the groups
+   * @param dims        the dims
+   * @param dimensions  the dimensions
+   * @return the tensor
+   */
   @NotNull
   public Tensor readReshapePermuted(String datasetName, String groups, int[] dims, int[] dimensions) {
     Tensor readDataSet = hdf5.readDataSet(datasetName, groups);
@@ -201,17 +331,38 @@ class VGG16_HDF5 {
     return permuteDimensions;
   }
 
+  /**
+   * Phase 3 a.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase3a(@Nonnull PipelineNetwork pipeline) {
     add(getConvolutionLayer(1, 4096, 4096, "layer_34", fullyconnectedOrder), pipeline.addRef());
     add(getBandBiasLayer(4096, "layer_34"), pipeline.addRef());
     add(new ActivationLayer(ActivationLayer.Mode.RELU), pipeline);
   }
 
+  /**
+   * Add pooling layer.
+   *
+   * @param size     the size
+   * @param pipeline the pipeline
+   */
   public void addPoolingLayer(final int size, @Nonnull PipelineNetwork pipeline) {
     add(new ImgModulusPaddingLayer(size, size), pipeline.addRef());
     add(getPoolingLayer(size), pipeline);
   }
 
+  /**
+   * Add convolution layer.
+   *
+   * @param radius         the radius
+   * @param inputBands     the input bands
+   * @param outputBands    the output bands
+   * @param activationMode the activation mode
+   * @param hdf_group      the hdf group
+   * @param pipeline       the pipeline
+   */
   public void addConvolutionLayer(final int radius, final int inputBands, final int outputBands,
                                   @Nonnull final ActivationLayer.Mode activationMode, final String hdf_group, @Nonnull PipelineNetwork pipeline) {
     add(getConvolutionLayer(radius, inputBands, outputBands, hdf_group, convolutionOrder), pipeline.addRef());
@@ -219,11 +370,23 @@ class VGG16_HDF5 {
     add(new ActivationLayer(activationMode), pipeline);
   }
 
+  /**
+   * Phase 3 b.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase3b(@Nonnull PipelineNetwork pipeline) {
     add(getConvolutionLayer(1, 4096, 1000, "layer_36", fullyconnectedOrder), pipeline.addRef());
     add(getBandBiasLayer(1000, "layer_36"), pipeline);
   }
 
+  /**
+   * Read permuted tensor.
+   *
+   * @param dimensions the dimensions
+   * @param groups     the groups
+   * @return the tensor
+   */
   @NotNull
   public Tensor readPermuted(int[] dimensions, String... groups) {
     Tensor readDataSet = hdf5.readDataSet("param_0", groups);
@@ -232,6 +395,11 @@ class VGG16_HDF5 {
     return permuteDimensions;
   }
 
+  /**
+   * Phase 3 c.
+   *
+   * @param pipeline the pipeline
+   */
   public void phase3c(@Nonnull PipelineNetwork pipeline) {
     SoftmaxActivationLayer softmaxActivationLayer = new SoftmaxActivationLayer();
     softmaxActivationLayer.setAlgorithm(SoftmaxActivationLayer.SoftmaxAlgorithm.ACCURATE);

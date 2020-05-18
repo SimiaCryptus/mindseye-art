@@ -49,8 +49,18 @@ import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.adjust
 import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.degree;
 import static java.util.stream.IntStream.range;
 
+/**
+ * The type Segment util.
+ */
 public class SegmentUtil {
 
+  /**
+   * Resize tensor.
+   *
+   * @param tensor    the tensor
+   * @param imageSize the image size
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor resize(@Nonnull Tensor tensor, int imageSize) {
     final Tensor resized = Tensor.fromRGB(ImageUtil.resize(tensor.toImage(), imageSize, true));
@@ -58,17 +68,34 @@ public class SegmentUtil {
     return resized;
   }
 
+  /**
+   * Value count array int [ ].
+   *
+   * @param ints the ints
+   * @return the int [ ]
+   */
   public static int[] valueCountArray(@Nonnull int[] ints) {
     final Map<Integer, Long> countMap = valueCountMap(ints);
     return range(0, RefArrays.stream(ints).max().getAsInt() + 1)
         .map((int i) -> (int) (long) countMap.getOrDefault(i, 0l)).toArray();
   }
 
+  /**
+   * Value count map map.
+   *
+   * @param ints the ints
+   * @return the map
+   */
   public static Map<Integer, Long> valueCountMap(@Nonnull int[] ints) {
     return Arrays.stream(ints).mapToObj(x -> x)
         .collect(Collectors.groupingBy((Integer x) -> x, Collectors.counting()));
   }
 
+  /**
+   * Print histogram.
+   *
+   * @param islands the islands
+   */
   public static void printHistogram(@Nonnull int[] islands) {
     RefArrays.stream(islands).mapToObj(x -> x).collect(Collectors.groupingBy(x -> x, Collectors.counting()))
         .values().stream().collect(Collectors.groupingBy(x -> x, Collectors.counting())).entrySet().stream()
@@ -85,6 +112,17 @@ public class SegmentUtil {
         .forEach(x1 -> System.out.println(x1));
   }
 
+  /**
+   * Mark islands int [ ].
+   *
+   * @param <T>          the type parameter
+   * @param topology     the topology
+   * @param extract      the extract
+   * @param test         the test
+   * @param maxRecursion the max recursion
+   * @param rows         the rows
+   * @return the int [ ]
+   */
   @Nonnull
   public static <T> int[] markIslands(@Nonnull RasterTopology topology, @Nonnull Function<int[], T> extract, @Nonnull BiPredicate<T, T> test,
                                       int maxRecursion, int rows) {
@@ -107,19 +145,53 @@ public class SegmentUtil {
     return marks;
   }
 
+  /**
+   * Remove tiny inclusions int [ ].
+   *
+   * @param pixelMap      the pixel map
+   * @param graph         the graph
+   * @param sizeThreshold the size threshold
+   * @return the int [ ]
+   */
   public static int[] removeTinyInclusions(@Nonnull int[] pixelMap, @Nonnull SparseMatrixFloat graph, int sizeThreshold) {
     return removeTinyInclusions(pixelMap, graph, sizeThreshold, sizeThreshold);
   }
 
+  /**
+   * Remove tiny inclusions int [ ].
+   *
+   * @param pixelMap  the pixel map
+   * @param graph     the graph
+   * @param smallSize the small size
+   * @param largeSize the large size
+   * @return the int [ ]
+   */
   public static int[] removeTinyInclusions(@Nonnull int[] pixelMap, @Nonnull SparseMatrixFloat graph, int smallSize, int largeSize) {
     return removeTinyInclusions(valueCountMap(pixelMap), graph, smallSize, largeSize);
   }
 
+  /**
+   * Remove tiny inclusions int [ ].
+   *
+   * @param islandSizes   the island sizes
+   * @param graph         the graph
+   * @param sizeThreshold the size threshold
+   * @return the int [ ]
+   */
   public static int[] removeTinyInclusions(@Nonnull Map<Integer, Long> islandSizes, @Nonnull SparseMatrixFloat graph,
                                            int sizeThreshold) {
     return removeTinyInclusions(islandSizes, graph, sizeThreshold, sizeThreshold);
   }
 
+  /**
+   * Remove tiny inclusions int [ ].
+   *
+   * @param islandSizes the island sizes
+   * @param graph       the graph
+   * @param smallSize   the small size
+   * @param largeSize   the large size
+   * @return the int [ ]
+   */
   public static int[] removeTinyInclusions(@Nonnull Map<Integer, Long> islandSizes, @Nonnull SparseMatrixFloat graph, int smallSize,
                                            int largeSize) {
     return range(0, graph.rows).map(row -> {
@@ -136,6 +208,16 @@ public class SegmentUtil {
     }).toArray();
   }
 
+  /**
+   * Flatten colors buffered image.
+   *
+   * @param content  the content
+   * @param topology the topology
+   * @param affinity the affinity
+   * @param n        the n
+   * @param solver   the solver
+   * @return the buffered image
+   */
   @Nonnull
   public static BufferedImage flattenColors(@Nonnull Tensor content, RasterTopology topology, @RefAware @Nonnull RasterAffinity affinity, int n,
                                             @Nonnull SmoothSolver solver) {
@@ -149,11 +231,27 @@ public class SegmentUtil {
     return image;
   }
 
+  /**
+   * Paint with random colors buffered image.
+   *
+   * @param topology the topology
+   * @param pixelMap the pixel map
+   * @param graph    the graph
+   * @return the buffered image
+   */
   @Nonnull
   public static BufferedImage paintWithRandomColors(@Nonnull RasterTopology topology, int[] pixelMap, @Nonnull SparseMatrixFloat graph) {
     return paint(topology, pixelMap, randomColors(graph, 0));
   }
 
+  /**
+   * Paint buffered image.
+   *
+   * @param topology the topology
+   * @param pixelMap the pixel map
+   * @param colors   the colors
+   * @return the buffered image
+   */
   @Nonnull
   public static BufferedImage paint(@Nonnull RasterTopology topology, int[] pixelMap, @Nonnull Map<Integer, double[]> colors) {
     Tensor blank = new Tensor(topology.getDimensions());
@@ -170,6 +268,18 @@ public class SegmentUtil {
     return image;
   }
 
+  /**
+   * Mark islands.
+   *
+   * @param <T>          the type parameter
+   * @param topology     the topology
+   * @param extract      the extract
+   * @param test         the test
+   * @param marks        the marks
+   * @param maxRecursion the max recursion
+   * @param indexNumber  the index number
+   * @param coords       the coords
+   */
   protected static <T> void _markIslands(@Nonnull RasterTopology topology, @Nonnull Function<int[], T> extract, @Nonnull BiPredicate<T, T> test,
                                          int[] marks, int maxRecursion, int indexNumber, int... coords) {
     final int row = topology.getIndexFromCoords(coords[0], coords[1]);

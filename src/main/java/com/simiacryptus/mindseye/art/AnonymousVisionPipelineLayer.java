@@ -27,12 +27,22 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import javax.annotation.Nonnull;
 import java.util.Objects;
 
+/**
+ * The type Anonymous vision pipeline layer.
+ */
 public class AnonymousVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
 
   private final Layer layer;
   private final String pipelineName;
   private String name;
 
+  /**
+   * Instantiates a new Anonymous vision pipeline layer.
+   *
+   * @param pipelineName the pipeline name
+   * @param layer        the layer
+   * @param name         the name
+   */
   public AnonymousVisionPipelineLayer(String pipelineName, Layer layer, String name) {
     this.layer = layer;
     this.pipelineName = pipelineName;

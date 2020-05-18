@@ -26,19 +26,33 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+/**
+ * The type Art settings.
+ */
 @RefIgnore
 public class ArtSettings implements Settings {
 
   private static final Logger logger = LoggerFactory.getLogger(ArtSettings.class);
   @Nullable
   private static transient ArtSettings INSTANCE = null;
+  /**
+   * The Default tile size.
+   */
   public final int defaultTileSize;
 
+  /**
+   * Instantiates a new Art settings.
+   */
   protected ArtSettings() {
     System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Settings.get("THREADS", 64)));
     this.defaultTileSize = Settings.get("DEFAULT_TILE_SIZE", 1200);
   }
 
+  /**
+   * Instance art settings.
+   *
+   * @return the art settings
+   */
   @Nullable
   public static ArtSettings INSTANCE() {
     if (null == INSTANCE) {

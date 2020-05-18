@@ -23,8 +23,16 @@ import com.simiacryptus.aws.exe.EC2NodeSettings;
 import com.simiacryptus.aws.exe.EC2NotebookRunner;
 import com.simiacryptus.util.test.MacroTestRunner;
 
+/**
+ * The type Remote tests art.
+ */
 public class RemoteTests_Art {
 
+  /**
+   * The entry point of application.
+   *
+   * @param args the input arguments
+   */
   public static void main(String[] args) {
     EC2NotebookRunner.launch(
         EC2NodeSettings.P2_XL,

@@ -23,34 +23,31 @@ import com.simiacryptus.mindseye.art.models.Inception5H;
 import com.simiacryptus.mindseye.art.models.VGG16;
 import com.simiacryptus.mindseye.art.models.VGG19;
 import com.simiacryptus.mindseye.lang.Layer;
-import com.simiacryptus.mindseye.layers.cudnn.MeanSqLossLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
-import com.simiacryptus.mindseye.test.TestUtil;
-import com.simiacryptus.mindseye.test.unit.ComponentTest;
-import com.simiacryptus.mindseye.test.unit.ReferenceIO;
-import com.simiacryptus.mindseye.test.unit.SerializationTest;
-import com.simiacryptus.mindseye.test.unit.StandardLayerTests;
+import com.simiacryptus.mindseye.test.MermaidGrapher;
 import com.simiacryptus.notebook.NotebookOutput;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefAssert;
 import com.simiacryptus.ref.wrappers.RefList;
-import com.simiacryptus.util.test.NotebookReportBase;
+import com.simiacryptus.util.test.NotebookTestBase;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.simiacryptus.mindseye.art.models.Inception5H.*;
 import static com.simiacryptus.mindseye.art.models.VGG16.*;
 import static com.simiacryptus.mindseye.art.models.VGG19.*;
 
-public abstract class VisionPipelineTest extends NotebookReportBase {
+/**
+ * The type Vision pipeline test.
+ */
+public abstract class VisionPipelineTest extends NotebookTestBase {
   private static final Logger log = LoggerFactory.getLogger(VisionPipelineTest.class);
 
   @Nonnull
@@ -59,9 +56,21 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     return ReportType.Components;
   }
 
+  /**
+   * Gets vision pipeline.
+   *
+   * @return the vision pipeline
+   */
   @Nullable
   public abstract VisionPipeline getVisionPipeline();
 
+  /**
+   * Test dims.
+   *
+   * @param inceptionVision    the inception vision
+   * @param inputDims          the input dims
+   * @param expectedOutputDims the expected output dims
+   */
   public static void testDims(@Nonnull @RefAware VisionPipelineLayer inceptionVision, int[] inputDims, @Nonnull int[] expectedOutputDims) {
     Layer layer = inceptionVision.getLayer();
     RefUtil.freeRef(inceptionVision);
@@ -70,6 +79,13 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     RefAssert.assertArrayEquals(RefArrays.toString(dimensions), expectedOutputDims, dimensions);
   }
 
+  /**
+   * Test dims int [ ].
+   *
+   * @param inceptionVision the inception vision
+   * @param inputDims       the input dims
+   * @return the int [ ]
+   */
   @Nonnull
   public static int[] testDims(@Nonnull VisionPipelineLayer inceptionVision, int... inputDims) {
     Layer layer = inceptionVision.getLayer();
@@ -79,6 +95,13 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     return dimensions;
   }
 
+  /**
+   * Test dims int [ ].
+   *
+   * @param pipeline the pipeline
+   * @param dims     the dims
+   * @return the int [ ]
+   */
   public static int[] testDims(@Nonnull VisionPipeline pipeline, int... dims) {
     RefList<? extends VisionPipelineLayer> keyList = pipeline.getLayerList();
     pipeline.freeRef();
@@ -88,10 +111,19 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     return reference.get();
   }
 
+  /**
+   * Test dims int [ ].
+   *
+   * @param dims the dims
+   * @return the int [ ]
+   */
   public int[] testDims(int... dims) {
     return testDims(getVisionPipeline(), dims);
   }
 
+  /**
+   * Inout dims.
+   */
   @Test
   public void inoutDims() {
     this.inoutDims(getLog());
@@ -102,11 +134,17 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
   //    run(this::layerPins);
   //  }
 
+  /**
+   * Pipeline test.
+   */
   @Test
   public void pipelineTest() {
     this.pipelineTest(getLog());
   }
 
+  /**
+   * Graphs.
+   */
   @Test
   public void graphs() {
     NotebookOutput log = getLog();
@@ -114,7 +152,9 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
     RefList<? extends VisionPipelineLayer> keyList = visionPipeline.getLayerList();
     keyList.forEach(e -> {
       log.h1(e.name());
-      TestUtil.graph(log, (DAGNetwork) e.getLayer());
+      DAGNetwork layer = (DAGNetwork) e.getLayer();
+      //TestUtil.graph(log, layer.addRef());
+      new MermaidGrapher(log, true).mermaid(layer);
       RefUtil.freeRef(e);
     });
     keyList.freeRef();
@@ -202,10 +242,23 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 //    keyList.freeRef();
 //  }
 
+  /**
+   * Inout dims.
+   *
+   * @param log the log
+   */
   public abstract void inoutDims(NotebookOutput log);
 
+  /**
+   * Pipeline test.
+   *
+   * @param log the log
+   */
   public abstract void pipelineTest(NotebookOutput log);
 
+  /**
+   * The type Vgg 16 test.
+   */
   public static class VGG16Test extends VisionPipelineTest {
     @Nonnull
     @Override
@@ -219,6 +272,12 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       return VGG16.getVisionPipeline();
     }
 
+    /**
+     * Add ref vgg 16 test [ ].
+     *
+     * @param array the array
+     * @return the vgg 16 test [ ]
+     */
     @Nullable
     public static @SuppressWarnings("unused")
     VGG16Test[] addRef(@Nullable VGG16Test[] array) {
@@ -254,6 +313,9 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
 
   }
 
+  /**
+   * The type Vgg 19 test.
+   */
   public static class VGG19Test extends VisionPipelineTest {
     @Nonnull
     @Override
@@ -267,6 +329,12 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       return VGG19.getVisionPipeline();
     }
 
+    /**
+     * Add ref vgg 19 test [ ].
+     *
+     * @param array the array
+     * @return the vgg 19 test [ ]
+     */
     @Nullable
     public static @SuppressWarnings("unused")
     VGG19Test[] addRef(@Nullable VGG19Test[] array) {
@@ -295,8 +363,16 @@ public abstract class VisionPipelineTest extends NotebookReportBase {
       });
     }
 
+    @Override
+    @Test
+    public void graphs() {
+      super.graphs();
+    }
   }
 
+  /**
+   * The type Inception 5 h test.
+   */
   public static class Inception5HTest extends VisionPipelineTest {
     @Nonnull
     @Override

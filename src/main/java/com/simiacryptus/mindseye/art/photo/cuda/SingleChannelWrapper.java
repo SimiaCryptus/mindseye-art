@@ -24,9 +24,17 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 
+/**
+ * The type Single channel wrapper.
+ */
 class SingleChannelWrapper extends ReferenceCountingBase implements RefUnaryOperator<double[][]> {
   private final RefUnaryOperator<double[][]> unaryOperator;
 
+  /**
+   * Instantiates a new Single channel wrapper.
+   *
+   * @param unaryOperator the unary operator
+   */
   public SingleChannelWrapper(RefUnaryOperator<double[][]> unaryOperator) {
     this.unaryOperator = unaryOperator;
   }

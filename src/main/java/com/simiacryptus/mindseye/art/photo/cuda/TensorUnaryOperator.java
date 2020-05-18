@@ -30,12 +30,22 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+/**
+ * The type Tensor unary operator.
+ */
 public class TensorUnaryOperator extends ReferenceCountingBase implements RefUnaryOperator<Tensor> {
   private final RefUnaryOperator<double[][]> inner;
   private final int[] dimensions;
   private final @RefAware
   RasterTopology topology;
 
+  /**
+   * Instantiates a new Tensor unary operator.
+   *
+   * @param inner      the inner
+   * @param dimensions the dimensions
+   * @param topology   the topology
+   */
   public TensorUnaryOperator(RefUnaryOperator<double[][]> inner, int[] dimensions, @RefAware RasterTopology topology) {
     this.inner = inner;
     this.dimensions = dimensions;

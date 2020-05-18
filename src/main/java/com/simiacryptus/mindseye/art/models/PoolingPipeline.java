@@ -29,17 +29,44 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
+/**
+ * The enum Pooling pipeline.
+ */
 public enum PoolingPipeline implements VisionPipelineLayer {
+  /**
+   * The Pooling 0.
+   */
   Pooling0(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3,
       (PipelineNetwork pipeline) -> {
         pipeline.freeRef();
       }),
+  /**
+   * The Pooling 2.
+   */
   Pooling2(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
+  /**
+   * The Pooling 4.
+   */
   Pooling4(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
+  /**
+   * The Pooling 8.
+   */
   Pooling8(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
+  /**
+   * The Pooling 16.
+   */
   Pooling16(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
+  /**
+   * The Pooling 32.
+   */
   Pooling32(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
+  /**
+   * The Pooling 64.
+   */
   Pooling64(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3),
+  /**
+   * The Pooling 128.
+   */
   Pooling128(new int[]{2, 2}, new int[]{4, 4}, new int[]{7, 7}, new int[]{2, 2}, 3, 3);
 
   @Nullable
@@ -99,6 +126,11 @@ public enum PoolingPipeline implements VisionPipelineLayer {
     return name;
   }
 
+  /**
+   * Gets vision pipeline.
+   *
+   * @return the vision pipeline
+   */
   @Nullable
   public static VisionPipeline getVisionPipeline() {
     if (null == visionPipeline) {

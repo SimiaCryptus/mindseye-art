@@ -25,26 +25,58 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import javax.annotation.Nonnull;
 import java.util.function.UnaryOperator;
 
+/**
+ * The interface Ref unary operator.
+ *
+ * @param <T> the type parameter
+ */
 public interface RefUnaryOperator<T> extends ReferenceCounting, UnaryOperator<T> {
+  /**
+   * Wrap ref unary operator.
+   *
+   * @param <T>   the type parameter
+   * @param inner the inner
+   * @return the ref unary operator
+   */
   @Nonnull
   static <T> RefUnaryOperator<T> wrap(UnaryOperator<T> inner) {
     return new RefUnaryOperatorWrapper<T>(inner);
   }
 
 
+  /**
+   * Iterate t.
+   *
+   * @param n   the n
+   * @param obj the obj
+   * @return the t
+   */
   default T iterate(int n, T obj) {
     return n <= 1 ? apply(obj) : this.iterate(n - 1, apply(obj));
   }
 
+  /**
+   * Free.
+   */
   void _free();
 
   @Nonnull
   RefUnaryOperator<T> addRef();
 
+  /**
+   * The type Ref unary operator wrapper.
+   *
+   * @param <T> the type parameter
+   */
   class RefUnaryOperatorWrapper<T> extends ReferenceCountingBase implements RefUnaryOperator<T> {
 
     private UnaryOperator<T> inner;
 
+    /**
+     * Instantiates a new Ref unary operator wrapper.
+     *
+     * @param inner the inner
+     */
     public RefUnaryOperatorWrapper(UnaryOperator<T> inner) {
       this.inner = inner;
     }

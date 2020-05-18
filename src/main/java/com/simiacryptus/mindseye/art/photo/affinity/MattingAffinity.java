@@ -36,19 +36,40 @@ import javax.annotation.Nonnull;
 public class MattingAffinity extends ContextAffinity {
   private double epsilon = 1e-4;
 
+  /**
+   * Instantiates a new Matting affinity.
+   *
+   * @param content the content
+   */
   public MattingAffinity(@Nonnull Tensor content) {
     this(content, new SimpleRasterTopology(content.getDimensions()));
   }
 
+  /**
+   * Instantiates a new Matting affinity.
+   *
+   * @param content  the content
+   * @param topology the topology
+   */
   public MattingAffinity(@Nonnull Tensor content, RasterTopology topology) {
     super(content);
     setTopology(topology);
   }
 
+  /**
+   * Gets epsilon.
+   *
+   * @return the epsilon
+   */
   public double getEpsilon() {
     return epsilon;
   }
 
+  /**
+   * Sets epsilon.
+   *
+   * @param epsilon the epsilon
+   */
   public void setEpsilon(double epsilon) {
     this.epsilon = epsilon;
   }

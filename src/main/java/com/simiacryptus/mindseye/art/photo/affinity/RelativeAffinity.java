@@ -36,33 +36,70 @@ public class RelativeAffinity extends ContextAffinity {
   private double epsilon = 1e-5;
   private double contrast = 5e0;
 
+  /**
+   * Instantiates a new Relative affinity.
+   *
+   * @param content the content
+   */
   public RelativeAffinity(@Nonnull Tensor content) {
     this(content, new SimpleRasterTopology(content.getDimensions()));
   }
 
+  /**
+   * Instantiates a new Relative affinity.
+   *
+   * @param content  the content
+   * @param topology the topology
+   */
   public RelativeAffinity(@Nonnull Tensor content, RasterTopology topology) {
     super(content);
     setTopology(topology);
   }
 
+  /**
+   * Gets contrast.
+   *
+   * @return the contrast
+   */
   public double getContrast() {
     return contrast;
   }
 
+  /**
+   * Sets contrast.
+   *
+   * @param contrast the contrast
+   */
   public void setContrast(double contrast) {
     this.contrast = contrast;
   }
 
+  /**
+   * Gets epsilon.
+   *
+   * @return the epsilon
+   */
   public double getEpsilon() {
     return epsilon;
   }
 
+  /**
+   * Sets epsilon.
+   *
+   * @param epsilon the epsilon
+   * @return the epsilon
+   */
   @Nonnull
   public RelativeAffinity setEpsilon(double epsilon) {
     this.epsilon = epsilon;
     return this;
   }
 
+  /**
+   * Gets introversion.
+   *
+   * @return the introversion
+   */
   public double getIntroversion() {
     return introversion;
   }

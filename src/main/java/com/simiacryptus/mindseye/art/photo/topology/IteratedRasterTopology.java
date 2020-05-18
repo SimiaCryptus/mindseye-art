@@ -26,10 +26,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * The type Iterated raster topology.
+ */
 public class IteratedRasterTopology extends ReferenceCountingBase implements RasterTopology {
   private final RasterTopology inner;
   private int iterations = 2;
 
+  /**
+   * Instantiates a new Iterated raster topology.
+   *
+   * @param inner the inner
+   */
   public IteratedRasterTopology(RasterTopology inner) {
     this.inner = inner;
     this.setIterations(getIterations());
@@ -40,14 +48,31 @@ public class IteratedRasterTopology extends ReferenceCountingBase implements Ras
     return inner.getDimensions();
   }
 
+  /**
+   * Gets iterations.
+   *
+   * @return the iterations
+   */
   public int getIterations() {
     return iterations;
   }
 
+  /**
+   * Sets iterations.
+   *
+   * @param iterations the iterations
+   */
   public void setIterations(int iterations) {
     this.iterations = iterations;
   }
 
+  /**
+   * Iterate list.
+   *
+   * @param edges the edges
+   * @param pow   the pow
+   * @return the list
+   */
   public static List<int[]> iterate(List<int[]> edges, int pow) {
     assert pow > 0;
     if (1 == pow) {

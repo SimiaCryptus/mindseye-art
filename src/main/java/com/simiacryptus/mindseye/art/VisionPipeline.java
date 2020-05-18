@@ -30,19 +30,37 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Vision pipeline.
+ */
 public final class VisionPipeline extends ReferenceCountingBase {
   private static final Logger logger = LoggerFactory.getLogger(VisionPipeline.class);
 
+  /**
+   * The Name.
+   */
   public final String name;
 
   private final RefLinkedHashMap<String, PipelineNetwork> networks = new RefLinkedHashMap<>();
 
   private final RefArrayList<VisionPipelineLayer> layers = new RefArrayList<>();
 
+  /**
+   * Instantiates a new Vision pipeline.
+   *
+   * @param name   the name
+   * @param values the values
+   */
   public VisionPipeline(String name, @Nonnull @RefAware VisionPipelineLayer... values) {
     this(name, RefArrays.asList(values));
   }
 
+  /**
+   * Instantiates a new Vision pipeline.
+   *
+   * @param name   the name
+   * @param values the values
+   */
   public VisionPipeline(String name, @Nonnull @RefAware RefCollection<VisionPipelineLayer> values) {
     this.name = name;
     final PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
@@ -63,11 +81,21 @@ public final class VisionPipeline extends ReferenceCountingBase {
     }
   }
 
+  /**
+   * Gets layer list.
+   *
+   * @return the layer list
+   */
   @Nonnull
   public RefList<VisionPipelineLayer> getLayerList() {
     return new RefArrayList<>(layers.addRef());
   }
 
+  /**
+   * Gets networks.
+   *
+   * @return the networks
+   */
   @Nonnull
   public RefLinkedHashMap<String, PipelineNetwork> getNetworks() {
     assertAlive();
@@ -87,6 +115,12 @@ public final class VisionPipeline extends ReferenceCountingBase {
     return (VisionPipeline) super.addRef();
   }
 
+  /**
+   * Get pipeline network.
+   *
+   * @param name the name
+   * @return the pipeline network
+   */
   public PipelineNetwork get(String name) {
     return networks.get(name);
   }

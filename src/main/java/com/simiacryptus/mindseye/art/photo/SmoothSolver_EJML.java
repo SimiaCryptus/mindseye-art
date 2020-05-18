@@ -38,8 +38,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
+/**
+ * The type Smooth solver ejml.
+ */
 public class SmoothSolver_EJML implements SmoothSolver {
 
+  /**
+   * Solve unary operator.
+   *
+   * @param affinity the affinity
+   * @param lambda   the lambda
+   * @return the unary operator
+   */
   @Nonnull
   public static UnaryOperator<SimpleMatrix> solve(@Nonnull DMatrixSparseCSC affinity, double lambda) {
     final double alpha = 1.0 / (1.0 + lambda);
@@ -54,6 +64,13 @@ public class SmoothSolver_EJML implements SmoothSolver {
     };
   }
 
+  /**
+   * Laplacian d matrix sparse csc.
+   *
+   * @param affinity the affinity
+   * @param topology the topology
+   * @return the d matrix sparse csc
+   */
   @Nonnull
   public static DMatrixSparseCSC laplacian(@Nonnull @RefAware RasterAffinity affinity, @Nonnull RasterTopology topology) {
     List<double[]> affinityList = affinity.affinityList(topology.connectivity());
@@ -63,6 +80,13 @@ public class SmoothSolver_EJML implements SmoothSolver {
     return laplacian;
   }
 
+  /**
+   * Wrap unary operator.
+   *
+   * @param solver   the solver
+   * @param topology the topology
+   * @return the unary operator
+   */
   @Nonnull
   public static UnaryOperator<Tensor> wrap(@Nonnull UnaryOperator<SimpleMatrix> solver, @Nonnull RasterTopology topology) {
     final int[] dimensions = topology.getDimensions();
@@ -91,6 +115,13 @@ public class SmoothSolver_EJML implements SmoothSolver {
     }, topology);
   }
 
+  /**
+   * Laplacian d matrix sparse csc.
+   *
+   * @param graphEdges   the graph edges
+   * @param affinityList the affinity list
+   * @return the d matrix sparse csc
+   */
   public static @Nonnull
   DMatrixSparseCSC laplacian(@Nonnull List<int[]> graphEdges, @Nonnull List<double[]> affinityList) {
     final int pixels = graphEdges.size();

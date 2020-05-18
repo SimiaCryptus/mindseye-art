@@ -44,7 +44,7 @@ import com.simiacryptus.ref.wrappers.RefAtomicReference;
 import com.simiacryptus.ref.wrappers.RefString;
 import com.simiacryptus.ref.wrappers.RefSystem;
 import com.simiacryptus.util.Util;
-import com.simiacryptus.util.test.NotebookReportBase;
+import com.simiacryptus.util.test.NotebookTestBase;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
@@ -58,7 +58,10 @@ import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.adjust
 import static com.simiacryptus.mindseye.art.photo.affinity.RasterAffinity.degree;
 import static com.simiacryptus.mindseye.art.photo.topology.RadiusRasterTopology.getRadius;
 
-public class WCTTest extends NotebookReportBase {
+/**
+ * The type Wct test.
+ */
+public class WCTTest extends NotebookTestBase {
 
   //  private String contentImage = "file:///C:/Users/andre/Downloads/winter-with-snow-on-the-ground-landscape.jpg";
   //  private String styleImage = "file:///C:/Users/andre/Downloads/wisconsin-77930_1280.jpg";
@@ -89,16 +92,25 @@ public class WCTTest extends NotebookReportBase {
   }
 
 
+  /**
+   * Test 0.
+   */
   @Test
   public void test0() {
     wct_test(getLog(), new PipelineNetwork(1), new PipelineNetwork(1), contentImage(), styleImage());
   }
 
+  /**
+   * Test 1.
+   */
   @Test
   public void test1() {
     wct_test(getLog(), VGG_WCT_Import.encode_1(), VGG_WCT_Import.decode_1(), contentImage(), styleImage());
   }
 
+  /**
+   * Test 2.
+   */
   @Test
   public void test2() {
     NotebookOutput log = getLog();
@@ -108,6 +120,9 @@ public class WCTTest extends NotebookReportBase {
     wct_test(log, VGG_WCT_Import.encode_2(), VGG_WCT_Import.decode_2(), contentImage(), styleImage());
   }
 
+  /**
+   * Test 3.
+   */
   @Test
   public void test3() {
     NotebookOutput log = getLog();
@@ -117,6 +132,9 @@ public class WCTTest extends NotebookReportBase {
     wct_test(log, VGG_WCT_Import.encode_3(), VGG_WCT_Import.decode_3(), contentImage(), styleImage());
   }
 
+  /**
+   * Test 4.
+   */
   @Test
   public void test4() {
     NotebookOutput log = getLog();
@@ -126,6 +144,9 @@ public class WCTTest extends NotebookReportBase {
     wct_test(log, VGG_WCT_Import.encode_4(), VGG_WCT_Import.decode_4(), contentImage(), styleImage());
   }
 
+  /**
+   * Test 5.
+   */
   @Test
   public void test5() {
     NotebookOutput log = getLog();
@@ -135,6 +156,9 @@ public class WCTTest extends NotebookReportBase {
     wct_test(log, VGG_WCT_Import.encode_5(), VGG_WCT_Import.decode_5(), contentImage(), styleImage());
   }
 
+  /**
+   * Wct full.
+   */
   @Test
   public void wct_full() {
     NotebookOutput log = getLog();
@@ -195,6 +219,9 @@ public class WCTTest extends NotebookReportBase {
     contentImage1.freeRef();
   }
 
+  /**
+   * Wct api.
+   */
   @Test
   public void wct_api() {
     NotebookOutput log = getLog();
@@ -238,6 +265,9 @@ public class WCTTest extends NotebookReportBase {
     fastPhotoStyleTransfer.freeRef();
   }
 
+  /**
+   * Photo blur.
+   */
   @Test
   public void photoBlur() {
     NotebookOutput log = getLog();
@@ -328,6 +358,9 @@ public class WCTTest extends NotebookReportBase {
     content.freeRef();
   }
 
+  /**
+   * Photo blur survey.
+   */
   @Test
   public void photoBlur_Survey() {
     NotebookOutput log = getLog();

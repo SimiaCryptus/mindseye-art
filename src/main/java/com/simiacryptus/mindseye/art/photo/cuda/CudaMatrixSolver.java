@@ -38,24 +38,53 @@ import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
+/**
+ * The type Cuda matrix solver.
+ */
 public class CudaMatrixSolver extends ReferenceCountingBase implements RefUnaryOperator<double[][]> {
 
+  /**
+   * The constant TOLERANCE.
+   */
   public static final double TOLERANCE = 1e-8;
   private static final int REORDER = 0;
 
+  /**
+   * The Scale output.
+   */
   final double scaleOutput;
+  /**
+   * The Forward matrix.
+   */
   @Nonnull
   final CudaSparseMatrix forwardMatrix;
+  /**
+   * The Pixels.
+   */
   final int pixels;
+  /**
+   * The Sp handle.
+   */
   @Nonnull
   cusparseHandle spHandle;
   private @Nonnull
   cusolverSpHandle solverHandle;
 
+  /**
+   * Instantiates a new Cuda matrix solver.
+   *
+   * @param forwardMatrix the forward matrix
+   */
   public CudaMatrixSolver(@Nonnull SparseMatrixFloat forwardMatrix) {
     this(forwardMatrix, 1.0);
   }
 
+  /**
+   * Instantiates a new Cuda matrix solver.
+   *
+   * @param forwardMatrix the forward matrix
+   * @param scaleOutput   the scale output
+   */
   public CudaMatrixSolver(@Nonnull SparseMatrixFloat forwardMatrix, double scaleOutput) {
     JCuda.setExceptionsEnabled(true);
     JCusparse.setExceptionsEnabled(true);

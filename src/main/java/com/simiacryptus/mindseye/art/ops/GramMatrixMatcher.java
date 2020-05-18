@@ -43,6 +43,9 @@ import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.function.Function;
 
+/**
+ * The type Gram matrix matcher.
+ */
 public class GramMatrixMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixMatcher.class);
   private final Precision precision = Precision.Float;
@@ -50,36 +53,77 @@ public class GramMatrixMatcher implements VisualModifier {
   private boolean balanced = true;
   private int tileSize = ArtSettings.INSTANCE().defaultTileSize;
 
+  /**
+   * Gets tile size.
+   *
+   * @return the tile size
+   */
   public int getTileSize() {
     return tileSize;
   }
 
+  /**
+   * Sets tile size.
+   *
+   * @param tileSize the tile size
+   * @return the tile size
+   */
   @Nonnull
   public GramMatrixMatcher setTileSize(int tileSize) {
     this.tileSize = tileSize;
     return this;
   }
 
+  /**
+   * Is averaging boolean.
+   *
+   * @return the boolean
+   */
   public boolean isAveraging() {
     return averaging;
   }
 
+  /**
+   * Sets averaging.
+   *
+   * @param averaging the averaging
+   * @return the averaging
+   */
   @Nonnull
   public GramMatrixMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
 
+  /**
+   * Is balanced boolean.
+   *
+   * @return the boolean
+   */
   public boolean isBalanced() {
     return balanced;
   }
 
+  /**
+   * Sets balanced.
+   *
+   * @param balanced the balanced
+   * @return the balanced
+   */
   @Nonnull
   public GramMatrixMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
+  /**
+   * Loss layer.
+   *
+   * @param result    the result
+   * @param mag       the mag
+   * @param averaging the averaging
+   * @return the layer
+   */
   @Nonnull
   public static Layer loss(@Nonnull Tensor result, double mag, boolean averaging) {
     result.scaleInPlace(-1);
@@ -100,6 +144,16 @@ public class GramMatrixMatcher implements VisualModifier {
     return layer1;
   }
 
+  /**
+   * Eval tensor.
+   *
+   * @param pixels   the pixels
+   * @param network  the network
+   * @param tileSize the tile size
+   * @param padding  the padding
+   * @param image    the image
+   * @return the tensor
+   */
   @Nullable
   public static Tensor eval(int pixels, @Nonnull PipelineNetwork network, int tileSize, int padding, @Nonnull Tensor... image) {
     final Tensor tensor = RefUtil.orElse(RefArrays.stream(image).flatMap(img -> {
@@ -133,6 +187,13 @@ public class GramMatrixMatcher implements VisualModifier {
     return map;
   }
 
+  /**
+   * Gets append uuid.
+   *
+   * @param network    the network
+   * @param layerClass the layer class
+   * @return the append uuid
+   */
   @Nonnull
   public static UUID getAppendUUID(@Nonnull PipelineNetwork network, @Nonnull Class<?> layerClass) {
     DAGNode head = network.getHead();
@@ -155,6 +216,15 @@ public class GramMatrixMatcher implements VisualModifier {
     return pipelineNetwork;
   }
 
+  /**
+   * Build with model pipeline network.
+   *
+   * @param network the network
+   * @param mask    the mask
+   * @param model   the model
+   * @param images  the images
+   * @return the pipeline network
+   */
   @Nonnull
   public PipelineNetwork buildWithModel(PipelineNetwork network, @Nullable Tensor mask, @Nullable Tensor model, @Nonnull Tensor... images) {
     PipelineNetwork copyPipeline = network.copyPipeline();

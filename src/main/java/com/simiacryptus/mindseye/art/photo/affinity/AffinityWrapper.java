@@ -21,10 +21,21 @@ package com.simiacryptus.mindseye.art.photo.affinity;
 
 import java.util.List;
 
+/**
+ * The type Affinity wrapper.
+ */
 public abstract class AffinityWrapper implements RasterAffinity {
 
+  /**
+   * The Inner.
+   */
   RasterAffinity inner;
 
+  /**
+   * Instantiates a new Affinity wrapper.
+   *
+   * @param inner the inner
+   */
   public AffinityWrapper(RasterAffinity inner) {
     this.inner = inner;
   }

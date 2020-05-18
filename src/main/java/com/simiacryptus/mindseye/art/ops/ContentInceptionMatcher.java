@@ -33,6 +33,9 @@ import com.simiacryptus.ref.wrappers.RefString;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Content inception matcher.
+ */
 public class ContentInceptionMatcher implements VisualModifier {
 
   private int minValue = -1;
@@ -40,40 +43,84 @@ public class ContentInceptionMatcher implements VisualModifier {
   private boolean averaging = true;
   private boolean balanced = true;
 
+  /**
+   * Gets max value.
+   *
+   * @return the max value
+   */
   public int getMaxValue() {
     return maxValue;
   }
 
+  /**
+   * Sets max value.
+   *
+   * @param maxValue the max value
+   * @return the max value
+   */
   @Nonnull
   public ContentInceptionMatcher setMaxValue(int maxValue) {
     this.maxValue = maxValue;
     return this;
   }
 
+  /**
+   * Gets min value.
+   *
+   * @return the min value
+   */
   public int getMinValue() {
     return minValue;
   }
 
+  /**
+   * Sets min value.
+   *
+   * @param minValue the min value
+   * @return the min value
+   */
   @Nonnull
   public ContentInceptionMatcher setMinValue(int minValue) {
     this.minValue = minValue;
     return this;
   }
 
+  /**
+   * Is averaging boolean.
+   *
+   * @return the boolean
+   */
   public boolean isAveraging() {
     return averaging;
   }
 
+  /**
+   * Sets averaging.
+   *
+   * @param averaging the averaging
+   * @return the averaging
+   */
   @Nonnull
   public ContentInceptionMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
 
+  /**
+   * Is balanced boolean.
+   *
+   * @return the boolean
+   */
   public boolean isBalanced() {
     return balanced;
   }
 
+  /**
+   * Sets balanced.
+   *
+   * @param balanced the balanced
+   * @return the balanced
+   */
   @Nonnull
   public ContentInceptionMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;

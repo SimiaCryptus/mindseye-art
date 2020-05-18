@@ -45,16 +45,34 @@ import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
+/**
+ * The type Eigenvector solver cuda.
+ */
 public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements RefUnaryOperator<double[][]> {
+  /**
+   * The Laplacian.
+   */
   @Nonnull
   final CudaSparseMatrix laplacian;
+  /**
+   * The Pixels.
+   */
   final int pixels;
+  /**
+   * The Sp handle.
+   */
   @Nonnull
   cusparseHandle spHandle;
   private @Nonnull
   cusolverSpHandle solverHandle;
   private float mu0;
 
+  /**
+   * Instantiates a new Eigenvector solver cuda.
+   *
+   * @param laplacian the laplacian
+   * @param mu0       the mu 0
+   */
   public EigenvectorSolver_Cuda(@Nonnull CudaSparseMatrix laplacian, float mu0) {
     JCuda.setExceptionsEnabled(true);
     JCusparse.setExceptionsEnabled(true);
@@ -66,6 +84,12 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
     this.mu0 = mu0;
   }
 
+  /**
+   * Get 2 d int [ ].
+   *
+   * @param topology the topology
+   * @return the int [ ]
+   */
   @Nonnull
   public static int[] get2D(@Nonnull RasterTopology topology) {
     int[] dimensions = topology.getDimensions();
@@ -73,11 +97,24 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
     return get2D(dimensions);
   }
 
+  /**
+   * Get 2 d int [ ].
+   *
+   * @param dimensions the dimensions
+   * @return the int [ ]
+   */
   @Nonnull
   public static int[] get2D(int[] dimensions) {
     return new int[]{dimensions[0], dimensions[1]};
   }
 
+  /**
+   * Remaining tensor.
+   *
+   * @param eigenVectors the eigen vectors
+   * @param dimensions   the dimensions
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor remaining(@Nonnull RefCollection<Tensor> eigenVectors, int... dimensions) {
     Tensor tensor = new Tensor(dimensions);
@@ -100,6 +137,13 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
     return unit;
   }
 
+  /**
+   * Eigen vectors ref list.
+   *
+   * @param topology the topology
+   * @param n        the n
+   * @return the ref list
+   */
   @Nonnull
   public RefList<Tensor> eigenVectors(@Nonnull RasterTopology topology, int n) {
     final RefList<Tensor> eigenVectors = new RefArrayList<>();
@@ -114,6 +158,12 @@ public class EigenvectorSolver_Cuda extends ReferenceCountingBase implements Ref
     return eigenVectors;
   }
 
+  /**
+   * Eigen refiner tensor unary operator.
+   *
+   * @param topology the topology
+   * @return the tensor unary operator
+   */
   @Nonnull
   public TensorUnaryOperator eigenRefiner(@Nonnull RasterTopology topology) {
     int[] dimensions = get2D(topology.addRef());

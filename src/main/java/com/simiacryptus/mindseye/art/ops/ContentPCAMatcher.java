@@ -38,6 +38,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Content pca matcher.
+ */
 public class ContentPCAMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(ContentPCAMatcher.class);
   private int minValue = -1;
@@ -45,34 +48,74 @@ public class ContentPCAMatcher implements VisualModifier {
   private boolean averaging = true;
   private int bands = 16;
 
+  /**
+   * Gets bands.
+   *
+   * @return the bands
+   */
   public int getBands() {
     return bands;
   }
 
+  /**
+   * Sets bands.
+   *
+   * @param bands the bands
+   */
   public void setBands(int bands) {
     this.bands = bands;
   }
 
+  /**
+   * Gets max value.
+   *
+   * @return the max value
+   */
   public int getMaxValue() {
     return maxValue;
   }
 
+  /**
+   * Sets max value.
+   *
+   * @param maxValue the max value
+   */
   public void setMaxValue(int maxValue) {
     this.maxValue = maxValue;
   }
 
+  /**
+   * Gets min value.
+   *
+   * @return the min value
+   */
   public int getMinValue() {
     return minValue;
   }
 
+  /**
+   * Sets min value.
+   *
+   * @param minValue the min value
+   */
   public void setMinValue(int minValue) {
     this.minValue = minValue;
   }
 
+  /**
+   * Is averaging boolean.
+   *
+   * @return the boolean
+   */
   public boolean isAveraging() {
     return averaging;
   }
 
+  /**
+   * Sets averaging.
+   *
+   * @param averaging the averaging
+   */
   public void setAveraging(boolean averaging) {
     this.averaging = averaging;
   }
@@ -158,6 +201,12 @@ public class ContentPCAMatcher implements VisualModifier {
     return network;
   }
 
+  /**
+   * Channel stats.
+   *
+   * @param spacialPattern the spacial pattern
+   * @param bands          the bands
+   */
   public void channelStats(@Nonnull Tensor spacialPattern, int bands) {
     double[] means = RefIntStream.range(0, bands).mapToDouble(band -> {
       Tensor selectBand = spacialPattern.selectBand(band);
@@ -175,6 +224,14 @@ public class ContentPCAMatcher implements VisualModifier {
     log.info("Means: " + RefArrays.toString(means) + "; StdDev: " + RefArrays.toString(stdDevs));
   }
 
+  /**
+   * Gets convolution layer 1.
+   *
+   * @param convolutionLayer the convolution layer
+   * @param components       the components
+   * @param stride           the stride
+   * @return the convolution layer 1
+   */
   @Nonnull
   public ConvolutionLayer getConvolutionLayer1(@Nonnull ConvolutionLayer convolutionLayer, @Nonnull RefList<Tensor> components,
                                                int stride) {
@@ -189,6 +246,14 @@ public class ContentPCAMatcher implements VisualModifier {
     return convolutionLayer;
   }
 
+  /**
+   * Gets convolution layer 2.
+   *
+   * @param convolutionLayer the convolution layer
+   * @param components       the components
+   * @param stride           the stride
+   * @return the convolution layer 2
+   */
   @Nonnull
   public ConvolutionLayer getConvolutionLayer2(@Nonnull ConvolutionLayer convolutionLayer, @Nonnull RefList<Tensor> components,
                                                int stride) {

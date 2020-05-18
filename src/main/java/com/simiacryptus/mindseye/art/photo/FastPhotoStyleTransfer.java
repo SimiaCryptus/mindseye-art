@@ -50,15 +50,39 @@ import static com.simiacryptus.util.JsonUtil.toJson;
  */
 public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Function<Tensor, UnaryOperator<Tensor>> {
 
+  /**
+   * The Encode 1.
+   */
   public final Layer encode_1;
+  /**
+   * The Decode 1.
+   */
   public final Layer decode_1;
+  /**
+   * The Encode 2.
+   */
   public final Layer encode_2;
+  /**
+   * The Decode 2.
+   */
   @Nonnull
   public final Layer decode_2;
+  /**
+   * The Encode 3.
+   */
   public final Layer encode_3;
+  /**
+   * The Decode 3.
+   */
   @Nonnull
   public final Layer decode_3;
+  /**
+   * The Encode 4.
+   */
   public final Layer encode_4;
+  /**
+   * The Decode 4.
+   */
   @Nonnull
   public final Layer decode_4;
   private boolean useCuda = true;
@@ -66,6 +90,18 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   private double lambda = 1e-4;
   private double epsilon = 1e-7;
 
+  /**
+   * Instantiates a new Fast photo style transfer.
+   *
+   * @param decode_1 the decode 1
+   * @param encode_1 the encode 1
+   * @param decode_2 the decode 2
+   * @param encode_2 the encode 2
+   * @param decode_3 the decode 3
+   * @param encode_3 the encode 3
+   * @param decode_4 the decode 4
+   * @param encode_4 the encode 4
+   */
   public FastPhotoStyleTransfer(Layer decode_1, Layer encode_1, @Nonnull Layer decode_2, Layer encode_2,
                                 @Nonnull Layer decode_3, Layer encode_3, @Nonnull Layer decode_4, Layer encode_4) {
     this.encode_4 = encode_4;
@@ -78,40 +114,87 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     this.decode_1 = decode_1;
   }
 
+  /**
+   * Gets epsilon.
+   *
+   * @return the epsilon
+   */
   public double getEpsilon() {
     return epsilon;
   }
 
+  /**
+   * Sets epsilon.
+   *
+   * @param epsilon the epsilon
+   */
   public void setEpsilon(double epsilon) {
     this.epsilon = epsilon;
   }
 
+  /**
+   * Gets lambda.
+   *
+   * @return the lambda
+   */
   public double getLambda() {
     return lambda;
   }
 
+  /**
+   * Sets lambda.
+   *
+   * @param lambda the lambda
+   */
   public void setLambda(double lambda) {
     this.lambda = lambda;
   }
 
+  /**
+   * Is smooth boolean.
+   *
+   * @return the boolean
+   */
   public boolean isSmooth() {
     return smooth;
   }
 
+  /**
+   * Sets smooth.
+   *
+   * @param smooth the smooth
+   */
   public void setSmooth(boolean smooth) {
     this.smooth = smooth;
   }
 
+  /**
+   * Is use cuda boolean.
+   *
+   * @return the boolean
+   */
   public boolean isUseCuda() {
     return useCuda;
   }
 
+  /**
+   * Sets use cuda.
+   *
+   * @param useCuda the use cuda
+   * @return the use cuda
+   */
   @Nonnull
   public FastPhotoStyleTransfer setUseCuda(boolean useCuda) {
     this.useCuda = useCuda;
     return this;
   }
 
+  /**
+   * From zip fast photo style transfer.
+   *
+   * @param zipfile the zipfile
+   * @return the fast photo style transfer
+   */
   @Nonnull
   public static FastPhotoStyleTransfer fromZip(@Nonnull final ZipFile zipfile) {
     @Nonnull
@@ -126,6 +209,17 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
         fromJson(toJson(resources.get("encode_4.json")), resources));
   }
 
+  /**
+   * Transfer tensor.
+   *
+   * @param contentImage   the content image
+   * @param styleImage     the style image
+   * @param encode         the encode
+   * @param decode         the decode
+   * @param contentDensity the content density
+   * @param styleDensity   the style density
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor transfer(Tensor contentImage, Tensor styleImage, @Nonnull Layer encode, @Nonnull Layer decode,
                                 double contentDensity, double styleDensity) {
@@ -152,6 +246,12 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     super._free();
   }
 
+  /**
+   * Write zip.
+   *
+   * @param out       the out
+   * @param precision the precision
+   */
   public void writeZip(@Nonnull File out, SerialPrecision precision) {
     try (@Nonnull
          ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(out))) {
@@ -174,11 +274,27 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     return new StyleUnaryOperator(contentImage, FastPhotoStyleTransfer.this);
   }
 
+  /**
+   * Photo wct tensor.
+   *
+   * @param style   the style
+   * @param content the content
+   * @return the tensor
+   */
   @Nonnull
   public Tensor photoWCT(Tensor style, Tensor content) {
     return photoWCT(style, content, 1.0, 1.0);
   }
 
+  /**
+   * Photo wct tensor.
+   *
+   * @param style          the style
+   * @param content        the content
+   * @param contentDensity the content density
+   * @param styleDensity   the style density
+   * @return the tensor
+   */
   @Nonnull
   public Tensor photoWCT(Tensor style, Tensor content, double contentDensity, double styleDensity) {
     Tensor wct1 = photoWCT_1(style.addRef(),
@@ -190,11 +306,27 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     return wct1;
   }
 
+  /**
+   * Photo wct 1 tensor.
+   *
+   * @param style   the style
+   * @param content the content
+   * @return the tensor
+   */
   public @Nonnull
   Tensor photoWCT_1(Tensor style, Tensor content) {
     return photoWCT_1(style, content, 1.0, 1.0);
   }
 
+  /**
+   * Photo wct 1 tensor.
+   *
+   * @param style          the style
+   * @param content        the content
+   * @param contentDensity the content density
+   * @param styleDensity   the style density
+   * @return the tensor
+   */
   public @Nonnull
   Tensor photoWCT_1(Tensor style, Tensor content, double contentDensity, double styleDensity) {
     final Tensor encodedContent = Result.getData0(encode_1.eval(content));
@@ -205,36 +337,90 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     return Result.getData0(decode_1.eval(encodedTransformed));
   }
 
+  /**
+   * Photo wct 2 tensor.
+   *
+   * @param style   the style
+   * @param content the content
+   * @return the tensor
+   */
   @Nonnull
   public Tensor photoWCT_2(Tensor style, Tensor content) {
     return photoWCT_2(style, content, 1.0, 1.0);
   }
 
+  /**
+   * Photo wct 2 tensor.
+   *
+   * @param style          the style
+   * @param content        the content
+   * @param contentDensity the content density
+   * @param styleDensity   the style density
+   * @return the tensor
+   */
   @Nonnull
   public Tensor photoWCT_2(Tensor style, Tensor content, double contentDensity, double styleDensity) {
     return transfer(content, style, encode_2.addRef(), decode_2.addRef(), contentDensity, styleDensity);
   }
 
+  /**
+   * Photo wct 3 tensor.
+   *
+   * @param style   the style
+   * @param content the content
+   * @return the tensor
+   */
   @Nonnull
   public Tensor photoWCT_3(Tensor style, Tensor content) {
     return photoWCT_3(style, content, 1.0, 1.0);
   }
 
+  /**
+   * Photo wct 3 tensor.
+   *
+   * @param style          the style
+   * @param content        the content
+   * @param contentDensity the content density
+   * @param styleDensity   the style density
+   * @return the tensor
+   */
   @Nonnull
   public Tensor photoWCT_3(Tensor style, Tensor content, double contentDensity, double styleDensity) {
     return transfer(content, style, encode_3.addRef(), decode_3.addRef(), contentDensity, styleDensity);
   }
 
+  /**
+   * Photo wct 4 tensor.
+   *
+   * @param style   the style
+   * @param content the content
+   * @return the tensor
+   */
   @Nonnull
   public Tensor photoWCT_4(Tensor style, Tensor content) {
     return photoWCT_4(style, content, 1.0, 1.0);
   }
 
+  /**
+   * Photo wct 4 tensor.
+   *
+   * @param style          the style
+   * @param content        the content
+   * @param contentDensity the content density
+   * @param styleDensity   the style density
+   * @return the tensor
+   */
   @Nonnull
   public Tensor photoWCT_4(Tensor style, Tensor content, double contentDensity, double styleDensity) {
     return transfer(content, style, encode_4.addRef(), decode_4.addRef(), contentDensity, styleDensity);
   }
 
+  /**
+   * Photo smooth ref unary operator.
+   *
+   * @param content the content
+   * @return the ref unary operator
+   */
   @Nonnull
   public RefUnaryOperator<Tensor> photoSmooth(@Nonnull Tensor content) {
     if (isSmooth()) {
@@ -278,6 +464,9 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
   }
 
   private static class StyleUnaryOperator extends ReferenceCountingBase implements RefUnaryOperator<Tensor> {
+    /**
+     * The Photo smooth.
+     */
     @Nonnull
     final RefUnaryOperator<Tensor> photoSmooth;
     @Nonnull
@@ -285,6 +474,12 @@ public class FastPhotoStyleTransfer extends ReferenceCountingBase implements Fun
     @Nonnull
     private final FastPhotoStyleTransfer parent;
 
+    /**
+     * Instantiates a new Style unary operator.
+     *
+     * @param contentImage the content image
+     * @param parent       the parent
+     */
     public StyleUnaryOperator(@Nonnull Tensor contentImage, @Nonnull FastPhotoStyleTransfer parent) {
       this.parent = parent;
       this.contentImage = contentImage;

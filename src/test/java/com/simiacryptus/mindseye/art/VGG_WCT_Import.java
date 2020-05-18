@@ -52,6 +52,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
+/**
+ * The type Vgg wct import.
+ */
 /* To extract weights from FastPhotoStyle pretrained models, run this python script to export the torch data files as simple text:
 
 ``` python
@@ -96,6 +99,9 @@ convertInv('conv5_1')
  */
 public class VGG_WCT_Import {
 
+  /**
+   * The constant log.
+   */
   public static final Logger log = LoggerFactory.getLogger(VGG_WCT_Import.class);
   private static final String fileBase = "H:\\SimiaCryptus\\data-science-tools\\FastPhotoStyle\\models\\";
   @Nonnull
@@ -103,6 +109,11 @@ public class VGG_WCT_Import {
   private static boolean verbose = false;
   private static boolean simple = false;
 
+  /**
+   * Encode 1 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer encode_1() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -119,6 +130,11 @@ public class VGG_WCT_Import {
     return pipeline;
   }
 
+  /**
+   * Encode 2 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer encode_2() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -147,6 +163,11 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  /**
+   * Encode 3 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer encode_3() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -185,6 +206,11 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  /**
+   * Encode 4 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer encode_4() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -220,6 +246,11 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  /**
+   * Encode 5 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer encode_5() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -262,6 +293,11 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  /**
+   * Decode 1 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer decode_1() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -276,6 +312,11 @@ public class VGG_WCT_Import {
     return pipeline;
   }
 
+  /**
+   * Decode 2 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer decode_2() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -300,6 +341,11 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  /**
+   * Decode 3 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer decode_3() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -332,6 +378,11 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  /**
+   * Decode 4 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer decode_4() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -360,6 +411,11 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  /**
+   * Decode 5 layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   public static Layer decode_5() {
     PipelineNetwork pipeline = new PipelineNetwork(1);
@@ -393,6 +449,11 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  /**
+   * Photo decode 2 layer.
+   *
+   * @return the layer
+   */
   public static @Nonnull
   Layer photo_decode_2() {
 
@@ -440,6 +501,11 @@ public class VGG_WCT_Import {
     return polish(pipeline2);
   }
 
+  /**
+   * Photo decode 3 layer.
+   *
+   * @return the layer
+   */
   public static @Nonnull
   Layer photo_decode_3() {
     PipelineNetwork pipeline2 = new PipelineNetwork(2);
@@ -517,6 +583,11 @@ public class VGG_WCT_Import {
     return polish(pipeline2);
   }
 
+  /**
+   * Photo decode 4 layer.
+   *
+   * @return the layer
+   */
   public static @Nonnull
   Layer photo_decode_4() {
     PipelineNetwork pipeline2 = new PipelineNetwork(2);
@@ -574,6 +645,11 @@ public class VGG_WCT_Import {
     return polish(pipeline2);
   }
 
+  /**
+   * Photo decode 5 layer.
+   *
+   * @return the layer
+   */
   public static @Nonnull
   Layer photo_decode_5() {
     PipelineNetwork pipeline = new PipelineNetwork(2);
@@ -639,11 +715,23 @@ public class VGG_WCT_Import {
     return polish(pipeline);
   }
 
+  /**
+   * Gets bias.
+   *
+   * @param prefix1 the prefix 1
+   * @return the bias
+   */
   @Nonnull
   public static Tensor getBias(String prefix1) {
     return loadNumpyTensor(fileBase + prefix1 + "bias.txt");
   }
 
+  /**
+   * Gets weight.
+   *
+   * @param prefix4 the prefix 4
+   * @return the weight
+   */
   @Nonnull
   public static Tensor getWeight(String prefix4) {
     Tensor tensor = loadNumpyTensor(fileBase + prefix4 + "weight.txt");
@@ -652,6 +740,12 @@ public class VGG_WCT_Import {
     return permuteDimensions;
   }
 
+  /**
+   * Load numpy tensor tensor.
+   *
+   * @param file the file
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor loadNumpyTensor(@Nonnull String file) {
     try {
@@ -662,6 +756,11 @@ public class VGG_WCT_Import {
     }
   }
 
+  /**
+   * New fast photo style transfer fast photo style transfer.
+   *
+   * @return the fast photo style transfer
+   */
   @Nonnull
   public static FastPhotoStyleTransfer newFastPhotoStyleTransfer() {
     return new FastPhotoStyleTransfer(decode_1(), encode_1(), photo_decode_2(), encode_2(), photo_decode_3(),

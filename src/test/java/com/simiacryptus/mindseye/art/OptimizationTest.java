@@ -49,9 +49,17 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Optimization test.
+ */
 public class OptimizationTest {
   private static final Logger log = LoggerFactory.getLogger(OptimizationTest.class);
 
+  /**
+   * Gets training monitor.
+   *
+   * @return the training monitor
+   */
   @Nonnull
   public static TrainingMonitor getTrainingMonitor() {
     return new TrainingMonitor() {
@@ -73,6 +81,14 @@ public class OptimizationTest {
     };
   }
 
+  /**
+   * Train.
+   *
+   * @param image         the image
+   * @param network       the network
+   * @param maxIterations the max iterations
+   * @param lineSearch    the line search
+   */
   public static void train(Tensor image, PipelineNetwork network, int maxIterations, LineSearchStrategy lineSearch) {
     ImageUtil.monitorImage(image.addRef(), false, 5, false);
     MultiPrecision.setPrecision(network.addRef(), Precision.Float);
@@ -100,6 +116,11 @@ public class OptimizationTest {
     iterativeTrainer.freeRef();
   }
 
+  /**
+   * Test dream.
+   *
+   * @throws InterruptedException the interrupted exception
+   */
   @Test
   public void testDream() throws InterruptedException {
     Tensor image = Tensor.fromRGB(ImageArtUtil.loadImage(new NullNotebookOutput(),
@@ -110,6 +131,11 @@ public class OptimizationTest {
     Thread.sleep(100000);
   }
 
+  /**
+   * Test style transfer.
+   *
+   * @throws InterruptedException the interrupted exception
+   */
   @Test
   public void testStyleTransfer() throws InterruptedException {
     NullNotebookOutput log = new NullNotebookOutput();
@@ -130,6 +156,11 @@ public class OptimizationTest {
     Thread.sleep(100000);
   }
 
+  /**
+   * Test mean match.
+   *
+   * @throws InterruptedException the interrupted exception
+   */
   @Test
   public void testMeanMatch() throws InterruptedException {
     NullNotebookOutput log = new NullNotebookOutput();
@@ -143,6 +174,11 @@ public class OptimizationTest {
     Thread.sleep(100000);
   }
 
+  /**
+   * Test gram match.
+   *
+   * @throws InterruptedException the interrupted exception
+   */
   @Test
   public void testGramMatch() throws InterruptedException {
     NullNotebookOutput log = new NullNotebookOutput();

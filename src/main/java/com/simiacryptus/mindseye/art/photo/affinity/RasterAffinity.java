@@ -30,11 +30,30 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+/**
+ * The interface Raster affinity.
+ */
 public interface RasterAffinity {
+  /**
+   * Normalize list.
+   *
+   * @param graphEdges   the graph edges
+   * @param affinityList the affinity list
+   * @return the list
+   */
   static List<double[]> normalize(@Nonnull List<int[]> graphEdges, @Nonnull List<double[]> affinityList) {
     return adjust(graphEdges, affinityList, degree(affinityList), 0.5);
   }
 
+  /**
+   * Adjust list.
+   *
+   * @param graphEdges   the graph edges
+   * @param affinityList the affinity list
+   * @param degree       the degree
+   * @param power        the power
+   * @return the list
+   */
   static List<double[]> adjust(@Nonnull List<int[]> graphEdges, @Nonnull List<double[]> affinityList, double[] degree, double power) {
     return IntStream.range(0, graphEdges.size()).mapToObj(i2 -> {
       final double deg_i = degree[i2];
@@ -51,12 +70,24 @@ public interface RasterAffinity {
     }).collect(Collectors.toList());
   }
 
+  /**
+   * Degree double [ ].
+   *
+   * @param affinityList the affinity list
+   * @return the double [ ]
+   */
   static double[] degree(@Nonnull List<double[]> affinityList) {
     Stream<double[]> stream = affinityList.stream();
     if (!CoreSettings.INSTANCE().singleThreaded) stream = stream.parallel();
     return stream.mapToDouble(x -> Arrays.stream(x).sum()).toArray();
   }
 
+  /**
+   * Wrap affinity wrapper.
+   *
+   * @param fn the fn
+   * @return the affinity wrapper
+   */
   @Nonnull
   default AffinityWrapper wrap(@Nonnull BiFunction<List<int[]>, List<double[]>, List<double[]>> fn) {
     return new AffinityWrapper(this) {
@@ -67,6 +98,12 @@ public interface RasterAffinity {
     };
   }
 
+  /**
+   * Wrap affinity wrapper.
+   *
+   * @param fn the fn
+   * @return the affinity wrapper
+   */
   @Nonnull
   default AffinityWrapper wrap(@Nonnull Function<List<int[]>, List<double[]>> fn) {
     return new AffinityWrapper(this) {
@@ -77,6 +114,12 @@ public interface RasterAffinity {
     };
   }
 
+  /**
+   * Affinity list list.
+   *
+   * @param graphEdges the graph edges
+   * @return the list
+   */
   List<double[]> affinityList(List<int[]> graphEdges);
 
 }

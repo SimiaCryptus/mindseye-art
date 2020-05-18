@@ -47,6 +47,9 @@ import java.util.stream.Collectors;
 
 import static org.bytedeco.javacpp.hdf5.*;
 
+/**
+ * The type Hdf 5 archive.
+ */
 public class Hdf5Archive {
   private static final Logger log = LoggerFactory.getLogger(Hdf5Archive.class);
 
@@ -64,10 +67,20 @@ public class Hdf5Archive {
   @Nonnull
   private final File filename;
 
+  /**
+   * Instantiates a new Hdf 5 archive.
+   *
+   * @param filename the filename
+   */
   public Hdf5Archive(@Nonnull String filename) {
     this(new File(filename));
   }
 
+  /**
+   * Instantiates a new Hdf 5 archive.
+   *
+   * @param filename the filename
+   */
   public Hdf5Archive(@Nonnull File filename) {
     this.filename = filename;
     final String canonicalPath;
@@ -83,6 +96,11 @@ public class Hdf5Archive {
     }
   }
 
+  /**
+   * Gets filename.
+   *
+   * @return the filename
+   */
   @Nonnull
   public File getFilename() {
     return filename;
@@ -141,6 +159,13 @@ public class Hdf5Archive {
     return RefString.format("Hdf5Archive{%s}", file);
   }
 
+  /**
+   * Read data set tensor.
+   *
+   * @param datasetName the dataset name
+   * @param groups      the groups
+   * @return the tensor
+   */
   @Nullable
   public Tensor readDataSet(@Nonnull CharSequence datasetName, @Nonnull CharSequence... groups) {
     if (groups.length == 0) {
@@ -154,6 +179,13 @@ public class Hdf5Archive {
     return a;
   }
 
+  /**
+   * Read attribute as json char sequence.
+   *
+   * @param attributeName the attribute name
+   * @param groups        the groups
+   * @return the char sequence
+   */
   @Nullable
   public CharSequence readAttributeAsJson(String attributeName, @Nonnull String... groups) {
     if (groups.length == 0) {
@@ -167,6 +199,13 @@ public class Hdf5Archive {
     return s;
   }
 
+  /**
+   * Read attribute as string char sequence.
+   *
+   * @param attributeName the attribute name
+   * @param groups        the groups
+   * @return the char sequence
+   */
   @Nullable
   public CharSequence readAttributeAsString(String attributeName, @Nonnull String... groups) {
     if (groups.length == 0) {
@@ -180,6 +219,13 @@ public class Hdf5Archive {
     return s;
   }
 
+  /**
+   * Has attribute boolean.
+   *
+   * @param attributeName the attribute name
+   * @param groups        the groups
+   * @return the boolean
+   */
   public boolean hasAttribute(String attributeName, @Nonnull String... groups) {
     if (groups.length == 0) {
       return this.file.attrExists(attributeName);
@@ -191,6 +237,12 @@ public class Hdf5Archive {
     return b;
   }
 
+  /**
+   * Gets attributes.
+   *
+   * @param groups the groups
+   * @return the attributes
+   */
   @Nonnull
   public Map<CharSequence, Object> getAttributes(@Nonnull String... groups) {
     if (groups.length == 0) {
@@ -205,6 +257,12 @@ public class Hdf5Archive {
     return attributes;
   }
 
+  /**
+   * Gets attributes.
+   *
+   * @param group the group
+   * @return the attributes
+   */
   @Nonnull
   public Map<CharSequence, Object> getAttributes(@Nonnull Group group) {
     int numAttrs = group.getNumAttrs();
@@ -225,6 +283,12 @@ public class Hdf5Archive {
     return attributes;
   }
 
+  /**
+   * Gets data sets.
+   *
+   * @param groups the groups
+   * @return the data sets
+   */
   @Nonnull
   public List<CharSequence> getDataSets(@Nonnull String... groups) {
     if (groups.length == 0) {
@@ -238,6 +302,12 @@ public class Hdf5Archive {
     return ls;
   }
 
+  /**
+   * Gets groups.
+   *
+   * @param groups the groups
+   * @return the groups
+   */
   @Nonnull
   public List<CharSequence> getGroups(@Nonnull String... groups) {
     if (groups.length == 0) {
@@ -251,15 +321,30 @@ public class Hdf5Archive {
     return ls;
   }
 
+  /**
+   * Read attribute as fixed length string char sequence.
+   *
+   * @param attributeName the attribute name
+   * @param bufferSize    the buffer size
+   * @return the char sequence
+   */
   @Nonnull
   public CharSequence readAttributeAsFixedLengthString(String attributeName, int bufferSize) {
     return readAttributeAsFixedLengthString(this.file.openAttribute(attributeName), bufferSize);
   }
 
+  /**
+   * Print.
+   */
   public void print() {
     print(log);
   }
 
+  /**
+   * Print.
+   *
+   * @param log the log
+   */
   public void print(@Nonnull Logger log) {
     print(this, log);
   }

@@ -34,31 +34,62 @@ import com.simiacryptus.ref.wrappers.RefString;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Content matcher.
+ */
 public class ContentMatcher implements VisualModifier {
 
   private boolean averaging = true;
   private boolean balanced = true;
 
+  /**
+   * Is averaging boolean.
+   *
+   * @return the boolean
+   */
   public boolean isAveraging() {
     return averaging;
   }
 
+  /**
+   * Sets averaging.
+   *
+   * @param averaging the averaging
+   * @return the averaging
+   */
   @Nonnull
   public ContentMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
 
+  /**
+   * Is balanced boolean.
+   *
+   * @return the boolean
+   */
   public boolean isBalanced() {
     return balanced;
   }
 
+  /**
+   * Sets balanced.
+   *
+   * @param balanced the balanced
+   * @return the balanced
+   */
   @Nonnull
   public ContentMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
+  /**
+   * Sets name.
+   *
+   * @param constNode the const node
+   * @param name      the name
+   */
   public static void setName(DAGNode constNode, String name) {
     Layer layer = constNode.getLayer();
     constNode.freeRef();

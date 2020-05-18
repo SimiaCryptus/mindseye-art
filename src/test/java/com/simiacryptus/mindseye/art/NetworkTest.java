@@ -27,10 +27,8 @@ import com.simiacryptus.mindseye.lang.Layer;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
-import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.DAGNetwork;
-import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.test.LayerTestBase;
 import com.simiacryptus.notebook.NullNotebookOutput;
 import org.junit.jupiter.api.Disabled;
@@ -40,6 +38,9 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
 
+/**
+ * The type Network test.
+ */
 public class NetworkTest extends LayerTestBase {
   private static final Logger log = LoggerFactory.getLogger(NetworkTest.class);
   private static final BufferedImage styleImage = ImageArtUtil.loadImage(new NullNotebookOutput(),
@@ -49,6 +50,9 @@ public class NetworkTest extends LayerTestBase {
       500);
   private static final DAGNetwork layer = build();
 
+  /**
+   * Instantiates a new Network test.
+   */
   public NetworkTest() {
     testingBatchSize = 1;
   }

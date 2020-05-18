@@ -31,12 +31,28 @@ import javax.annotation.Nonnull;
 
 import static com.simiacryptus.mindseye.layers.cudnn.PoolingLayer.getPoolingLayer;
 
+/**
+ * The interface Vision pipeline layer.
+ */
 public interface VisionPipelineLayer extends ReferenceCounting {
+  /**
+   * The constant NOOP.
+   */
   VisionPipelineLayer.Noop NOOP = new VisionPipelineLayer.Noop();
 
+  /**
+   * Gets layer.
+   *
+   * @return the layer
+   */
   @Nonnull
   Layer getLayer();
 
+  /**
+   * Gets network.
+   *
+   * @return the network
+   */
   @Nonnull
   default PipelineNetwork getNetwork() {
     final VisionPipeline pipeline = getPipeline();
@@ -49,45 +65,104 @@ public interface VisionPipelineLayer extends ReferenceCounting {
     return PipelineNetwork.getCopy(network);
   }
 
+  /**
+   * Gets pipeline.
+   *
+   * @return the pipeline
+   */
   @Nonnull
   VisionPipeline getPipeline();
 
+  /**
+   * Gets pipeline name.
+   *
+   * @return the pipeline name
+   */
   @Nonnull
   String getPipelineName();
 
+  /**
+   * Name string.
+   *
+   * @return the string
+   */
   @Nonnull
   String name();
 
+  /**
+   * Prepend avg pool vision pipeline layer.
+   *
+   * @param radius the radius
+   * @return the vision pipeline layer
+   */
   @Nonnull
   default VisionPipelineLayer prependAvgPool(int radius) {
     return prependPool(radius, PoolingLayer.PoolingMode.Avg);
   }
 
+  /**
+   * Append avg pool vision pipeline layer.
+   *
+   * @param radius the radius
+   * @return the vision pipeline layer
+   */
   @Nonnull
   default VisionPipelineLayer appendAvgPool(int radius) {
     return appendPool(radius, PoolingLayer.PoolingMode.Avg);
   }
 
+  /**
+   * Append max pool vision pipeline layer.
+   *
+   * @param radius the radius
+   * @return the vision pipeline layer
+   */
   @Nonnull
   default VisionPipelineLayer appendMaxPool(int radius) {
     return appendPool(radius, PoolingLayer.PoolingMode.Max);
   }
 
+  /**
+   * Prepend max pool vision pipeline layer.
+   *
+   * @param radius the radius
+   * @return the vision pipeline layer
+   */
   @Nonnull
   default VisionPipelineLayer prependMaxPool(int radius) {
     return prependPool(radius, PoolingLayer.PoolingMode.Max);
   }
 
+  /**
+   * Prepend pool vision pipeline layer.
+   *
+   * @param radius the radius
+   * @param mode   the mode
+   * @return the vision pipeline layer
+   */
   @Nonnull
   default VisionPipelineLayer prependPool(int radius, PoolingLayer.PoolingMode mode) {
     return prepend(getPoolingLayer(radius, mode, RefString.format("prepend(%s)", this.addRef())));
   }
 
+  /**
+   * Append pool vision pipeline layer.
+   *
+   * @param radius the radius
+   * @param mode   the mode
+   * @return the vision pipeline layer
+   */
   @Nonnull
   default VisionPipelineLayer appendPool(int radius, PoolingLayer.PoolingMode mode) {
     return append(getPoolingLayer(radius, mode, RefString.format("append(%s)", this.addRef())));
   }
 
+  /**
+   * Prepend vision pipeline layer.
+   *
+   * @param layer the layer
+   * @return the vision pipeline layer
+   */
   @Nonnull
   @RefAware
   default VisionPipelineLayer prepend(Layer layer) {
@@ -99,12 +174,23 @@ public interface VisionPipelineLayer extends ReferenceCounting {
     return this;
   }
 
+  /**
+   * Append vision pipeline layer.
+   *
+   * @param layer the layer
+   * @return the vision pipeline layer
+   */
   @Nonnull
   @RefAware
   default VisionPipelineLayer append(Layer layer) {
     return new AppendVisionPipelineLayer(this.addRef(), layer);
   }
 
+  /**
+   * With logging vision pipeline layer.
+   *
+   * @return the vision pipeline layer
+   */
   @Nonnull
   @RefAware
   default VisionPipelineLayer withLogging() {
@@ -114,6 +200,9 @@ public interface VisionPipelineLayer extends ReferenceCounting {
     return new AppendVisionPipelineLayer<>(this.addRef(), loggingLayer);
   }
 
+  /**
+   * The type Noop.
+   */
   class Noop implements VisionPipelineLayer {
 
 
@@ -137,7 +226,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
 
     @Override
     public Noop addRef() {
-      return (Noop) this;
+      return this;
     }
 
     @Nonnull

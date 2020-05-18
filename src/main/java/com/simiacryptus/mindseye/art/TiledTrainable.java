@@ -42,25 +42,59 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
+/**
+ * The type Tiled trainable.
+ */
 public abstract class TiledTrainable extends ReferenceCountingBase implements Trainable {
 
   private static final Logger logger = LoggerFactory.getLogger(TiledTrainable.class);
 
+  /**
+   * The Canvas.
+   */
   public final Tensor canvas;
+  /**
+   * The Filter.
+   */
   public final Layer filter;
   @Nullable
   private final Layer[] selectors;
   @Nullable
   private final PipelineNetwork[] networks;
   private final BasicTrainable basicTrainable;
+  /**
+   * The Precision.
+   */
   @Nonnull
   public Precision precision;
+  /**
+   * The Mutable canvas.
+   */
   public boolean mutableCanvas = true;
 
+  /**
+   * Instantiates a new Tiled trainable.
+   *
+   * @param canvas    the canvas
+   * @param filter    the filter
+   * @param tileSize  the tile size
+   * @param padding   the padding
+   * @param precision the precision
+   */
   public TiledTrainable(Tensor canvas, @Nonnull Layer filter, int tileSize, int padding, @Nonnull Precision precision) {
     this(canvas, filter, tileSize, padding, precision, true);
   }
 
+  /**
+   * Instantiates a new Tiled trainable.
+   *
+   * @param canvas    the canvas
+   * @param filter    the filter
+   * @param tileSize  the tile size
+   * @param padding   the padding
+   * @param precision the precision
+   * @param fade      the fade
+   */
   public TiledTrainable(Tensor canvas, @Nonnull Layer filter, int tileSize, int padding, @Nonnull Precision precision,
                         boolean fade) {
     this.canvas = canvas.addRef();
@@ -101,26 +135,57 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     return filter.addRef();
   }
 
+  /**
+   * Gets precision.
+   *
+   * @return the precision
+   */
   @Nonnull
   public Precision getPrecision() {
     return precision;
   }
 
+  /**
+   * Sets precision.
+   *
+   * @param precision the precision
+   */
   public void setPrecision(@Nonnull Precision precision) {
     this.precision = precision;
     MultiPrecision.setPrecision(filter.addRef(), precision);
   }
 
+  /**
+   * Is mutable canvas boolean.
+   *
+   * @return the boolean
+   */
   public boolean isMutableCanvas() {
     return mutableCanvas;
   }
 
+  /**
+   * Sets mutable canvas.
+   *
+   * @param mutableCanvas the mutable canvas
+   * @return the mutable canvas
+   */
   @Nonnull
   public TiledTrainable setMutableCanvas(boolean mutableCanvas) {
     this.mutableCanvas = mutableCanvas;
     return this;
   }
 
+  /**
+   * Selectors layer [ ].
+   *
+   * @param padding  the padding
+   * @param width    the width
+   * @param height   the height
+   * @param tileSize the tile size
+   * @param fade     the fade
+   * @return the layer [ ]
+   */
   @Nonnull
   public static Layer[] selectors(int padding, int width, int height, int tileSize, boolean fade) {
     int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
@@ -242,6 +307,12 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     return (TiledTrainable) super.addRef();
   }
 
+  /**
+   * Gets network.
+   *
+   * @param regionSelector the region selector
+   * @return the network
+   */
   protected abstract PipelineNetwork getNetwork(Layer regionSelector);
 
 }

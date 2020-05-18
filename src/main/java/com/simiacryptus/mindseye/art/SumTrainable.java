@@ -39,16 +39,29 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.util.UUID;
 
+/**
+ * The type Sum trainable.
+ */
 public class SumTrainable extends ReferenceCountingBase implements Trainable {
 
   private static final Logger logger = LoggerFactory.getLogger(SumTrainable.class);
 
   private final Trainable[] inner;
 
+  /**
+   * Instantiates a new Sum trainable.
+   *
+   * @param inner the inner
+   */
   public SumTrainable(Trainable... inner) {
     this.inner = inner;
   }
 
+  /**
+   * Get inner trainable [ ].
+   *
+   * @return the trainable [ ]
+   */
   public Trainable[] getInner() {
     assertAlive();
     return RefUtil.addRef(inner);

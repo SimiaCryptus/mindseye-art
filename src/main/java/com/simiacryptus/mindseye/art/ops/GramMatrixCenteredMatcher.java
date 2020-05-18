@@ -43,6 +43,9 @@ import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.function.Function;
 
+/**
+ * The type Gram matrix centered matcher.
+ */
 public class GramMatrixCenteredMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(GramMatrixCenteredMatcher.class);
   private final Precision precision = Precision.Float;
@@ -50,36 +53,77 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
   private boolean balanced = true;
   private int tileSize = ArtSettings.INSTANCE().defaultTileSize;
 
+  /**
+   * Gets tile size.
+   *
+   * @return the tile size
+   */
   public int getTileSize() {
     return tileSize;
   }
 
+  /**
+   * Sets tile size.
+   *
+   * @param tileSize the tile size
+   * @return the tile size
+   */
   @Nonnull
   public GramMatrixCenteredMatcher setTileSize(int tileSize) {
     this.tileSize = tileSize;
     return this;
   }
 
+  /**
+   * Is averaging boolean.
+   *
+   * @return the boolean
+   */
   public boolean isAveraging() {
     return averaging;
   }
 
+  /**
+   * Sets averaging.
+   *
+   * @param averaging the averaging
+   * @return the averaging
+   */
   @Nonnull
   public GramMatrixCenteredMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
 
+  /**
+   * Is balanced boolean.
+   *
+   * @return the boolean
+   */
   public boolean isBalanced() {
     return balanced;
   }
 
+  /**
+   * Sets balanced.
+   *
+   * @param balanced the balanced
+   * @return the balanced
+   */
   @Nonnull
   public GramMatrixCenteredMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
 
+  /**
+   * Loss layer.
+   *
+   * @param result    the result
+   * @param mag       the mag
+   * @param averaging the averaging
+   * @return the layer
+   */
   @Nonnull
   public static Layer loss(@Nonnull Tensor result, double mag, boolean averaging) {
     result.scaleInPlace(-1);
@@ -94,6 +138,15 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
     return layer1;
   }
 
+  /**
+   * Eval tensor.
+   *
+   * @param pixels   the pixels
+   * @param network  the network
+   * @param tileSize the tile size
+   * @param image    the image
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor eval(int pixels, @Nonnull PipelineNetwork network, int tileSize, @Nonnull Tensor... image) {
     Tensor tensor1 = RefUtil.get(RefArrays.stream(image).flatMap(img -> {
@@ -126,6 +179,13 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
     return map;
   }
 
+  /**
+   * Gets append uuid.
+   *
+   * @param network    the network
+   * @param layerClass the layer class
+   * @return the append uuid
+   */
   @Nonnull
   public static UUID getAppendUUID(@Nonnull PipelineNetwork network, @Nonnull Class<GramianLayer> layerClass) {
     DAGNode head = network.getHead();
@@ -148,6 +208,14 @@ public class GramMatrixCenteredMatcher implements VisualModifier {
     return pipelineNetwork;
   }
 
+  /**
+   * Build with model pipeline network.
+   *
+   * @param network the network
+   * @param cov     the cov
+   * @param images  the images
+   * @return the pipeline network
+   */
   @Nonnull
   public PipelineNetwork buildWithModel(PipelineNetwork network, @Nullable Tensor cov, @Nonnull Tensor... images) {
     PipelineNetwork copyPipeline = network.copyPipeline();

@@ -35,6 +35,9 @@ import com.simiacryptus.ref.wrappers.RefString;
 
 import javax.annotation.Nonnull;
 
+/**
+ * The type Content convolution matcher.
+ */
 public class ContentConvolutionMatcher implements VisualModifier {
 
   private int minValue = -1;
@@ -44,60 +47,126 @@ public class ContentConvolutionMatcher implements VisualModifier {
   private int patternSize = 32 * 32 * 3;
   private PoolingLayer.PoolingMode poolingMode = PoolingLayer.PoolingMode.Max;
 
+  /**
+   * Gets max value.
+   *
+   * @return the max value
+   */
   public int getMaxValue() {
     return maxValue;
   }
 
+  /**
+   * Sets max value.
+   *
+   * @param maxValue the max value
+   * @return the max value
+   */
   @Nonnull
   public ContentConvolutionMatcher setMaxValue(int maxValue) {
     this.maxValue = maxValue;
     return this;
   }
 
+  /**
+   * Gets min value.
+   *
+   * @return the min value
+   */
   public int getMinValue() {
     return minValue;
   }
 
+  /**
+   * Sets min value.
+   *
+   * @param minValue the min value
+   * @return the min value
+   */
   @Nonnull
   public ContentConvolutionMatcher setMinValue(int minValue) {
     this.minValue = minValue;
     return this;
   }
 
+  /**
+   * Gets pattern size.
+   *
+   * @return the pattern size
+   */
   public int getPatternSize() {
     return patternSize;
   }
 
+  /**
+   * Sets pattern size.
+   *
+   * @param patternSize the pattern size
+   * @return the pattern size
+   */
   @Nonnull
   public ContentConvolutionMatcher setPatternSize(int patternSize) {
     this.patternSize = patternSize;
     return this;
   }
 
+  /**
+   * Gets pooling mode.
+   *
+   * @return the pooling mode
+   */
   public PoolingLayer.PoolingMode getPoolingMode() {
     return poolingMode;
   }
 
+  /**
+   * Sets pooling mode.
+   *
+   * @param poolingMode the pooling mode
+   * @return the pooling mode
+   */
   @Nonnull
   public ContentConvolutionMatcher setPoolingMode(PoolingLayer.PoolingMode poolingMode) {
     this.poolingMode = poolingMode;
     return this;
   }
 
+  /**
+   * Is averaging boolean.
+   *
+   * @return the boolean
+   */
   public boolean isAveraging() {
     return averaging;
   }
 
+  /**
+   * Sets averaging.
+   *
+   * @param averaging the averaging
+   * @return the averaging
+   */
   @Nonnull
   public ContentConvolutionMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
 
+  /**
+   * Is balanced boolean.
+   *
+   * @return the boolean
+   */
   public boolean isBalanced() {
     return balanced;
   }
 
+  /**
+   * Sets balanced.
+   *
+   * @param balanced the balanced
+   * @return the balanced
+   */
   @Nonnull
   public ContentConvolutionMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;

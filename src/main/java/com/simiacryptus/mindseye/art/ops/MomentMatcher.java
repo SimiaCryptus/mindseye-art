@@ -50,6 +50,9 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.UUID;
 
+/**
+ * The type Moment matcher.
+ */
 public class MomentMatcher implements VisualModifier {
   private static final Logger log = LoggerFactory.getLogger(MomentMatcher.class);
   private static int padding = 8;
@@ -59,48 +62,106 @@ public class MomentMatcher implements VisualModifier {
   private double scaleCoeff = 1.0;
   private double covCoeff = 1.0;
 
+  /**
+   * Gets cov coeff.
+   *
+   * @return the cov coeff
+   */
   public double getCovCoeff() {
     return covCoeff;
   }
 
+  /**
+   * Sets cov coeff.
+   *
+   * @param covCoeff the cov coeff
+   */
   public void setCovCoeff(double covCoeff) {
     this.covCoeff = covCoeff;
   }
 
+  /**
+   * Gets pos coeff.
+   *
+   * @return the pos coeff
+   */
   public double getPosCoeff() {
     return posCoeff;
   }
 
+  /**
+   * Sets pos coeff.
+   *
+   * @param posCoeff the pos coeff
+   */
   public void setPosCoeff(double posCoeff) {
     this.posCoeff = posCoeff;
   }
 
+  /**
+   * Gets precision.
+   *
+   * @return the precision
+   */
   public Precision getPrecision() {
     return precision;
   }
 
+  /**
+   * Sets precision.
+   *
+   * @param precision the precision
+   */
   public void setPrecision(Precision precision) {
     this.precision = precision;
   }
 
+  /**
+   * Gets scale coeff.
+   *
+   * @return the scale coeff
+   */
   public double getScaleCoeff() {
     return scaleCoeff;
   }
 
+  /**
+   * Sets scale coeff.
+   *
+   * @param scaleCoeff the scale coeff
+   */
   public void setScaleCoeff(double scaleCoeff) {
     this.scaleCoeff = scaleCoeff;
   }
 
+  /**
+   * Gets tile size.
+   *
+   * @return the tile size
+   */
   public int getTileSize() {
     return tileSize;
   }
 
+  /**
+   * Sets tile size.
+   *
+   * @param tileSize the tile size
+   * @return the tile size
+   */
   @Nonnull
   public MomentMatcher setTileSize(int tileSize) {
     this.tileSize = tileSize;
     return this;
   }
 
+  /**
+   * Loss sq layer.
+   *
+   * @param precision the precision
+   * @param target    the target
+   * @return the layer
+   */
   @Nonnull
   public static Layer lossSq(Precision precision, @Nonnull Tensor target) {
     double rms = target.rms();
@@ -125,6 +186,12 @@ public class MomentMatcher implements VisualModifier {
     return layer;
   }
 
+  /**
+   * Sum tensor.
+   *
+   * @param tensorStream the tensor stream
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor sum(@Nonnull RefStream<Tensor> tensorStream) {
     return RefUtil.orElse(tensorStream.reduce((a, b) -> {
@@ -132,6 +199,13 @@ public class MomentMatcher implements VisualModifier {
     }), null);
   }
 
+  /**
+   * Gets append uuid.
+   *
+   * @param network    the network
+   * @param layerClass the layer class
+   * @return the append uuid
+   */
   @Nonnull
   public static UUID getAppendUUID(@Nonnull PipelineNetwork network, @Nonnull Class<GramianLayer> layerClass) {
     DAGNode head = network.getHead();
@@ -145,6 +219,14 @@ public class MomentMatcher implements VisualModifier {
     return uuid;
   }
 
+  /**
+   * Transform tensor.
+   *
+   * @param network   the network
+   * @param in        the in
+   * @param precision the precision
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor transform(PipelineNetwork network, Tensor in, Precision precision) {
     if (null == in) {
@@ -173,6 +255,13 @@ public class MomentMatcher implements VisualModifier {
     return tensor;
   }
 
+  /**
+   * Gate network pipeline network.
+   *
+   * @param network   the network
+   * @param finalMask the final mask
+   * @return the pipeline network
+   */
   @Nonnull
   public static PipelineNetwork gateNetwork(@Nonnull PipelineNetwork network, Tensor finalMask) {
     final PipelineNetwork copyPipeline = network.copyPipeline();
@@ -183,6 +272,12 @@ public class MomentMatcher implements VisualModifier {
     return copyPipeline;
   }
 
+  /**
+   * To mask tensor.
+   *
+   * @param tensor the tensor
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor toMask(@Nonnull Tensor tensor) {
     if (tensor == null) return null;
@@ -197,6 +292,13 @@ public class MomentMatcher implements VisualModifier {
     return mapPixels;
   }
 
+  /**
+   * Test boolean.
+   *
+   * @param network the network
+   * @param images  the images
+   * @return the boolean
+   */
   public static boolean test(@Nonnull PipelineNetwork network, @Nonnull Tensor... images) {
     if (images.length > 1) {
       Boolean test = RefUtil.get(RefArrays.stream(images).map(x -> test(network.addRef(), x)).reduce((a, b) -> a && b));
@@ -214,6 +316,16 @@ public class MomentMatcher implements VisualModifier {
     }
   }
 
+  /**
+   * Eval tensor.
+   *
+   * @param pixels   the pixels
+   * @param network  the network
+   * @param tileSize the tile size
+   * @param power    the power
+   * @param image    the image
+   * @return the tensor
+   */
   @Nonnull
   protected static Tensor eval(int pixels, @Nonnull PipelineNetwork network, int tileSize, double power, @Nonnull Tensor[] image) {
     if (image.length <= 0) {
@@ -322,6 +434,12 @@ public class MomentMatcher implements VisualModifier {
     return maskedNetwork;
   }
 
+  /**
+   * Gets pixels.
+   *
+   * @param images the images
+   * @return the pixels
+   */
   public int getPixels(@Nonnull Tensor[] images) {
     return Math.max(1, RefArrays.stream(images).mapToInt(tensor -> {
       int[] dimensions = tensor.getDimensions();
@@ -330,6 +448,14 @@ public class MomentMatcher implements VisualModifier {
     }).sum());
   }
 
+  /**
+   * Gets moment params.
+   *
+   * @param network    the network
+   * @param maskFactor the mask factor
+   * @param images     the images
+   * @return the moment params
+   */
   @Nonnull
   public MomentMatcher.MomentParams getMomentParams(@Nonnull PipelineNetwork network, double maskFactor, @Nonnull Tensor... images) {
     int pixels = getPixels(RefUtil.addRef(images));
@@ -380,6 +506,13 @@ public class MomentMatcher implements VisualModifier {
     return new MomentParams(avgNode, avgValue, rmsNode, rmsValue, covNode, covValue, MomentMatcher.this);
   }
 
+  /**
+   * Gets moment nodes.
+   *
+   * @param network    the network
+   * @param maskFactor the mask factor
+   * @return the moment nodes
+   */
   @Nonnull
   public MomentMatcher.MomentParams getMomentNodes(@Nonnull PipelineNetwork network, double maskFactor) {
     DAGNode mainIn = network.getHead();
@@ -427,6 +560,14 @@ public class MomentMatcher implements VisualModifier {
     return new MomentParams(avgNode, null, rmsNode, null, covNode, null, MomentMatcher.this);
   }
 
+  /**
+   * Avg tensor.
+   *
+   * @param network the network
+   * @param pixels  the pixels
+   * @param image   the image
+   * @return the tensor
+   */
   @Nullable
   protected Tensor avg(@Nonnull PipelineNetwork network, int pixels, @Nonnull Tensor[] image) {
     //    return eval(pixels, network, getTileSize(), 1.0, image);
@@ -470,6 +611,12 @@ public class MomentMatcher implements VisualModifier {
       super._free();
     }
 
+    /**
+     * Add loss inner node.
+     *
+     * @param network the network
+     * @return the inner node
+     */
     @Nullable
     public InnerNode addLoss(@Nonnull PipelineNetwork network) {
       ScaleLayer scaleLayerMultiPrecision = new ScaleLayer(parent.getCovCoeff());

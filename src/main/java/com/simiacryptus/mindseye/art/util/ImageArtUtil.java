@@ -56,8 +56,16 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+/**
+ * The type Image art util.
+ */
 public class ImageArtUtil {
 
+  /**
+   * Gets hadoop config.
+   *
+   * @return the hadoop config
+   */
   @Nonnull
   public static Configuration getHadoopConfig() {
     Configuration configuration = new Configuration(false);
@@ -71,6 +79,13 @@ public class ImageArtUtil {
     return configuration;
   }
 
+  /**
+   * Cuda reports closeable.
+   *
+   * @param log          the log
+   * @param interceptLog the intercept log
+   * @return the closeable
+   */
   @Nonnull
   public static Closeable cudaReports(@Nonnull NotebookOutput log, boolean interceptLog) {
     Closeable handler_info = log.getHttpd().addGET("cuda/info.txt", "text/plain", outputStream -> {
@@ -147,6 +162,13 @@ public class ImageArtUtil {
     };
   }
 
+  /**
+   * Convert pipeline ref map.
+   *
+   * @param graphDef the graph def
+   * @param nodes    the nodes
+   * @return the ref map
+   */
   @Nonnull
   public static RefMap<String, PipelineNetwork> convertPipeline(@Nonnull GraphDef graphDef, @Nonnull String... nodes) {
     GraphModel graphModel = new GraphModel(graphDef.toByteArray());
@@ -167,6 +189,14 @@ public class ImageArtUtil {
     return graphs;
   }
 
+  /**
+   * Load image buffered image.
+   *
+   * @param log       the log
+   * @param image     the image
+   * @param imageSize the image size
+   * @return the buffered image
+   */
   @Nonnull
   public static BufferedImage loadImage(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int imageSize) {
     Tensor imageTensor = getImageTensor(image, log, imageSize);
@@ -175,6 +205,14 @@ public class ImageArtUtil {
     return bufferedImage;
   }
 
+  /**
+   * Load images buffered image [ ].
+   *
+   * @param log       the log
+   * @param image     the image
+   * @param imageSize the image size
+   * @return the buffered image [ ]
+   */
   @Nonnull
   public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int imageSize) {
     return RefArrays.stream(getImageTensors(image, log, imageSize)).map(tensor -> {
@@ -184,6 +222,14 @@ public class ImageArtUtil {
     }).toArray(BufferedImage[]::new);
   }
 
+  /**
+   * Load images buffered image [ ].
+   *
+   * @param log       the log
+   * @param image     the image
+   * @param imageSize the image size
+   * @return the buffered image [ ]
+   */
   @Nonnull
   public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final List<? extends CharSequence> image, final int imageSize) {
     return image.stream().flatMap(img -> Arrays.stream(getImageTensors(img, log, imageSize)))
@@ -194,6 +240,15 @@ public class ImageArtUtil {
         }).toArray(BufferedImage[]::new);
   }
 
+  /**
+   * Load image buffered image.
+   *
+   * @param log    the log
+   * @param image  the image
+   * @param width  the width
+   * @param height the height
+   * @return the buffered image
+   */
   @Nonnull
   public static BufferedImage loadImage(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int width, final int height) {
     Tensor imageTensor = getImageTensor(image, log, width, height);
@@ -202,6 +257,15 @@ public class ImageArtUtil {
     return bufferedImage;
   }
 
+  /**
+   * Load images buffered image [ ].
+   *
+   * @param log    the log
+   * @param image  the image
+   * @param width  the width
+   * @param height the height
+   * @return the buffered image [ ]
+   */
   @Nonnull
   public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final CharSequence image, final int width, final int height) {
     return RefArrays.stream(getImageTensors(image, log, width, height))
@@ -212,6 +276,15 @@ public class ImageArtUtil {
         }).toArray(BufferedImage[]::new);
   }
 
+  /**
+   * Load images buffered image [ ].
+   *
+   * @param log    the log
+   * @param image  the image
+   * @param width  the width
+   * @param height the height
+   * @return the buffered image [ ]
+   */
   @Nonnull
   public static BufferedImage[] loadImages(@Nonnull NotebookOutput log, @Nonnull final List<? extends CharSequence> image, final int width, final int height) {
     return image.stream().flatMap(img -> Arrays.stream(getImageTensors(img, log, width, height)))
@@ -222,6 +295,14 @@ public class ImageArtUtil {
         }).toArray(BufferedImage[]::new);
   }
 
+  /**
+   * Gets image tensor.
+   *
+   * @param file  the file
+   * @param log   the log
+   * @param width the width
+   * @return the image tensor
+   */
   @Nonnull
   public static Tensor getImageTensor(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width) {
     String fileStr = file.toString();
@@ -272,6 +353,14 @@ public class ImageArtUtil {
     return resized;
   }
 
+  /**
+   * Get image tensors tensor [ ].
+   *
+   * @param file  the file
+   * @param log   the log
+   * @param width the width
+   * @return the tensor [ ]
+   */
   @Nonnull
   public static Tensor[] getImageTensors(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width) {
     return RefArrays.stream(getTensors(log, file))
@@ -284,6 +373,15 @@ public class ImageArtUtil {
         .toArray(Tensor[]::new);
   }
 
+  /**
+   * Get image tensors tensor [ ].
+   *
+   * @param file   the file
+   * @param log    the log
+   * @param width  the width
+   * @param height the height
+   * @return the tensor [ ]
+   */
   @Nonnull
   public static Tensor[] getImageTensors(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width, int height) {
     return RefArrays.stream(getTensors(log, file))
@@ -297,6 +395,15 @@ public class ImageArtUtil {
         .toArray(Tensor[]::new);
   }
 
+  /**
+   * Gets image tensor.
+   *
+   * @param file   the file
+   * @param log    the log
+   * @param width  the width
+   * @param height the height
+   * @return the image tensor
+   */
   @Nonnull
   public static Tensor getImageTensor(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width, int height) {
     String fileStr = file.toString();
@@ -351,6 +458,13 @@ public class ImageArtUtil {
     return resized;
   }
 
+  /**
+   * Get tensors tensor [ ].
+   *
+   * @param log  the log
+   * @param file the file
+   * @return the tensor [ ]
+   */
   @Nonnull
   public static Tensor[] getTensors(@Nonnull NotebookOutput log, @Nonnull CharSequence file) {
     String fileStr = file.toString();
@@ -413,6 +527,13 @@ public class ImageArtUtil {
     }
   }
 
+  /**
+   * Gets tensor.
+   *
+   * @param log  the log
+   * @param file the file
+   * @return the tensor
+   */
   @Nonnull
   public static Tensor getTensor(@Nonnull NotebookOutput log, @Nonnull CharSequence file) {
     String fileStr = file.toString();
@@ -452,6 +573,12 @@ public class ImageArtUtil {
     }
   }
 
+  /**
+   * Gets file system.
+   *
+   * @param file the file
+   * @return the file system
+   */
   public static FileSystem getFileSystem(@Nonnull final CharSequence file) {
     Configuration conf = getHadoopConfig();
     FileSystem fileSystem;
@@ -463,6 +590,12 @@ public class ImageArtUtil {
     return fileSystem;
   }
 
+  /**
+   * Get index map int [ ] [ ].
+   *
+   * @param layer the layer
+   * @return the int [ ] [ ]
+   */
   @Nonnull
   public static int[][] getIndexMap(@Nonnull final SimpleConvolutionLayer layer) {
     int[] kernelDimensions = layer.getKernelDimensions();

@@ -24,6 +24,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * The type Const affinity.
+ */
 public class ConstAffinity implements RasterAffinity {
   @Override
   public List<double[]> affinityList(@Nonnull List<int[]> graphEdges) {

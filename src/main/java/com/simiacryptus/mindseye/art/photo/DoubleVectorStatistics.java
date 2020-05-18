@@ -29,13 +29,27 @@ import java.util.DoubleSummaryStatistics;
 import java.util.function.*;
 import java.util.stream.Collector;
 
+/**
+ * The type Double vector statistics.
+ */
 public class DoubleVectorStatistics implements Consumer<double[]> {
 
+  /**
+   * The First order.
+   */
   @Nonnull
   final DoubleSummaryStatistics[] firstOrder;
+  /**
+   * The Second order.
+   */
   @Nonnull
   final DoubleSummaryStatistics[] secondOrder;
 
+  /**
+   * Instantiates a new Double vector statistics.
+   *
+   * @param length the length
+   */
   public DoubleVectorStatistics(int length) {
     firstOrder = RefIntStream.range(0, length).mapToObj(i -> new DoubleSummaryStatistics())
         .toArray(i -> new DoubleSummaryStatistics[i]);
@@ -43,6 +57,12 @@ public class DoubleVectorStatistics implements Consumer<double[]> {
         .toArray(i -> new DoubleSummaryStatistics[i]);
   }
 
+  /**
+   * Collector collector.
+   *
+   * @param dims the dims
+   * @return the collector
+   */
   @Nonnull
   public static Collector<double[], DoubleVectorStatistics, DoubleVectorStatistics> collector(int dims) {
     return new Collector<double[], DoubleVectorStatistics, DoubleVectorStatistics>() {
@@ -89,6 +109,11 @@ public class DoubleVectorStatistics implements Consumer<double[]> {
     RefIntStream.range(0, doubles.length).forEach(i -> secondOrder[i].accept(doubles[i] * doubles[i]));
   }
 
+  /**
+   * Combine.
+   *
+   * @param colorStats the color stats
+   */
   public void combine(@Nonnull DoubleVectorStatistics colorStats) {
     assert firstOrder.length == colorStats.firstOrder.length;
     RefIntStream.range(0, firstOrder.length).forEach(i -> firstOrder[i].combine(colorStats.firstOrder[i]));
