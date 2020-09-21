@@ -219,15 +219,24 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
             Tensor mask = coordSource.mapCoords(c -> {
               int[] coords = c.getCoords();
               double v = 1.0;
-              if (coords[0] < padding && finalCol > 0) {
-                v *= coords[0] / padding;
-              } else if (tileSizeX - coords[0] < padding && finalCol < cols - 1) {
-                v *= (double) (tileSizeX - coords[0]) / padding;
+              int left = coords[0];
+              int right = tileSizeX - left;
+              int top = coords[1];
+              int bottom = tileSizeY - top;
+
+              if (left < padding && finalCol > 0) {
+                v *= (double) left / padding;
+              } else {
+                if (right < padding && finalCol < cols - 1) {
+                  v *= (double) right / padding;
+                }
               }
-              if (coords[1] < padding && finalRow > 0) {
-                v *= (double) coords[1] / padding;
-              } else if (tileSizeY - coords[1] < padding && finalRow < rows - 1) {
-                v *= (double) (tileSizeY - coords[1]) / padding;
+              if (top < padding && finalRow > 0) {
+                v *= (double) top / padding;
+              } else {
+                if (bottom < padding && finalRow < rows - 1) {
+                  v *= (double) bottom / padding;
+                }
               }
               return v;
             });

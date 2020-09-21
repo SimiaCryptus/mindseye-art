@@ -127,21 +127,22 @@ public class GramMatrixMatcher implements VisualModifier {
   @Nonnull
   public static Layer loss(@Nonnull Tensor result, double mag, boolean averaging) {
     result.scaleInPlace(-1);
-    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
     double scale;
     if (Double.isFinite(mag) && mag > 0) {
-      scale = Math.pow(mag, -2);
+      scale = Math.pow(mag, -1);
     } else {
       scale = 1;
     }
+    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
     linearActivationLayer.setScale(scale);
-    Layer layer1 = PipelineNetwork.build(1,
+    Layer layer = PipelineNetwork.build(1,
         new ImgBandBiasLayer(result),
+        linearActivationLayer,
         new SquareActivationLayer(),
-        averaging ? new AvgReducerLayer() : new SumReducerLayer(),
-        linearActivationLayer);
-    layer1.setName(RefString.format("RMS[x-C] / %.0E", mag));
-    return layer1;
+        averaging ? new AvgReducerLayer() : new SumReducerLayer()
+    );
+    layer.setName(RefString.format("RMS[x-C] / %.0E", mag));
+    return layer;
   }
 
   /**

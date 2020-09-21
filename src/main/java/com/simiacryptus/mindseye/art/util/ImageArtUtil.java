@@ -468,6 +468,9 @@ public class ImageArtUtil {
   @Nonnull
   public static Tensor[] getTensors(@Nonnull NotebookOutput log, @Nonnull CharSequence file) {
     String fileStr = file.toString();
+    if(fileStr.contains(",")) {
+      return Arrays.stream(fileStr.split(",")).flatMap(x-> Arrays.stream(getTensors(log, x))).toArray(Tensor[]::new);
+    }
     try {
       String uploadPrefix = "upload:";
       if (fileStr.trim().toLowerCase().startsWith(uploadPrefix)) {

@@ -30,7 +30,7 @@ import java.util.Objects;
 /**
  * The type Anonymous vision pipeline layer.
  */
-public class AnonymousVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
+public class AnonymousVisionPipelineLayer extends  ReferenceCountingBase implements  VisionPipelineLayer {
 
   private final Layer layer;
   private final String pipelineName;

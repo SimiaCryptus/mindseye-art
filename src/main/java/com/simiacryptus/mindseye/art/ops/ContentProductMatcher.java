@@ -37,7 +37,7 @@ import javax.annotation.Nonnull;
 /**
  * The type Content matcher.
  */
-public class ContentMatcher implements VisualModifier {
+public class ContentProductMatcher implements VisualModifier {
 
   private boolean averaging = true;
   private boolean balanced = true;
@@ -58,7 +58,7 @@ public class ContentMatcher implements VisualModifier {
    * @return the averaging
    */
   @Nonnull
-  public ContentMatcher setAveraging(boolean averaging) {
+  public ContentProductMatcher setAveraging(boolean averaging) {
     this.averaging = averaging;
     return this;
   }
@@ -79,7 +79,7 @@ public class ContentMatcher implements VisualModifier {
    * @return the balanced
    */
   @Nonnull
-  public ContentMatcher setBalanced(boolean balanced) {
+  public ContentProductMatcher setBalanced(boolean balanced) {
     this.balanced = balanced;
     return this;
   }
@@ -140,7 +140,8 @@ public class ContentMatcher implements VisualModifier {
     sumInputsLayer.setName("Difference");
     network.add(sumInputsLayer, head, constNode).freeRef();
     LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
-    linearActivationLayer.setScale(0 == mag ? 1 : Math.pow(mag, -1));
+    final double scale = 0 == mag ? 1 : Math.pow(mag, -1);
+    linearActivationLayer.setScale(scale);
     Layer layer1 = PipelineNetwork.build(1,
         linearActivationLayer,
         new SquareActivationLayer(),

@@ -45,7 +45,7 @@ public class ArtSettings implements Settings {
    */
   protected ArtSettings() {
     System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", Integer.toString(Settings.get("THREADS", 64)));
-    this.defaultTileSize = Settings.get("DEFAULT_TILE_SIZE", 1200);
+    this.defaultTileSize = Settings.get("DEFAULT_TILE_SIZE", 1024);
   }
 
   /**

@@ -1,28 +1,27 @@
 
 # BlueJ files
-*.class
 # Compiled class file
+# Log file
+# Mobile Tools for Java (J2ME)
+# Package Files #
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+*.class
 *.ctxt
 *.ear
-../.gitignore
 *.h5
-hs_err_pid*
-.idea/
-*.iml
+*.hprof
 *.iml
 *.jar
 *.log
-# Log file
-mindseye-art.iml
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-# Package Files #
 *.rar
-reports/
-target/
 *.tar.gz
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 *.war
 *.zip
-*.hprof
-
+../.gitignore
+.idea/
+.mtj.tmp/
+hs_err_pid*
+mindseye-art.iml
+mindseye-art.iml
+reports/
+target/

@@ -43,6 +43,12 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
  */
 public class CudaMatrixSolver extends ReferenceCountingBase implements RefUnaryOperator<double[][]> {
 
+  static {
+    JCuda.setExceptionsEnabled(true);
+    JCusparse.setExceptionsEnabled(true);
+    JCusolver.setExceptionsEnabled(true);
+  }
+
   /**
    * The constant TOLERANCE.
    */
@@ -86,9 +92,6 @@ public class CudaMatrixSolver extends ReferenceCountingBase implements RefUnaryO
    * @param scaleOutput   the scale output
    */
   public CudaMatrixSolver(@Nonnull SparseMatrixFloat forwardMatrix, double scaleOutput) {
-    JCuda.setExceptionsEnabled(true);
-    JCusparse.setExceptionsEnabled(true);
-    JCusolver.setExceptionsEnabled(true);
     this.scaleOutput = scaleOutput;
     this.forwardMatrix = new CudaSparseMatrix(forwardMatrix);
     solverHandle = CudaSparseMatrix.newSolverHandle();

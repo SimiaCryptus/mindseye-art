@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T> the type parameter
  */
-public class AppendVisionPipelineLayer<T extends VisionPipelineLayer> extends ReferenceCountingBase implements VisionPipelineLayer {
+public class AppendVisionPipelineLayer<T extends VisionPipelineLayer> extends  ReferenceCountingBase implements  VisionPipelineLayer {
 
   private final T inner;
   private final Layer layer;

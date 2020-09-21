@@ -20,14 +20,19 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.lang.Layer;
+import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.layers.LoggingLayer;
 import com.simiacryptus.mindseye.layers.cudnn.PoolingLayer;
+import com.simiacryptus.mindseye.layers.cudnn.conv.SimpleConvolutionLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.lang.RefAware;
 import com.simiacryptus.ref.lang.ReferenceCounting;
 import com.simiacryptus.ref.wrappers.RefString;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.simiacryptus.mindseye.layers.cudnn.PoolingLayer.getPoolingLayer;
 
@@ -38,7 +43,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
   /**
    * The constant NOOP.
    */
-  VisionPipelineLayer.Noop NOOP = new VisionPipelineLayer.Noop();
+  public static final VisionPipelineLayer.Noop NOOP = new VisionPipelineLayer.Noop();
 
   /**
    * Gets layer.
@@ -46,7 +51,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    * @return the layer
    */
   @Nonnull
-  Layer getLayer();
+  public abstract Layer getLayer();
 
   /**
    * Gets network.
@@ -71,7 +76,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    * @return the pipeline
    */
   @Nonnull
-  VisionPipeline getPipeline();
+  public abstract VisionPipeline getPipeline();
 
   /**
    * Gets pipeline name.
@@ -79,7 +84,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    * @return the pipeline name
    */
   @Nonnull
-  String getPipelineName();
+  public abstract String getPipelineName();
 
   /**
    * Name string.
@@ -87,7 +92,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    * @return the string
    */
   @Nonnull
-  String name();
+  public abstract String name();
 
   /**
    * Prepend avg pool vision pipeline layer.
@@ -118,7 +123,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    * @return the vision pipeline layer
    */
   @Nonnull
-  default VisionPipelineLayer appendMaxPool(int radius) {
+  default  VisionPipelineLayer appendMaxPool(int radius) {
     return appendPool(radius, PoolingLayer.PoolingMode.Max);
   }
 
@@ -129,7 +134,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    * @return the vision pipeline layer
    */
   @Nonnull
-  default VisionPipelineLayer prependMaxPool(int radius) {
+  default  VisionPipelineLayer prependMaxPool(int radius) {
     return prependPool(radius, PoolingLayer.PoolingMode.Max);
   }
 
@@ -141,7 +146,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    * @return the vision pipeline layer
    */
   @Nonnull
-  default VisionPipelineLayer prependPool(int radius, PoolingLayer.PoolingMode mode) {
+  default  VisionPipelineLayer prependPool(int radius, PoolingLayer.PoolingMode mode) {
     return prepend(getPoolingLayer(radius, mode, RefString.format("prepend(%s)", this.addRef())));
   }
 
@@ -153,7 +158,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    * @return the vision pipeline layer
    */
   @Nonnull
-  default VisionPipelineLayer appendPool(int radius, PoolingLayer.PoolingMode mode) {
+  default  VisionPipelineLayer appendPool(int radius, PoolingLayer.PoolingMode mode) {
     return append(getPoolingLayer(radius, mode, RefString.format("append(%s)", this.addRef())));
   }
 
@@ -165,12 +170,12 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    */
   @Nonnull
   @RefAware
-  default VisionPipelineLayer prepend(Layer layer) {
+  default  VisionPipelineLayer prepend(Layer layer) {
     return new PrependVisionPipelineLayer(this.addRef(), layer);
   }
 
   @Override
-  default VisionPipelineLayer addRef() {
+  default  VisionPipelineLayer addRef() {
     return this;
   }
 
@@ -182,7 +187,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    */
   @Nonnull
   @RefAware
-  default VisionPipelineLayer append(Layer layer) {
+  default  VisionPipelineLayer append(Layer layer) {
     return new AppendVisionPipelineLayer(this.addRef(), layer);
   }
 
@@ -193,7 +198,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    */
   @Nonnull
   @RefAware
-  default VisionPipelineLayer withLogging() {
+  default  VisionPipelineLayer withLogging() {
     LoggingLayer loggingLayer = new LoggingLayer(LoggingLayer.DetailLevel.Statistics);
     loggingLayer.setName(name());
     loggingLayer.setLogFeedback(false);
@@ -203,7 +208,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
   /**
    * The type Noop.
    */
-  class Noop implements VisionPipelineLayer {
+  public static class Noop implements VisionPipelineLayer {
 
 
     @Nonnull
