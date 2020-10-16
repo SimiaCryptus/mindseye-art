@@ -406,7 +406,7 @@ public class ImageArtUtil {
    */
   @Nonnull
   public static Tensor getImageTensor(@Nonnull final CharSequence file, @Nonnull NotebookOutput log, int width, int height) {
-    String fileStr = file.toString();
+    String fileStr = file.toString().trim();
     int length = fileStr.split("\\:")[0].length();
     if (length <= 0 || length >= Math.min(7, fileStr.length())) {
       if (fileStr.contains(" + ")) {

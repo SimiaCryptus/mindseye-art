@@ -163,13 +163,16 @@ public class GramMatrixMatcher implements VisualModifier {
           .map(RefUtil.wrapInterface((Function<Layer, Tensor>) selector -> {
             //log.info(selector.toString());
             Tensor tile = Result.getData0(selector.eval(img.addRef()));
+            if(tile.getDimensions().length == 1) {
+              return null;
+            }
             selector.freeRef();
             int[] tileDimensions = tile.getDimensions();
             Tensor tensor1 = Result.getData0(network.eval(tile));
             tensor1.scaleInPlace(tileDimensions[0] * tileDimensions[1]);
             return tensor1;
           }, img));
-    }).reduce((a, b) -> {
+    }).filter(x->x!=null).reduce((a, b) -> {
       a.addInPlace(b);
       return a;
     }), null);

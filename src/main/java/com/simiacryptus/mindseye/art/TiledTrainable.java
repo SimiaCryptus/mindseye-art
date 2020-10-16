@@ -25,8 +25,6 @@ import com.simiacryptus.mindseye.eval.Trainable;
 import com.simiacryptus.mindseye.lang.*;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
-import com.simiacryptus.mindseye.layers.java.ImgPixelGateLayer;
-import com.simiacryptus.mindseye.layers.java.ImgTileSelectLayer;
 import com.simiacryptus.mindseye.network.InnerNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.mindseye.opt.TrainingMonitor;
@@ -35,6 +33,7 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
 import com.simiacryptus.ref.wrappers.RefMap;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,68 +187,132 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
    */
   @Nonnull
   public static Layer[] selectors(int padding, int width, int height, int tileSize, boolean fade) {
+    return selectors(padding, width, height, tileSize, fade, false);
+  }
+
+  /**
+   * Selectors layer [ ].
+   *
+   * @param padding  the padding
+   * @param width    the width
+   * @param height   the height
+   * @param tileSize the tile size
+   * @param fade     the fade
+   * @param useGpu
+   * @return the layer [ ]
+   */
+  @Nonnull
+  public static Layer[] selectors(int padding, int width, int height, int tileSize, boolean fade, boolean useGpu) {
     int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
     int tileSizeX = cols <= 1 ? width : (int) Math.ceil((double) (width - padding) / cols + padding);
     int tileSizeY = rows <= 1 ? height : (int) Math.ceil((double) (height - padding) / rows + padding);
-    //    logger.info(String.format(
-    //        "Using Tile Size %s x %s to partition %s x %s png into %s x %s tiles",
-    //        tileSizeX,
-    //        tileSizeY,
-    //        width,
-    //        height,
-    //        cols,
-    //        rows
-    //    ));
     if (1 == cols && 1 == rows) {
-      return new ImgTileSelectLayer[]{new ImgTileSelectLayer(width, height, 0, 0)};
+      return new Layer[]{ getTileSelectLayer(useGpu, width, height, 0, 0) };
     } else {
       Layer[] selectors = new Layer[rows * cols];
       int index = 0;
       for (int row = 0; row < rows; row++) {
         for (int col = 0; col < cols; col++) {
-          ImgTileSelectLayer tileSelectLayer = new ImgTileSelectLayer(tileSizeX, tileSizeY, col * (tileSizeX - padding),
-              row * (tileSizeY - padding));
+          int positionX = col * (tileSizeX - padding);
+          int positionY = row * (tileSizeY - padding);
+          Layer tileSelectLayer = getTileSelectLayer(useGpu, tileSizeX, tileSizeY, positionX, positionY);
           if (!fade) {
             RefUtil.set(selectors, index++, tileSelectLayer);
           } else {
-            int finalCol = col;
-            int finalRow = row;
-            Tensor coordSource = new Tensor(tileSizeX, tileSizeY, 1);
-            Tensor mask = coordSource.mapCoords(c -> {
-              int[] coords = c.getCoords();
-              double v = 1.0;
-              int left = coords[0];
-              int right = tileSizeX - left;
-              int top = coords[1];
-              int bottom = tileSizeY - top;
-
-              if (left < padding && finalCol > 0) {
-                v *= (double) left / padding;
-              } else {
-                if (right < padding && finalCol < cols - 1) {
-                  v *= (double) right / padding;
-                }
-              }
-              if (top < padding && finalRow > 0) {
-                v *= (double) top / padding;
-              } else {
-                if (bottom < padding && finalRow < rows - 1) {
-                  v *= (double) bottom / padding;
-                }
-              }
-              return v;
-            });
-            coordSource.freeRef();
-            PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
-            InnerNode selectNode = pipelineNetwork.add(tileSelectLayer);
-            pipelineNetwork.add(new ImgPixelGateLayer(), selectNode, pipelineNetwork.constValueWrap(mask)).freeRef();
-            RefUtil.set(selectors, index++, pipelineNetwork);
+            Tensor mask = tileMask(padding, tileSizeX, tileSizeY, cols, rows, col, row);
+            RefUtil.set(selectors, index++, addMask(tileSelectLayer, mask, useGpu));
           }
         }
       }
       return selectors;
     }
+  }
+
+  @Nonnull
+  public static Tensor reassemble(int width, int height, Tensor[] tiles, int padding, int tileSize, boolean fade, boolean useGpu) {
+    int cols = (int) (Math.ceil((width - tileSize) * 1.0 / (tileSize - padding)) + 1);
+    int rows = (int) (Math.ceil((height - tileSize) * 1.0 / (tileSize - padding)) + 1);
+    int tileSizeX = cols <= 1 ? width : (int) Math.ceil((double) (width - padding) / cols + padding);
+    int tileSizeY = rows <= 1 ? height : (int) Math.ceil((double) (height - padding) / rows + padding);
+    if (rows * cols != tiles.length) throw new IllegalArgumentException();
+    if (1 == cols && 1 == rows) {
+      return tiles[0];
+    } else {
+      Tensor reassembled = new Tensor(width, height, 3);
+      reassembled.fill(0);
+      int index = 0;
+      for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+          Tensor tile = tiles[index++];
+          int positionX = col * (tileSizeX - padding);
+          int positionY = row * (tileSizeY - padding);
+          tile.forEach((v,c)->{
+            int[] coords = c.getCoords();
+            int x = coords[0] + positionX;
+            int y = coords[1] + positionY;
+            int z = coords[2];
+            reassembled.set(x, y, z, tile.get(c) + reassembled.get(x, y, z));
+          }, true);
+//          if (!fade) {
+//            //RefUtil.set(selectors, index++, tileSelectLayer);
+//          } else {
+//            Tensor mask = tileMask(padding, tileSizeX, tileSizeY, cols, rows, col, row);
+//            //RefUtil.set(selectors, index++, addMask(tileSelectLayer, mask, useGpu));
+//          }
+        }
+      }
+      return reassembled;
+    }
+  }
+
+  @NotNull
+  public static PipelineNetwork addMask(Layer select, Tensor mask, boolean useGpu) {
+    PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
+    InnerNode selectNode = pipelineNetwork.add(select);
+    pipelineNetwork.add(
+            useGpu ? new com.simiacryptus.mindseye.layers.cudnn.ProductLayer()
+                    : new com.simiacryptus.mindseye.layers.java.ImgPixelGateLayer(),
+            selectNode, pipelineNetwork.constValueWrap(mask)
+    ).freeRef();
+    return pipelineNetwork;
+  }
+
+  @NotNull
+  public static Tensor tileMask(int padding, int sizeX, int sizeY, int cols, int rows, int col, int row) {
+    Tensor coordSource = new Tensor(sizeX, sizeY, 1);
+    Tensor mask = coordSource.mapCoords(c -> {
+      int[] coords = c.getCoords();
+      double v = 1.0;
+      int left = coords[0];
+      int right = sizeX - left;
+      int top = coords[1];
+      int bottom = sizeY - top;
+
+      if (left < padding && col > 0) {
+        v *= (double) left / padding;
+      } else {
+        if (right < padding && col < cols - 1) {
+          v *= (double) right / padding;
+        }
+      }
+      if (top < padding && row > 0) {
+        v *= (double) top / padding;
+      } else {
+        if (bottom < padding && row < rows - 1) {
+          v *= (double) bottom / padding;
+        }
+      }
+      return v;
+    });
+    coordSource.freeRef();
+    return mask;
+  }
+
+  @NotNull
+  private static Layer getTileSelectLayer(boolean useGpu, int tileSizeX, int tileSizeY, int positionX, int positionY) {
+    return useGpu ? new com.simiacryptus.mindseye.layers.cudnn.ImgTileSelectLayer(tileSizeX, tileSizeY, positionX, positionY)
+            : new com.simiacryptus.mindseye.layers.java.ImgTileSelectLayer(tileSizeX, tileSizeY, positionX, positionY);
   }
 
   @Override
