@@ -32,6 +32,7 @@ import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import com.simiacryptus.ref.wrappers.RefArrays;
 import com.simiacryptus.ref.wrappers.RefIntStream;
+import com.simiacryptus.ref.wrappers.RefList;
 import com.simiacryptus.ref.wrappers.RefMap;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   /**
    * The Canvas.
    */
-  public final Tensor canvas;
+  public Tensor canvas;
   /**
    * The Filter.
    */
@@ -387,4 +388,14 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
    */
   protected abstract PipelineNetwork getNetwork(Layer regionSelector);
 
+  @Override
+  public void setData(RefList<Tensor[]> tensors) {
+    if(basicTrainable != null) {
+      basicTrainable.setData(tensors);
+    }
+    assert 1 == tensors.size();
+    Tensor[] first = tensors.get(0);
+    assert 1 == first.length;
+    canvas = first[0];
+  }
 }

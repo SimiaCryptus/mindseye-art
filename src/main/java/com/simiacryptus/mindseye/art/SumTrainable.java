@@ -20,10 +20,7 @@
 package com.simiacryptus.mindseye.art;
 
 import com.simiacryptus.mindseye.eval.Trainable;
-import com.simiacryptus.mindseye.lang.DeltaSet;
-import com.simiacryptus.mindseye.lang.Layer;
-import com.simiacryptus.mindseye.lang.PointSample;
-import com.simiacryptus.mindseye.lang.StateSet;
+import com.simiacryptus.mindseye.lang.*;
 import com.simiacryptus.mindseye.layers.java.SumInputsLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
@@ -134,5 +131,12 @@ public class SumTrainable extends ReferenceCountingBase implements Trainable {
   @SuppressWarnings("unused")
   SumTrainable addRef() {
     return (SumTrainable) super.addRef();
+  }
+
+  @Override
+  public void setData(RefList<Tensor[]> tensors) {
+    for (Trainable trainable : inner) {
+      trainable.setData(tensors);
+    }
   }
 }
