@@ -123,7 +123,6 @@ public class CudaSparseMatrix extends RefLazyVal<CudaSparseMatrix.GpuCopy> {
   }
 
   @Override
-  @Nonnull
   public CudaSparseMatrix.GpuCopy build() {
     return new GpuCopy(this.matrix);
   }

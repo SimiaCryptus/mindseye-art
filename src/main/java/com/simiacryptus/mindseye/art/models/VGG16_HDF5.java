@@ -364,7 +364,7 @@ class VGG16_HDF5 {
    * @param pipeline       the pipeline
    */
   public void addConvolutionLayer(final int radius, final int inputBands, final int outputBands,
-                                  @Nonnull final ActivationLayer.Mode activationMode, final String hdf_group, @Nonnull PipelineNetwork pipeline) {
+                                  final ActivationLayer.Mode activationMode, final String hdf_group, @Nonnull PipelineNetwork pipeline) {
     add(getConvolutionLayer(radius, inputBands, outputBands, hdf_group, convolutionOrder), pipeline.addRef());
     add(getBandBiasLayer(outputBands, hdf_group), pipeline.addRef());
     add(new ActivationLayer(activationMode), pipeline);

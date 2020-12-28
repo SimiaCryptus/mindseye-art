@@ -366,7 +366,7 @@ class VGG19_HDF5 {
    * @param pipeline       the pipeline
    */
   public void addConvolutionLayer(final int radius, final int inputBands, final int outputBands,
-                                  @Nonnull final ActivationLayer.Mode activationMode, final String hdf_group, @Nonnull PipelineNetwork pipeline) {
+                                  final ActivationLayer.Mode activationMode, final String hdf_group, @Nonnull PipelineNetwork pipeline) {
     ConvolutionLayer convolutionLayer1 = new ConvolutionLayer(radius, radius, inputBands, outputBands);
     convolutionLayer1.setPaddingXY(0, 0);
     convolutionLayer1.set(readPermuted("param_0", convolutionOrder, hdf_group));

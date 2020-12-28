@@ -456,7 +456,6 @@ public class MomentMatcher implements VisualModifier {
    * @param images     the images
    * @return the moment params
    */
-  @Nonnull
   public MomentMatcher.MomentParams getMomentParams(@Nonnull PipelineNetwork network, double maskFactor, @Nonnull Tensor... images) {
     int pixels = getPixels(RefUtil.addRef(images));
     DAGNode mainIn = network.getHead();
@@ -513,7 +512,6 @@ public class MomentMatcher implements VisualModifier {
    * @param maskFactor the mask factor
    * @return the moment nodes
    */
-  @Nonnull
   public MomentMatcher.MomentParams getMomentNodes(@Nonnull PipelineNetwork network, double maskFactor) {
     DAGNode mainIn = network.getHead();
     BandAvgReducerLayer bandAvgReducerLayerMultiPrecision1 = new BandAvgReducerLayer();
