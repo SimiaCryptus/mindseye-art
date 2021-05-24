@@ -147,7 +147,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    */
   @Nonnull
   default  VisionPipelineLayer prependPool(int radius, PoolingLayer.PoolingMode mode) {
-    return prepend(getPoolingLayer(radius, mode, RefString.format("prepend(%s)", this.addRef())));
+    return prepend(getPoolingLayer(radius, mode, String.format("prepend(%s)", toString())));
   }
 
   /**
@@ -159,7 +159,7 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    */
   @Nonnull
   default  VisionPipelineLayer appendPool(int radius, PoolingLayer.PoolingMode mode) {
-    return append(getPoolingLayer(radius, mode, RefString.format("append(%s)", this.addRef())));
+    return append(getPoolingLayer(radius, mode, String.format("append(%s)", toString())));
   }
 
   /**

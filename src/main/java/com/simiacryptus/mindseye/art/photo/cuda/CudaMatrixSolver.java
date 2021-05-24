@@ -44,9 +44,14 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 public class CudaMatrixSolver extends ReferenceCountingBase implements RefUnaryOperator<double[][]> {
 
   static {
-    JCuda.setExceptionsEnabled(true);
-    JCusparse.setExceptionsEnabled(true);
-    JCusolver.setExceptionsEnabled(true);
+    try {
+      JCuda.setExceptionsEnabled(true);
+      JCusparse.setExceptionsEnabled(true);
+      JCusolver.setExceptionsEnabled(true);
+    } catch (Throwable e) {
+      e.printStackTrace();
+      throw e;
+    }
   }
 
   /**
