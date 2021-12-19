@@ -114,7 +114,7 @@ public interface VisualModifier {
    */
   @Nonnull
   default VisualModifier scale(double scale) {
-    return new VisualModifier() {
+    return RefUtil.wrapInterface(new VisualModifier() {
       public boolean isLocalized() {
         return VisualModifier.this.isLocalized();
       }
@@ -136,7 +136,7 @@ public interface VisualModifier {
         build.freeze();
         return build;
       }
-    };
+    }, VisualModifier.this);
   }
 
   /**
@@ -237,7 +237,7 @@ public interface VisualModifier {
         parameters.freeRef();
         return build;
       }
-    }, maskedInput);
+    }, maskedInput, inner);
   }
 
 }

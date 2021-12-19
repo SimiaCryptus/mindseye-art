@@ -28,6 +28,7 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
 /**
@@ -101,7 +102,8 @@ public class VisualModifierParameters extends ReferenceCountingBase {
    */
   public Tensor[] getStyle() {
     assertAlive();
-    return RefUtil.addRef(style);
+    return Arrays.stream(style).map(Tensor::copy).toArray(Tensor[]::new);
+//    return RefUtil.addRef(style);
   }
 
   /**

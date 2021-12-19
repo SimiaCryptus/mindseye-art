@@ -160,35 +160,41 @@ public class GramMatrixMatcher implements VisualModifier {
     final Tensor tensor = RefUtil.orElse(RefArrays.stream(image).flatMap(img -> {
       int[] imageDimensions = img.getDimensions();
       return RefArrays.stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
-          .map(RefUtil.wrapInterface((Function<Layer, Tensor>) selector -> {
-            //log.info(selector.toString());
-            Tensor tile = Result.getData0(selector.eval(img.addRef()));
-            if(tile.getDimensions().length == 1) {
-              return null;
-            }
-            selector.freeRef();
-            int[] tileDimensions = tile.getDimensions();
-            Tensor tensor1 = Result.getData0(network.eval(tile));
-            tensor1.scaleInPlace(tileDimensions[0] * tileDimensions[1]);
-            return tensor1;
-          }, img));
-    }).filter(x->x!=null).reduce((a, b) -> {
+              .map(RefUtil.wrapInterface((Function<Layer, Tensor>) selector -> {
+                //log.info(selector.toString());
+                Tensor tile = Result.getData0(selector.eval(img.addRef()));
+                if (tile.getDimensions().length == 1) {
+                  return null;
+                }
+                selector.freeRef();
+                int[] tileDimensions = tile.getDimensions();
+                Tensor tensor1 = Result.getData0(network.eval(tile));
+                tensor1.scaleInPlace(tileDimensions[0] * tileDimensions[1]);
+                return tensor1;
+              }, img));
+    }).filter(x -> {
+      boolean notNull = x != null;
+      if(notNull) x.freeRef();
+      return notNull;
+    }).reduce((a, b) -> {
       a.addInPlace(b);
       return a;
     }), null);
-    network.freeRef();
-    if (null == tensor)
-      return null;
-    tensor.scaleInPlace(1.0 / pixels);
-    Tensor map = tensor.map(x -> {
-      if (Double.isFinite(x)) {
-        return x;
-      } else {
-        return 0;
-      }
-    });
-    tensor.freeRef();
-    return map;
+    try {
+      if (null == tensor) return null;
+      tensor.scaleInPlace(1.0 / pixels);
+      Tensor map = tensor.map(x -> {
+        if (Double.isFinite(x)) {
+          return x;
+        } else {
+          return 0;
+        }
+      });
+      return map;
+    } finally {
+      network.freeRef();
+      tensor.freeRef();
+    }
   }
 
   /**
