@@ -226,9 +226,7 @@ public class SegmentUtil {
     RefUtil.freeRef(affinity);
     final Tensor tensor = refUnaryOperator.iterate(n, content);
     refUnaryOperator.freeRef();
-    final BufferedImage image = tensor.toRgbImage();
-    tensor.freeRef();
-    return image;
+    return Tensor.toRgbImage(tensor);
   }
 
   /**

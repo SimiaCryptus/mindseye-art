@@ -91,6 +91,10 @@ public class ChannelMeanMatcher implements VisualModifier {
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.getNetwork(), null,
         visualModifierParameters.getStyle());
+    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+    linearActivationLayer.setScale(visualModifierParameters.scale);
+    linearActivationLayer.freeze();
+    pipelineNetwork.add(linearActivationLayer).freeRef();
     visualModifierParameters.freeRef();
     return pipelineNetwork;
   }

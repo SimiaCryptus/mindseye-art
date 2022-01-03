@@ -103,6 +103,18 @@ public enum PoolingPipeline implements VisionPipelineLayer {
     this.strides = strides;
   }
 
+  private double scale = 1.0;
+  @Override
+  public @Nonnull VisionPipelineLayer scale(double scale) {
+    this.scale *= scale;
+    return addRef();
+  }
+
+  @Override
+  public @Nonnull double getScale() {
+    return scale;
+  }
+
   @Nonnull
   @Override
   public PipelineNetwork getLayer() {

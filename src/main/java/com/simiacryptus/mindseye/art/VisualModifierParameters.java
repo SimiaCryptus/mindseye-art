@@ -45,17 +45,19 @@ public class VisualModifierParameters extends ReferenceCountingBase {
   private final Tensor mask;
   private final Tensor[] style;
   private final int[] contentDims;
+  public final double scale;
 
   /**
    * Instantiates a new Visual modifier parameters.
-   *
-   * @param network     the network
+   *  @param network     the network
+   * @param scale
    * @param contentDims the content dims
    * @param viewLayer   the view layer
    * @param mask        the mask
    * @param styleImages the style images
    */
   public VisualModifierParameters(@Nonnull PipelineNetwork network,
+                                  double scale, 
                                   @Nonnull int[] contentDims,
                                   @Nullable UnaryOperator<Tensor> viewLayer,
                                   @Nullable Tensor mask,
@@ -68,6 +70,7 @@ public class VisualModifierParameters extends ReferenceCountingBase {
       RefUtil.freeRef(styleImages);
       throw new IllegalArgumentException();
     }
+    this.scale = scale;
     this.contentDims = contentDims;
     this.viewLayer = viewLayer;
     this.style = styleImages;
@@ -139,7 +142,7 @@ public class VisualModifierParameters extends ReferenceCountingBase {
         mask = viewLayer.apply(mask);
       }
     }
-    return new VisualModifierParameters(getNetwork(), contentDims, viewLayer, mask, getStyle());
+    return new VisualModifierParameters(getNetwork(), scale, contentDims, viewLayer, mask, getStyle());
   }
 
   @Nonnull

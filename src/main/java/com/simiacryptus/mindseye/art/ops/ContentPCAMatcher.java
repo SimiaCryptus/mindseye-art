@@ -125,7 +125,6 @@ public class ContentPCAMatcher implements VisualModifier {
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.copyNetwork();
     Tensor baseContent = Result.getData0(network.eval(visualModifierParameters.getStyle()));
-    visualModifierParameters.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
     final RefList<Tensor> components;
     final PipelineNetwork signalProjection;
@@ -149,6 +148,15 @@ public class ContentPCAMatcher implements VisualModifier {
       log.info("Error processing PCA for dimensions " + RefArrays.toString(contentDimensions), e);
       PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
       pipelineNetwork.add(new ValueLayer(new Tensor(0.0)), new DAGNode[]{}).freeRef();
+
+      {
+        LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+        linearActivationLayer.setScale(visualModifierParameters.scale);
+        linearActivationLayer.freeze();
+        network.add(linearActivationLayer).freeRef();
+      }
+      visualModifierParameters.freeRef();
+
       return pipelineNetwork;
     }
     int bands = Math.min(getBands(), contentDimensions[2]);
@@ -186,17 +194,29 @@ public class ContentPCAMatcher implements VisualModifier {
     Layer layer1 = new SumInputsLayer();
     layer1.setName("Difference");
     signalProjection.add(layer1, head, constNode).freeRef();
-    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
-    linearActivationLayer.setScale(Math.pow(mag, -2));
-    Layer layer = PipelineNetwork.build(1,
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        linearActivationLayer
-    );
-    layer.setName(RefString.format("RMS / %.0E", mag));
-    signalProjection.add(layer).freeRef();
-    signalProjection.setName(RefString.format("PCA Content Match"));
-    network.add(signalProjection).freeRef();
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(Math.pow(mag, -2));
+      Layer layer = PipelineNetwork.build(1,
+              new SquareActivationLayer(),
+              isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
+              linearActivationLayer
+      );
+      layer.setName(RefString.format("RMS / %.0E", mag));
+      signalProjection.add(layer).freeRef();
+      signalProjection.setName(RefString.format("PCA Content Match"));
+      network.add(signalProjection).freeRef();
+    }
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(visualModifierParameters.scale);
+      linearActivationLayer.freeze();
+      network.add(linearActivationLayer).freeRef();
+      visualModifierParameters.freeRef();
+    }
+
     network.freeze();
     return network;
   }

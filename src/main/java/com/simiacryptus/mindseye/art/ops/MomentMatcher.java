@@ -428,6 +428,14 @@ public class MomentMatcher implements VisualModifier {
     momentParams.freeRef();
     assert mask == null || test(maskedNetwork.addRef(), mask.addRef());
     visualModifierParameters.freeRef();
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(visualModifierParameters.scale);
+      linearActivationLayer.freeze();
+      maskedNetwork.add(linearActivationLayer).freeRef();
+    }
+
     MultiPrecision.setPrecision(maskedNetwork.addRef(), getPrecision());
     maskedNetwork.freeze();
     RefUtil.freeRef(mask);

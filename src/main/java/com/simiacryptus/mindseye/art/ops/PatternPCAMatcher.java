@@ -30,6 +30,7 @@ import com.simiacryptus.mindseye.layers.cudnn.*;
 import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
 import com.simiacryptus.mindseye.layers.java.ImgBandScaleLayer;
+import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.layers.java.NthPowerActivationLayer;
 import com.simiacryptus.mindseye.network.DAGNode;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
@@ -141,7 +142,6 @@ public class PatternPCAMatcher implements VisualModifier {
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.copyNetwork();
     Tensor baseContent = Result.getData0(network.eval(visualModifierParameters.getStyle()));
-    visualModifierParameters.freeRef();
     int[] contentDimensions = baseContent.getDimensions();
     final RefList<Tensor> components;
     final PipelineNetwork signalProjection;
@@ -164,6 +164,15 @@ public class PatternPCAMatcher implements VisualModifier {
       log.info("Error processing PCA for dimensions " + RefArrays.toString(contentDimensions), e);
       PipelineNetwork pipelineNetwork = new PipelineNetwork(1);
       pipelineNetwork.add(new ValueLayer(new Tensor(0.0)), new DAGNode[]{}).freeRef();
+
+      {
+        LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+        linearActivationLayer.setScale(visualModifierParameters.scale);
+        linearActivationLayer.freeze();
+        network.add(linearActivationLayer).freeRef();
+        visualModifierParameters.freeRef();
+      }
+
       return pipelineNetwork;
     }
     int bands = Math.min(getBands(), contentDimensions[2]);
@@ -214,6 +223,15 @@ public class PatternPCAMatcher implements VisualModifier {
     signalProjection.add(nextHead).freeRef();
     signalProjection.setName(RefString.format("PCA Match"));
     network.add(signalProjection).freeRef();
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(visualModifierParameters.scale);
+      linearActivationLayer.freeze();
+      network.add(linearActivationLayer).freeRef();
+      visualModifierParameters.freeRef();
+    }
+
     network.freeze();
     return network;
   }

@@ -217,7 +217,6 @@ public class GramMatrixEnhancer implements VisualModifier {
       ).freeRef();
     }
 
-    visualModifierParameters.freeRef();
     GramianLayer gramianLayerMultiPrecision = new GramianLayer(uuid);
     gramianLayerMultiPrecision.setPrecision(precision);
     network.add(gramianLayerMultiPrecision).freeRef();
@@ -227,6 +226,15 @@ public class GramMatrixEnhancer implements VisualModifier {
     log.info(RefString.format("Adjust for %s by %s: %s", network.getName(), this.getClass().getSimpleName(), mag));
     network.add(loss(result, mag, isAveraging())).freeRef();
     network.freeze();
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(visualModifierParameters.scale);
+      linearActivationLayer.freeze();
+      network.add(linearActivationLayer).freeRef();
+    }
+
+    visualModifierParameters.freeRef();
     return network;
   }
 

@@ -124,11 +124,11 @@ public class ContentProductMatcher implements VisualModifier {
     }
 
     Tensor baseContent = Result.getData0(network.eval(style));
-    visualModifierParameters.freeRef();
     double mag = balanced ? baseContent.rms() : 1;
     if (!Double.isFinite(mag) || mag < 0) {
       baseContent.freeRef();
       network.freeRef();
+      visualModifierParameters.freeRef();
       throw new RuntimeException("RMS = " + mag);
     }
     DAGNode head = network.getHead();
@@ -139,16 +139,28 @@ public class ContentProductMatcher implements VisualModifier {
     Layer sumInputsLayer = new SumInputsLayer();
     sumInputsLayer.setName("Difference");
     network.add(sumInputsLayer, head, constNode).freeRef();
-    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
-    final double scale = 0 == mag ? 1 : Math.pow(mag, -1);
-    linearActivationLayer.setScale(scale);
-    Layer layer1 = PipelineNetwork.build(1,
-        linearActivationLayer,
-        new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()
-    );
-    layer1.setName(RefString.format("RMS / %.0E", mag));
-    network.add(layer1).freeRef();
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      final double scale = 0 == mag ? 1 : Math.pow(mag, -1);
+      linearActivationLayer.setScale(scale);
+      Layer layer1 = PipelineNetwork.build(1,
+              linearActivationLayer,
+              new SquareActivationLayer(),
+              isAveraging() ? new AvgReducerLayer() : new SumReducerLayer()
+      );
+      layer1.setName(RefString.format("RMS / %.0E", mag));
+      network.add(layer1).freeRef();
+    }
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(visualModifierParameters.scale);
+      linearActivationLayer.freeze();
+      network.add(linearActivationLayer).freeRef();
+    }
+    visualModifierParameters.freeRef();
+
     network.freeze();
     return network;
   }

@@ -93,17 +93,28 @@ public class ChannelPowerEnhancer implements VisualModifier {
       mag = data0.rms();
       data0.freeRef();
     } else mag = 1;
-    LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
-    final double scale = -Math.pow(mag, -2);
-    linearActivationLayer.setScale(scale);
-    final Layer[] layers = new Layer[]{new SquareActivationLayer(),
-        isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
-        linearActivationLayer
-    };
-    Layer layer = PipelineNetwork.build(1, layers);
-    layer.setName(RefString.format("-RMS / %.0E", mag));
-    network.add(layer).freeRef();
-    network.freeze();
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      final double scale = -Math.pow(mag, -2);
+      linearActivationLayer.setScale(scale);
+      final Layer[] layers = new Layer[]{new SquareActivationLayer(),
+              isAveraging() ? new AvgReducerLayer() : new SumReducerLayer(),
+              linearActivationLayer
+      };
+      Layer layer = PipelineNetwork.build(1, layers);
+      layer.setName(RefString.format("-RMS / %.0E", mag));
+      network.add(layer).freeRef();
+      network.freeze();
+    }
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(visualModifierParameters.scale);
+      linearActivationLayer.freeze();
+      network.add(linearActivationLayer).freeRef();
+    }
+
     visualModifierParameters.freeRef();
     return network;
   }

@@ -40,6 +40,20 @@ import static com.simiacryptus.mindseye.layers.cudnn.PoolingLayer.getPoolingLaye
  * The interface Vision pipeline layer.
  */
 public interface VisionPipelineLayer extends ReferenceCounting {
+
+
+  @Nonnull
+  public abstract VisionPipelineLayer scale(double scale);
+
+  @Nonnull
+  public static VisionPipelineLayer scale(VisionPipelineLayer layer, double scale) {
+    layer.scale(scale).freeRef();
+    return layer;
+  }
+
+  @Nonnull
+  public abstract double getScale();
+
   /**
    * The constant NOOP.
    */
@@ -210,6 +224,16 @@ public interface VisionPipelineLayer extends ReferenceCounting {
    */
   public static class Noop implements VisionPipelineLayer {
 
+
+    @Override
+    public @Nonnull VisionPipelineLayer scale(double scale) {
+      return this.addRef();
+    }
+
+    @Override
+    public @Nonnull double getScale() {
+      return 1.0;
+    }
 
     @Nonnull
     @Override

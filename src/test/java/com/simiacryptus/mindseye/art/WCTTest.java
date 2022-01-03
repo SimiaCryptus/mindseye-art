@@ -208,7 +208,7 @@ public class WCTTest extends NotebookTestBase {
     log.eval(() -> {
       final MattingAffinity affinity = new MattingAffinity(contentImage1.addRef());
       RefUnaryOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
-      BufferedImage image = toImage(solve.apply(content_1.addRef()));
+      BufferedImage image = Tensor.toImage(solve.apply(content_1.addRef()));
       solve.freeRef();
       return image;
     });
@@ -237,26 +237,26 @@ public class WCTTest extends NotebookTestBase {
     final FastPhotoStyleTransfer fastPhotoStyleTransfer = getFastPhotoStyleTransfer(log);
     if (verbose) {
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_1(styleImage1.addRef(), contentImage1.addRef()));
+        return Tensor.toImage(fastPhotoStyleTransfer.photoWCT_1(styleImage1.addRef(), contentImage1.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_2(styleImage1.addRef(), contentImage1.addRef()));
+        return Tensor.toImage(fastPhotoStyleTransfer.photoWCT_2(styleImage1.addRef(), contentImage1.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_3(styleImage1.addRef(), contentImage1.addRef()));
+        return Tensor.toImage(fastPhotoStyleTransfer.photoWCT_3(styleImage1.addRef(), contentImage1.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT_4(styleImage1.addRef(), contentImage1.addRef()));
+        return Tensor.toImage(fastPhotoStyleTransfer.photoWCT_4(styleImage1.addRef(), contentImage1.addRef()));
       });
       log.eval(() -> {
-        return toImage(fastPhotoStyleTransfer.photoWCT(styleImage1.addRef(), contentImage1.addRef()));
+        return Tensor.toImage(fastPhotoStyleTransfer.photoWCT(styleImage1.addRef(), contentImage1.addRef()));
       });
     }
     log.eval(() -> {
       fastPhotoStyleTransfer.setLambda(1e-4);
       fastPhotoStyleTransfer.setEpsilon(1e-4);
       final RefUnaryOperator<Tensor> operator = fastPhotoStyleTransfer.apply(contentImage1.addRef());
-      final BufferedImage image = toImage(operator.apply(styleImage1.addRef()));
+      final BufferedImage image = Tensor.toImage(operator.apply(styleImage1.addRef()));
       operator.freeRef();
       return image;
     });
@@ -483,9 +483,8 @@ public class WCTTest extends NotebookTestBase {
       fastPhotoStyleTransfer.setEpsilon(1e-4);
       styledImage.set(fastPhotoStyleTransfer.photoWCT(styleImage.addRef(), content.addRef()));
       Tensor tensor = styledImage.get();
-      BufferedImage image = tensor.toImage();
-      tensor.freeRef();
-      return image;
+        BufferedImage image = Tensor.toImage(tensor);
+        return image;
     });
     styleImage.freeRef();
     content.freeRef();
@@ -504,9 +503,8 @@ public class WCTTest extends NotebookTestBase {
       }).forEach(tensor -> {
         log.eval(RefUtil.wrapInterface(() -> {
           Tensor apply = smoothingTransform.apply(tensor.addRef());
-          BufferedImage image = apply.toImage();
-          apply.freeRef();
-          return image;
+            BufferedImage image = Tensor.toImage(apply);
+            return image;
         }, tensor));
       });
       smoothingTransform.freeRef();
@@ -514,13 +512,6 @@ public class WCTTest extends NotebookTestBase {
       e.printStackTrace();
       RefSystem.gc();
     }
-  }
-
-  @Nonnull
-  private BufferedImage toImage(@Nonnull Tensor tensor) {
-    final BufferedImage bufferedImage = tensor.toImage();
-    tensor.freeRef();
-    return bufferedImage;
   }
 
   private void wct_test(@Nonnull NotebookOutput log, @Nonnull Layer encoder, @Nonnull Layer decoder, @Nonnull Tensor contentImage, @Nonnull Tensor styleImage) {
@@ -589,14 +580,14 @@ public class WCTTest extends NotebookTestBase {
         log.eval(() -> {
           final MattingAffinity affinity = new MattingAffinity(contentImage.addRef());
           RefUnaryOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
-          BufferedImage image = toImage(solve.apply(restyled.addRef()));
+          BufferedImage image = Tensor.toImage(solve.apply(restyled.addRef()));
           solve.freeRef();
           return image;
         });
         restyled.freeRef();
         if (verbose)
           log.eval(() -> {
-            return toImage(Result.getData0(decoder.eval(originalFeatures.addRef(), contentImage.addRef())));
+            return Tensor.toImage(Result.getData0(decoder.eval(originalFeatures.addRef(), contentImage.addRef())));
           });
       } else {
         final Tensor restyled = log.eval(() -> {
@@ -608,14 +599,14 @@ public class WCTTest extends NotebookTestBase {
         log.eval(() -> {
           final MattingAffinity affinity = new MattingAffinity(contentImage.addRef());
           RefUnaryOperator<Tensor> solve = new SmoothSolver_EJML().solve(affinity.getTopology(), affinity, 1e-4);
-          BufferedImage image = toImage(solve.apply(restyled.addRef()));
+          BufferedImage image = Tensor.toImage(solve.apply(restyled.addRef()));
           solve.freeRef();
           return image;
         });
         restyled.freeRef();
         if (verbose)
           log.eval(() -> {
-            return toImage(Result.getData0(decoder.eval(originalFeatures.addRef())));
+            return Tensor.toImage(Result.getData0(decoder.eval(originalFeatures.addRef())));
           });
       }
       restyledFeatures.freeRef();

@@ -132,19 +132,6 @@ public class Plasma {
   }
 
   /**
-   * To image buffered image.
-   *
-   * @param image the image
-   * @return the buffered image
-   */
-  @NotNull
-  public static BufferedImage toImage(@Nonnull Tensor image) {
-    BufferedImage rgbImage = image.toRgbImage();
-    image.freeRef();
-    return rgbImage;
-  }
-
-  /**
    * Resize tensor.
    *
    * @param rgbImage the rgb image
@@ -187,7 +174,7 @@ public class Plasma {
         newImage.freeRef();
       }
     }
-    return resize(toImage(renormBands(image)), width, height);
+    return resize(Tensor.toRgbImage(renormBands(image)), width, height);
   }
 
   /**

@@ -30,6 +30,7 @@ import com.simiacryptus.mindseye.layers.cudnn.SquareActivationLayer;
 import com.simiacryptus.mindseye.layers.cudnn.SumReducerLayer;
 import com.simiacryptus.mindseye.layers.cudnn.conv.ConvolutionLayer;
 import com.simiacryptus.mindseye.layers.java.BoundedActivationLayer;
+import com.simiacryptus.mindseye.layers.java.LinearActivationLayer;
 import com.simiacryptus.mindseye.network.PipelineNetwork;
 import com.simiacryptus.ref.wrappers.RefString;
 
@@ -178,7 +179,6 @@ public class ContentConvolutionMatcher implements VisualModifier {
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     PipelineNetwork network = visualModifierParameters.copyNetwork();
     Tensor baseContent = Result.getData0(network.eval(visualModifierParameters.getStyle()));
-    visualModifierParameters.freeRef();
     double mag = balanced ? baseContent.rms() : 1;
     int[] baseContentDimensions = baseContent.getDimensions();
     int patternSize = (int) Math.ceil(Math.sqrt(getPatternSize() / baseContentDimensions[2]));
@@ -206,6 +206,15 @@ public class ContentConvolutionMatcher implements VisualModifier {
     Layer layer = PipelineNetwork.build(1, layers);
     layer.setName(RefString.format("-RMS / %.0E", mag));
     network.add(layer).freeRef();
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(visualModifierParameters.scale);
+      linearActivationLayer.freeze();
+      network.add(linearActivationLayer).freeRef();
+    }
+    visualModifierParameters.freeRef();
+
     network.freeze();
     return network;
   }

@@ -141,7 +141,15 @@ public class SingleChannelEnhancer implements VisualModifier {
     layer.setName(RefString.format("-RMS / %.0E", mag));
     network.add(layer).freeRef();
     network.freeze();
-    visualModifierParameters.freeRef();
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(visualModifierParameters.scale);
+      linearActivationLayer.freeze();
+      network.add(linearActivationLayer).freeRef();
+      visualModifierParameters.freeRef();
+    }
+
     return network;
   }
 

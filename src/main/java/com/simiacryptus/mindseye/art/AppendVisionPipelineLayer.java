@@ -93,4 +93,15 @@ public class AppendVisionPipelineLayer<T extends VisionPipelineLayer> extends  R
   AppendVisionPipelineLayer addRef() {
     return (AppendVisionPipelineLayer) super.addRef();
   }
+
+  @Override
+  public @Nonnull VisionPipelineLayer scale(double scale) {
+    inner.scale(scale).freeRef();
+    return this.addRef();
+  }
+
+  @Override
+  public @Nonnull double getScale() {
+    return inner.getScale();
+  }
 }

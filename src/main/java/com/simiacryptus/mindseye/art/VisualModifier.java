@@ -69,9 +69,10 @@ public interface VisualModifier {
                                 @Nullable UnaryOperator<Tensor> viewLayer,
                                 @Nonnull Tensor... image) {
     PipelineNetwork network = layer.getNetwork();
+    double scale = layer.getScale();
     layer.freeRef();
     network.assertAlive();
-    return build(new VisualModifierParameters(network, contentDims, viewLayer, null, image));
+    return build(new VisualModifierParameters(network, scale, contentDims, viewLayer, null, image));
   }
 
   /**

@@ -44,6 +44,17 @@ public class PrependVisionPipelineLayer extends ReferenceCountingBase implements
     this.layer = layer;
   }
 
+  @Override
+  public @Nonnull VisionPipelineLayer scale(double scale) {
+    inner.scale(scale).freeRef();
+    return this.addRef();
+  }
+
+  @Override
+  public @Nonnull double getScale() {
+    return inner.getScale();
+  }
+
   @Nonnull
   @Override
   public Layer getLayer() {

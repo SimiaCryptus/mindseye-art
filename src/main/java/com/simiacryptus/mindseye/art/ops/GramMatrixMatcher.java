@@ -222,6 +222,14 @@ public class GramMatrixMatcher implements VisualModifier {
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
     final PipelineNetwork pipelineNetwork = buildWithModel(visualModifierParameters.getNetwork(),
         visualModifierParameters.getMask(), null, visualModifierParameters.getStyle());
+
+    {
+      LinearActivationLayer linearActivationLayer = new LinearActivationLayer();
+      linearActivationLayer.setScale(visualModifierParameters.scale);
+      linearActivationLayer.freeze();
+      pipelineNetwork.add(linearActivationLayer).freeRef();
+    }
+
     visualModifierParameters.freeRef();
     return pipelineNetwork;
   }
