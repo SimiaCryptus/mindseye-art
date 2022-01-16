@@ -37,6 +37,7 @@ import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.tensorflow.GraphModel;
 import com.simiacryptus.util.FastRandom;
+import com.simiacryptus.util.IOUtil;
 import com.simiacryptus.util.JsonUtil;
 import com.simiacryptus.util.Util;
 import org.apache.commons.io.FileUtils;
@@ -616,27 +617,35 @@ public class ImageArtUtil {
     String fileStr = file.toString();
     if (fileStr.startsWith("http")) {
       try {
-        BufferedImage read = ImageIO.read(new URL(fileStr));
+        File cacheFile = new File("http_cache", new Path(fileStr).getName());
+        if(!cacheFile.exists()) {
+          cacheFile.getParentFile().mkdirs();
+          try(InputStream inputStream = new URL(fileStr).openStream()) {
+            IOUtils.copy(inputStream, new FileOutputStream(cacheFile));
+          }
+        }
+        BufferedImage read = ImageIO.read(cacheFile);
         if (null == read)
           throw new IllegalArgumentException("Error reading " + file);
         return Tensor.fromRGB(read);
       } catch (Throwable e) {
         throw new RuntimeException("Error reading " + file, e);
       }
-    }
-    FileSystem fileSystem = getFileSystem(fileStr);
-    Path path = new Path(fileStr);
-    try {
-      if (!fileSystem.exists(path))
-        throw new IllegalArgumentException("Not Found: " + path);
-      try (FSDataInputStream open = fileSystem.open(path)) {
-        byte[] bytes = IOUtils.toByteArray(open);
-        try (ByteArrayInputStream in = new ByteArrayInputStream(bytes)) {
-          return Tensor.fromRGB(ImageIO.read(in));
+    } else {
+      FileSystem fileSystem = getFileSystem(fileStr);
+      Path path = new Path(fileStr);
+      try {
+        if (!fileSystem.exists(path))
+          throw new IllegalArgumentException("Not Found: " + path);
+        try (FSDataInputStream open = fileSystem.open(path)) {
+          byte[] bytes = IOUtils.toByteArray(open);
+          try (ByteArrayInputStream in = new ByteArrayInputStream(bytes)) {
+            return Tensor.fromRGB(ImageIO.read(in));
+          }
         }
+      } catch (Throwable e) {
+        throw new RuntimeException("Error reading " + file, e);
       }
-    } catch (Throwable e) {
-      throw new RuntimeException("Error reading " + file, e);
     }
   }
 
