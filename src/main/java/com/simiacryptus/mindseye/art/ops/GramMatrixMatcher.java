@@ -24,7 +24,6 @@ import com.simiacryptus.mindseye.art.TiledTrainable;
 import com.simiacryptus.mindseye.art.VisualModifier;
 import com.simiacryptus.mindseye.art.VisualModifierParameters;
 import com.simiacryptus.mindseye.lang.Layer;
-import com.simiacryptus.mindseye.lang.Result;
 import com.simiacryptus.mindseye.lang.Tensor;
 import com.simiacryptus.mindseye.lang.cudnn.MultiPrecision;
 import com.simiacryptus.mindseye.lang.cudnn.Precision;
@@ -41,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.UUID;
-import java.util.function.Function;
 
 /**
  * The type Gram matrix matcher.
@@ -145,56 +143,10 @@ public class GramMatrixMatcher implements VisualModifier {
     return layer;
   }
 
-  /**
-   * Eval tensor.
-   *
-   * @param pixels   the pixels
-   * @param network  the network
-   * @param tileSize the tile size
-   * @param padding  the padding
-   * @param image    the image
-   * @return the tensor
-   */
-  @Nullable
   public static Tensor eval(int pixels, @Nonnull PipelineNetwork network, int tileSize, int padding, @Nonnull Tensor... image) {
-    final Tensor tensor = RefUtil.orElse(RefArrays.stream(image).flatMap(img -> {
-      int[] imageDimensions = img.getDimensions();
-      return RefArrays.stream(TiledTrainable.selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
-              .map(RefUtil.wrapInterface((Function<Layer, Tensor>) selector -> {
-                //log.info(selector.toString());
-                Tensor tile = Result.getData0(selector.eval(img.addRef()));
-                if (tile.getDimensions().length == 1) {
-                  return null;
-                }
-                selector.freeRef();
-                int[] tileDimensions = tile.getDimensions();
-                Tensor tensor1 = Result.getData0(network.eval(tile));
-                tensor1.scaleInPlace(tileDimensions[0] * tileDimensions[1]);
-                return tensor1;
-              }, img));
-    }).filter(x -> {
-      boolean notNull = x != null;
-      if(notNull) x.freeRef();
-      return notNull;
-    }).reduce((a, b) -> {
-      a.addInPlace(b);
-      return a;
-    }), null);
-    try {
-      if (null == tensor) return null;
-      tensor.scaleInPlace(1.0 / pixels);
-      Tensor map = tensor.map(x -> {
-        if (Double.isFinite(x)) {
-          return x;
-        } else {
-          return 0;
-        }
-      });
-      return map;
-    } finally {
-      network.freeRef();
-      tensor.freeRef();
-    }
+    Tensor tensor = TiledTrainable.eval(network, tileSize, padding, image);
+    tensor.scaleInPlace(1.0 / pixels);
+    return tensor;
   }
 
   /**
@@ -206,10 +158,7 @@ public class GramMatrixMatcher implements VisualModifier {
    */
   @Nonnull
   public static UUID getAppendUUID(@Nonnull PipelineNetwork network, @Nonnull Class<?> layerClass) {
-    DAGNode head = network.getHead();
-    Layer layer = head.getLayer();
-    head.freeRef();
-    network.freeRef();
+    Layer layer = network.headLayer();
     if (null == layer)
       return UUID.randomUUID();
     UUID uuid = UUID.nameUUIDFromBytes((layer.getId().toString() + layerClass.getName()).getBytes());

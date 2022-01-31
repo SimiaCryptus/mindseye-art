@@ -176,12 +176,12 @@ public class GramMatrixEnhancer implements VisualModifier {
     final double scale = mag == 0 ? 1 : -Math.pow(mag, -2);
     linearActivationLayer.setScale(scale);
     final Layer nextHead1 = averaging ? new AvgReducerLayer() : new SumReducerLayer();
-    BoundedActivationLayer boundedActivationLayer1 = new BoundedActivationLayer();
-    boundedActivationLayer1.setMinValue(getMin());
-    boundedActivationLayer1.setMaxValue(getMax());
+    BoundedActivationLayer boundedActivationLayer = new BoundedActivationLayer();
+    boundedActivationLayer.setMinValue(getMin());
+    boundedActivationLayer.setMaxValue(getMax());
     rmsNetwork
         .add(nextHead1,
-            rmsNetwork.add(boundedActivationLayer1,
+            rmsNetwork.add(boundedActivationLayer,
                 rmsNetwork.add(linearActivationLayer,
                     rmsNetwork.add(new ProductLayer(), rmsNetwork.getInput(0), rmsNetwork.constValueWrap(result)))))
         .freeRef();

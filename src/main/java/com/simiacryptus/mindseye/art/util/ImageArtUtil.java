@@ -305,11 +305,12 @@ public class ImageArtUtil {
     if(fileStr.contains(",")) {
       return Arrays.stream(fileStr.split(",")).flatMap(x-> Arrays.stream(getImageTensors(x, log, width))).toArray(Tensor[]::new);
     } else if (fileStr.contains(" + ")) {
-      Tensor[] sampleImages = getImageTensors(fileStr.split(" +\\+ +")[0], log, width);
+      String[] split = fileStr.split(" +\\+ +");
+      Tensor[] sampleImages = getImageTensors(split[0], log, width);
       return Arrays.stream(sampleImages).map(sampleImage->{
         int[] sampleImageDimensions = sampleImage.getDimensions();
         sampleImage.freeRef();
-        return RefUtil.get(RefArrays.stream(fileStr.split(" +\\+ +"))
+        return RefUtil.get(RefArrays.stream(split)
             .flatMap(x -> Arrays.stream(getImageTensors(x, log, sampleImageDimensions[0], sampleImageDimensions[1])))
             .reduce((a, b) -> {
               Tensor r = a.mapCoords(c -> a.get(c) + b.get(c));
@@ -319,11 +320,12 @@ public class ImageArtUtil {
             }));
       }).toArray(Tensor[]::new);
     } else if (fileStr.contains(" * ")) {
-      Tensor sampleImage = RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +")).flatMap(x -> Arrays.stream(getImageTensors(x, log, width))).findFirst());
+      String[] split = fileStr.split(" +\\* +");
+      Tensor sampleImage = RefUtil.get(RefArrays.stream(split).flatMap(x -> Arrays.stream(getImageTensors(x, log, width))).findFirst());
       int[] sampleImageDimensions = sampleImage.getDimensions();
       sampleImage.freeRef();
       return new Tensor[]{
-        RefUtil.get(RefArrays.stream(fileStr.split(" +\\* +"))
+        RefUtil.get(RefArrays.stream(split)
                 .flatMap(x -> Arrays.stream(getImageTensors(x, log, sampleImageDimensions[0], sampleImageDimensions[1])))
                 .reduce((a, b) -> {
                   Tensor r = a.mapCoords(c -> a.get(c) * b.get(c));

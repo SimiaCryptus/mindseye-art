@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * The type Tiled trainable.
@@ -130,6 +131,55 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
     logger.info("Trainable canvas ID: " + this.canvas.getId());
   }
 
+  /**
+   * Eval tensor.
+   *
+   * @param network  the network
+   * @param tileSize the tile size
+   * @param padding  the padding
+   * @param image    the image
+   * @return the tensor
+   */
+  @Nullable
+  public static Tensor eval(@Nonnull PipelineNetwork network, int tileSize, int padding, @Nonnull Tensor... image) {
+    final Tensor tensor = RefUtil.orElse(RefArrays.stream(image).flatMap(img -> {
+      int[] imageDimensions = img.getDimensions();
+      return RefArrays.stream(selectors(padding, imageDimensions[0], imageDimensions[1], tileSize, true))
+          .map(RefUtil.wrapInterface((Function<Layer, Tensor>) selector -> {
+            //log.info(selector.toString());
+            Tensor tile = Result.getData0(selector.eval(img.addRef()));
+            if (tile.getDimensions().length == 1) {
+              return null;
+            }
+            selector.freeRef();
+            int[] tileDimensions = tile.getDimensions();
+            Tensor tensor1 = Result.getData0(network.eval(tile));
+            tensor1.scaleInPlace(tileDimensions[0] * tileDimensions[1]);
+            return tensor1;
+          }, img));
+    }).filter(x -> {
+      boolean notNull = x != null;
+      if(notNull) x.freeRef();
+      return notNull;
+    }).reduce((a, b) -> {
+      a.addInPlace(b);
+      return a;
+    }), null);
+    try {
+      if (null == tensor) return null;
+      return tensor.map(x -> {
+        if (Double.isFinite(x)) {
+          return x;
+        } else {
+          return 0;
+        }
+      });
+    } finally {
+      network.freeRef();
+      tensor.freeRef();
+    }
+  }
+
   @Override
   public Layer getLayer() {
     return filter.addRef();
@@ -189,6 +239,21 @@ public abstract class TiledTrainable extends ReferenceCountingBase implements Tr
   @Nonnull
   public static Layer[] selectors(int padding, int width, int height, int tileSize, boolean fade) {
     return selectors(padding, width, height, tileSize, fade, false);
+  }
+
+  public static int[] closestEvenSize(int padding, int width, int height, int tileSize) {
+    return new int[] {
+        closestEvenSize(tileSize, padding, width),
+        closestEvenSize(tileSize, padding, height)
+    };
+  }
+
+  public static int closestEvenSize(int tileSize, int padding, int size) {
+    int cnt = (int) (Math.ceil((size - tileSize) * 1.0 / (tileSize - padding)) + 1);
+    int tileSizeOpt = cnt <= 1 ? size : (int) Math.ceil((double) (size - padding) / cnt + padding);
+    int x = tileSizeOpt;
+    while (x < size) x += (tileSizeOpt - padding);
+    return x;
   }
 
   /**
