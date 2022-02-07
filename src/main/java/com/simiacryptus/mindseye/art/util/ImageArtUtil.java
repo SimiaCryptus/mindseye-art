@@ -37,7 +37,6 @@ import com.simiacryptus.ref.lang.RefUtil;
 import com.simiacryptus.ref.wrappers.*;
 import com.simiacryptus.tensorflow.GraphModel;
 import com.simiacryptus.util.FastRandom;
-import com.simiacryptus.util.IOUtil;
 import com.simiacryptus.util.JsonUtil;
 import com.simiacryptus.util.Util;
 import org.apache.commons.io.FileUtils;
@@ -686,4 +685,6 @@ public class ImageArtUtil {
       return IntStream.range(0, l).map(j -> j + l * i).toArray();
     }).toArray(i -> new int[i][]);
   }
+
+
 }
