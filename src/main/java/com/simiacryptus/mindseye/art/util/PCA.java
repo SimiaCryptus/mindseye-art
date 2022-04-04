@@ -221,12 +221,18 @@ public class PCA {
   }
 
   /**
-   * Gets channel rms.
    *
-   * @param image      the image
-   * @param bands      the bands
-   * @param meanTensor the mean tensor
-   * @return the channel rms
+   * public Tensor getChannelRms(Tensor image, int bands, @Nonnull Tensor meanTensor)
+   *
+   * This code calculates the root mean square (RMS) of an image, using a mean tensor.
+   * If the image does not need to be rescaled, the mean tensor is simply returned.
+   * Otherwise, a pipeline network is used to apply a square activation layer, a band reducer layer, and an Nth power activation layer (with a power of 0.5) to the image.
+   * The resulting data is then mapped so that any zeros are replaced with ones.
+   *
+   * @param image The image to be processed.
+   * @param bands The number of bands in the image.
+   * @param meanTensor The mean tensor.
+   * @return The RMS of the image.
    */
   @Nullable
   public Tensor getChannelRms(Tensor image, int bands, @Nonnull Tensor meanTensor) {
@@ -276,5 +282,6 @@ public class PCA {
       meanTensor.fill(0);
     return meanTensor;
   }
+
 
 }

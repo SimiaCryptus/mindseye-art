@@ -120,6 +120,15 @@ public class ContentPCAMatcher implements VisualModifier {
     this.averaging = averaging;
   }
 
+  /**
+   * This code builds a pipeline network that can be used to modify visual images.
+   * The network is based on the style of the image being modified,
+   * and includes a number of layers that perform operations such as PCA dimensionality reduction and channel scaling.
+   *
+   * @param visualModifierParameters
+   *          - the parameters that define the visual modifier network
+   * @return the visual modifier network
+   */
   @Nonnull
   @Override
   public PipelineNetwork build(@Nonnull VisualModifierParameters visualModifierParameters) {
@@ -222,10 +231,14 @@ public class ContentPCAMatcher implements VisualModifier {
   }
 
   /**
-   * Channel stats.
+   * public void channelStats(@Nonnull Tensor spacialPattern, int bands)
    *
-   * @param spacialPattern the spacial pattern
-   * @param bands          the bands
+   * This method calculates the mean and standard deviation for each band of a given spacial pattern tensor..
+   *
+   * @param spacialPattern
+   *          the spacial pattern tensor
+   * @param bands
+   *          the number of bands
    */
   public void channelStats(@Nonnull Tensor spacialPattern, int bands) {
     double[] means = RefIntStream.range(0, bands).mapToDouble(band -> {

@@ -26,77 +26,77 @@ import com.simiacryptus.ref.wrappers.RefList;
 import javax.annotation.Nonnull;
 
 /**
- * The type Prepend vision pipeline layer.
+ * This class represents a layer that can be prepended to a vision pipeline. It takes an inner layer and a layer to prepend, and creates a new pipeline with the prepended layer at the front.
  */
-public class PrependVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
+  public class PrependVisionPipelineLayer extends ReferenceCountingBase implements VisionPipelineLayer {
 
-  private final VisionPipelineLayer inner;
-  private final Layer layer;
+    private final VisionPipelineLayer inner;
+    private final Layer layer;
 
-  /**
-   * Instantiates a new Prepend vision pipeline layer.
-   *
-   * @param inner the inner
-   * @param layer the layer
-   */
-  public PrependVisionPipelineLayer(VisionPipelineLayer inner, Layer layer) {
-    this.inner = inner;
-    this.layer = layer;
+    /**
+     * Instantiates a new Prepend vision pipeline layer.
+     *
+     * @param inner the inner
+     * @param layer the layer
+     */
+    public PrependVisionPipelineLayer(VisionPipelineLayer inner, Layer layer) {
+      this.inner = inner;
+      this.layer = layer;
+    }
+
+    @Override
+    public @Nonnull VisionPipelineLayer scale(double scale) {
+      inner.scale(scale).freeRef();
+      return this.addRef();
+    }
+
+    @Override
+    public @Nonnull double getScale() {
+      return inner.getScale();
+    }
+
+    @Nonnull
+    @Override
+    public Layer getLayer() {
+      return inner.getLayer();
+    }
+
+    @Nonnull
+    @Override
+    public VisionPipeline getPipeline() {
+      assertAlive();
+      final VisionPipeline innerPipeline = inner.getPipeline();
+      RefList<VisionPipelineLayer> innerLayers = innerPipeline.getLayerList();
+      innerPipeline.freeRef();
+      innerLayers.add(0, new AnonymousVisionPipelineLayer(getPipelineName(), layer.addRef(), "prepend:" + layer.getName()));
+      return new VisionPipeline(getPipelineName(), innerLayers);
+    }
+
+    @Nonnull
+    @Override
+    public String getPipelineName() {
+      return inner.getPipelineName() + "/prepend=" + layer.getName();
+    }
+
+
+    @Nonnull
+    @Override
+    public String name() {
+      return inner.name();
+    }
+
+    public @SuppressWarnings("unused")
+    void _free() {
+      super._free();
+      layer.freeRef();
+      inner.freeRef();
+    }
+
+    @Nonnull
+    public @Override
+    @SuppressWarnings("unused")
+    PrependVisionPipelineLayer addRef() {
+      return (PrependVisionPipelineLayer) super.addRef();
+    }
+
   }
-
-  @Override
-  public @Nonnull VisionPipelineLayer scale(double scale) {
-    inner.scale(scale).freeRef();
-    return this.addRef();
-  }
-
-  @Override
-  public @Nonnull double getScale() {
-    return inner.getScale();
-  }
-
-  @Nonnull
-  @Override
-  public Layer getLayer() {
-    return inner.getLayer();
-  }
-
-  @Nonnull
-  @Override
-  public VisionPipeline getPipeline() {
-    assertAlive();
-    final VisionPipeline innerPipeline = inner.getPipeline();
-    RefList<VisionPipelineLayer> innerLayers = innerPipeline.getLayerList();
-    innerPipeline.freeRef();
-    innerLayers.add(0, new AnonymousVisionPipelineLayer(getPipelineName(), layer.addRef(), "prepend:" + layer.getName()));
-    return new VisionPipeline(getPipelineName(), innerLayers);
-  }
-
-  @Nonnull
-  @Override
-  public String getPipelineName() {
-    return inner.getPipelineName() + "/prepend=" + layer.getName();
-  }
-
-
-  @Nonnull
-  @Override
-  public String name() {
-    return inner.name();
-  }
-
-  public @SuppressWarnings("unused")
-  void _free() {
-    super._free();
-    layer.freeRef();
-    inner.freeRef();
-  }
-
-  @Nonnull
-  public @Override
-  @SuppressWarnings("unused")
-  PrependVisionPipelineLayer addRef() {
-    return (PrependVisionPipelineLayer) super.addRef();
-  }
-
-}
