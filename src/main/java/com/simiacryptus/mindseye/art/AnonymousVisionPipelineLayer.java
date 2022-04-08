@@ -27,10 +27,21 @@ import com.simiacryptus.ref.lang.ReferenceCountingBase;
 import javax.annotation.Nonnull;
 import java.util.Objects;
 
-/**
- * The type Anonymous vision pipeline layer.
- */
-public class AnonymousVisionPipelineLayer extends  ReferenceCountingBase implements  VisionPipelineLayer {
+  /*
+   * class AnonymousVisionPipelineLayer {
+   * 
+   *     private final Layer layer;
+   * 
+   *     private final String pipelineName;
+   * 
+   *     private String name;
+   * 
+   *     private double scale = 1.0;
+   * }
+   *
+   *   @docgenVersion 9
+   */
+  public class AnonymousVisionPipelineLayer extends  ReferenceCountingBase implements  VisionPipelineLayer {
 
   private final Layer layer;
   private final String pipelineName;
@@ -49,37 +60,67 @@ public class AnonymousVisionPipelineLayer extends  ReferenceCountingBase impleme
     this.name = name;
   }
 
-  @Nonnull
+    /*
+     * Layer getLayer();
+     *
+     *   @docgenVersion 9
+     */
+    @Nonnull
   @Override
   public Layer getLayer() {
     return layer.addRef();
   }
 
-  @Nonnull
+    /*
+     * PipelineNetwork getNetwork();
+     *
+     *   @docgenVersion 9
+     */
+    @Nonnull
   @Override
   public PipelineNetwork getNetwork() {
     throw new RuntimeException("Not Implemented");
   }
 
-  @Nonnull
+    /*
+     * VisionPipeline getPipeline();
+     *
+     *   @docgenVersion 9
+     */
+    @Nonnull
   @Override
   public VisionPipeline getPipeline() {
     throw new RuntimeException("Not Implemented");
   }
 
-  @Nonnull
+    /*
+     * String getPipelineName();
+     *
+     *   @docgenVersion 9
+     */
+    @Nonnull
   @Override
   public String getPipelineName() {
     return pipelineName;
   }
 
-  @Nonnull
+    /*
+     * String name();
+     *
+     *   @docgenVersion 9
+     */
+    @Nonnull
   @Override
   public String name() {
     return name;
   }
 
-  @Override
+    /*
+     * boolean equals();
+     *
+     *   @docgenVersion 9
+     */
+    @Override
   @RefIgnore
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -89,19 +130,34 @@ public class AnonymousVisionPipelineLayer extends  ReferenceCountingBase impleme
         Objects.equals(pipelineName, that.pipelineName);
   }
 
-  @Override
+    /*
+     * int hashCode();
+     *
+     *   @docgenVersion 9
+     */
+    @Override
   @RefIgnore
   public int hashCode() {
     return Objects.hash(layer, pipelineName);
   }
 
-  public @SuppressWarnings("unused")
+    /*
+     * void _free();
+     *
+     *   @docgenVersion 9
+     */
+    public @SuppressWarnings("unused")
   void _free() {
     super._free();
     layer.freeRef();
   }
 
-  @Nonnull
+    /*
+     * AnonymousVisionPipelineLayer addRef();
+     *
+     *   @docgenVersion 9
+     */
+    @Nonnull
   public @Override
   @SuppressWarnings("unused")
   AnonymousVisionPipelineLayer addRef() {
@@ -109,13 +165,23 @@ public class AnonymousVisionPipelineLayer extends  ReferenceCountingBase impleme
   }
 
   private double scale = 1.0;
-  @Override
+    /*
+     * VisionPipelineLayer scale();
+     *
+     *   @docgenVersion 9
+     */
+    @Override
   public @Nonnull VisionPipelineLayer scale(double scale) {
     this.scale *= scale;
     return addRef();
   }
 
-  @Override
+    /*
+     * double getScale();
+     *
+     *   @docgenVersion 9
+     */
+    @Override
   public @Nonnull double getScale() {
     return scale;
   }
